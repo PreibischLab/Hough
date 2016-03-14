@@ -49,6 +49,7 @@ public class PlotFunctionPush {
                     
                     center[0] = inputimage.dimension(0)/2;
                     center[1] = inputimage.dimension(1)/2;
+                    // This is half circle, the other half is with -ve sign
 					double rho = Math.sqrt(radius*radius-(position[0]-center[0])*(position[0]-center[0]))+center[1] ;
 
 					point[0] = (int) position[0];
