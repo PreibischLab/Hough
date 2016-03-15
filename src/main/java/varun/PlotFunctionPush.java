@@ -2,6 +2,7 @@ package varun;
 
 import java.io.File;
 
+import ij.ImageJ;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccess;
@@ -25,17 +26,26 @@ public class PlotFunctionPush {
 		final int[] realposone = new int[n];
 		final int[] realpostwo = new int[n];
 		final int[] realposthree = new int[n];
-
+		final int[] realposfour = new int[n];
+		final int[] realposfive = new int[n];
 		final double[] realpos = new double[n];
-		double functionone, functiontwo, functionthree;
-		int newposone, newpostwo, newposthree;
+		double functionone, functiontwo, functionthree, functionfour, functionfive;
+		int newposone, newpostwo, newposthree, newposfour, newposfive;
 		final double sigma = 100.0;
+		final double radius = 100;
+		final double radiussecond = 200;
 
 		double[] delta = new double[n];
 
+		double[] centercircle = new double[n]; // Defines the center of the circle 1
+		
+		double[] centersecond = new double[n];
+		
+		
 		for (int d = 0; d < n; ++d) {
 			delta[d] = (max[d] - min[d]) / inputimage.dimension(d);
-
+			centercircle[d] = (inputimage.dimension(d) / 2) * delta[d] + min[d];
+			centersecond[d] = (3*inputimage.dimension(d) / 4) * delta[d] + min[d];
 		}
 
 		
@@ -67,7 +77,16 @@ public class PlotFunctionPush {
 			
 			// Quadratic function
 
-			functionthree = -100 * (-Math.pow((realpos[0] - center), 2) / 100); 
+			functionthree = (Math.pow((realpos[0] - center), 2) ); 
+			
+			// Half circle function
+			
+			functionfour = -Math.sqrt(radius*radius-(realpos[0]-centercircle[0])*(realpos[0]-centercircle[0]))+centercircle[1];
+			
+			// Second Half circle
+			
+			functionfive = -Math.sqrt(radiussecond * radiussecond - (realpos[0] - centersecond[0]) * (realpos[0] - centersecond[0]))
+					+ centersecond[1];
 																			 
 
 			// Back transformation
@@ -83,6 +102,16 @@ public class PlotFunctionPush {
 			//Transforming back the y coordinate for Quadratic function
 			
 			newposthree = (int) Math.round((functionthree - min[1]) / delta[1]);
+			
+            //Transforming back the y coordinate for Circle function
+			
+			newposfour = (int) Math.round((functionfour - min[1]) / delta[1]);
+			
+           //Transforming back the y coordinate for second Circle function
+			
+			newposfive = (int) Math.round((functionfive - min[1]) / delta[1]);
+			
+			
 
 			// To get the new pixels, first set them to original values and then
 			// change the y value to the new one
@@ -90,11 +119,15 @@ public class PlotFunctionPush {
 			inputcursor.localize(realposone);
 			inputcursor.localize(realpostwo);
 			inputcursor.localize(realposthree);
+			inputcursor.localize(realposfour);
+			inputcursor.localize(realposfive);
 
 			realposone[1] = newposone;
 			realpostwo[1] = newpostwo;
 			realposthree[1] = newposthree;
-
+			realposfour[1] = newposfour;
+			realposfive[1] = newposfive;
+/*
 			// To make sure that the new y values are in the proper range, plot
 			// only when in range
 
@@ -124,6 +157,25 @@ public class PlotFunctionPush {
 				outbound.get().setReal(1);
 
 			}
+		*/	
+			// Plotting for function four
+						if (newposfour < inputimage.dimension(1)) {
+
+							outbound.setPosition(realposfour);
+
+							outbound.get().setReal(1);
+
+						}
+						
+			// Plotting for function five
+			if (newposfive < inputimage.dimension(1)) {
+
+				outbound.setPosition(realposfive);
+
+				outbound.get().setReal(1);
+
+			}
+			
 
 		}
 	}
@@ -132,7 +184,7 @@ public class PlotFunctionPush {
 
 		final Img<FloatType> inputimage = ImgLib2Util.openAs32Bit(new File("src/main/resources/1line.tif"));
 
-		ImageJFunctions.show(inputimage);
+	//	ImageJFunctions.show(inputimage);
 
 		double[] min = { -150, -150 };
 		double[] max = { 150, 150 };
@@ -145,8 +197,8 @@ public class PlotFunctionPush {
 		final Img<FloatType> houghquadimage = new ArrayImgFactory<FloatType>().create(intervalquad, new FloatType());
 
 		push(inputimage, houghquadimage, min, max);
-
-		ImageJFunctions.show(houghquadimage).setTitle("Test function");
+new ImageJ();
+		ImageJFunctions.show(houghquadimage).setTitle("Push-circle function");
 
 	}
 }
