@@ -19,133 +19,144 @@ public class PlotFunctionPush {
 	// for (x-img.dimensions(0)/2)^2+(y-image.dimensions(1)/2)^2 = radius^2,
 	// radius = image.dimensions(0)/2
 
+	public static <T extends RealType<T>> void push (Img<T> inputimage,RandomAccessible<T> imgout, double[] min, double[] max){
+		
+		int n = inputimage.numDimensions();
+		final int[] position = new int[n];
+		final int[] newpositionfunctone = new int[n];
+		final int[] newpositionfuncttwo = new int[n];
+		final int[] newpositionfunctthree = new int[n];
+		final double[] realposfunctone = new double[n];
+		final double[] realposfuncttwo = new double [n];
+		final double[] realposfunctthree = new double [n];
+		
 	
 		
-		public static  <T extends RealType<T>> void circlefunction(Img<T> inputimage, RandomAccessible<T> imgout,
-				T threshold, double radius) {
+		double[] delta = new double[n];
+		
+		for (int d = 0; d<n;++d){
+		delta[d] = (max[d] - min[d])/inputimage.dimension(d);
+		
+		}
+		
+		double center =inputimage.dimension(0)/2*delta[0]+min[0]; // For centering function at the middle of the grid.
+		
+		final Cursor<T> inputcursor = inputimage.localizingCursor();
+		final RandomAccess<T> outbound = imgout.randomAccess();
+		
+		while(inputcursor.hasNext()){
+		inputcursor.fwd();
+		inputcursor.localize(position);
+		
+		
+			realposfunctone[0] = position[0]*delta[0]+min[0]; // Transforming from pixels to function space
+			
+			realposfunctone[1] = -100*Math.exp(-Math.pow((realposfunctone[0]-center),2)/100); // Gaussian function
+			
+			realposfuncttwo[0] = realposfunctone[0];
+			realposfuncttwo[1] = 10*Math.sin(Math.toRadians(realposfunctone[0]*10)); // Sin function
+			
+			realposfunctthree[0] = realposfunctone[0];
+			realposfunctthree[1] = -100*(-Math.pow((realposfunctone[0]-center),2)/100); // Quadratic function
+			
+		newpositionfunctone[1] = (int) Math.round((realposfunctone[1]-min[1])/delta[1]); // Transforming back the y coordinate for Gaussian
+		newpositionfunctone[0] = position[0];
+		
+		
+		newpositionfuncttwo[1] = (int) Math.round((realposfuncttwo[1]-min[1])/delta[1]); // Transforming back the y coordinate for Sin
+		newpositionfuncttwo[0] = position[0];
+		
+		
+		newpositionfunctthree[1] = (int) Math.round((realposfunctthree[1]-min[1])/delta[1]);// Transforming back the y coordinate for Quadratic
+		newpositionfunctthree[0] = position[0];
+		
 
-			int n = inputimage.numDimensions();
-
-			final long[] position = new long[n];
-
-			int[] point = new int[n];
-
-			double[] center = new double [n];
-			final RandomAccess<T> outbound = imgout.randomAccess();
-
-			final Cursor<T> inputcursor = inputimage.localizingCursor();
-
-			// for every function (as defined by an individual pixel)
-			while (inputcursor.hasNext()) {
-
-				inputcursor.fwd();
-				inputcursor.localize(position);
-
-				// draw the function space
-
-				if (inputcursor.get().compareTo(threshold) > 0) {
-
-					
-                    
-                    center[0] = inputimage.dimension(0)/2;
-                    center[1] = inputimage.dimension(1)/2;
-                    // This is half circle, the other half is with -ve sign
-					double rho = Math.sqrt(radius*radius-(position[0]-center[0])
-							*(position[0]-center[0]))+center[1] ;
-
-					point[0] = (int) position[0];
-					point[1] = (int) Math.round(rho);
-
-					outbound.setPosition(point);
-					outbound.get().set(inputcursor.get());
-
-				}
-
-			}
+		if (newpositionfunctone[1] < inputimage.dimension(1)){
+		
+	
+		
+		outbound.setPosition(newpositionfunctone);
+		
+		
+	outbound.get().setReal(1);
+		
+		
 		}
 	
-	
-	public static <T extends RealType<T>> void sqrtfunction(Img<T> inputimage, RandomAccessible<T> imgout,
-			T threshold, double center) {
-
-		int n = inputimage.numDimensions();
-
-		final long[] position = new long[n];
-
-		int[] point = new int[n];
-
-		final RandomAccess<T> outbound = imgout.randomAccess();
-
-		final Cursor<T> inputcursor = inputimage.localizingCursor();
-
-		// for every function (as defined by an individual pixel)
-		while (inputcursor.hasNext()) {
-
-			inputcursor.fwd();
-			inputcursor.localize(position);
-
-			// draw the function space
-
-			if (inputcursor.get().compareTo(threshold) > 0) {
-
+		if (newpositionfuncttwo[1] < inputimage.dimension(1)){
+			
+			
+			
+		outbound.setPosition(newpositionfuncttwo);
+			
+			
+		outbound.get().setReal(1);
+			
+			
+			}	
+		if (newpositionfunctthree[1] < inputimage.dimension(1)){
+			
+			
+			
+			outbound.setPosition(newpositionfunctthree);
 				
-
-				double rho =  Math.sqrt((position[0]))+center ;
-
-				point[0] = (int) position[0];
-				point[1] = (int) Math.round(rho);
-
-				outbound.setPosition(point);
-				outbound.get().set(inputcursor.get());
-
-			}
-
+				
+		outbound.get().setReal(1);
+			
+				
+				}	
+		
+		
+		
 		}
 	}
 
+	
+
 	public static void main(String[] args) {
 
-		final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/2lines.tif"));
+		final Img<FloatType> inputimage = ImgLib2Util.openAs32Bit(new File("src/main/resources/1line.tif"));
 
-		ImageJFunctions.show(inputimg);
-		int maxcircleX = (int) inputimg.dimension(0);
- 
-		int maxsqrtX = maxcircleX;
 		
-		double radius = 100;
-		double center = 10;
 		
-		int maxcircleY =   (int) (((inputimg.dimension(1)) )+radius);
+		ImageJFunctions.show(inputimage);
 		
-		int maxsqrtY =  (int) (Math.sqrt(inputimg.dimension(0))+2*center);
+		double[] min ={-150,-150};
+		double[] max ={150,150};
 		
-		double YPerPixel = 1;
-		double XPerPixel = 1;
-		int pixelscircleY = (int) Math.round((maxcircleY) / YPerPixel);
-		int pixelscircleX = (int) Math.round((maxcircleX) / XPerPixel);
 		
-		int pixelssqrtY = (int) Math.round((maxsqrtY) / YPerPixel);
-		int pixelssqrtX = (int) Math.round((maxsqrtX) / XPerPixel);
+		
+		
+		
+		
+		
+		
+		int pixelsY = (int) Math.round((max[1]-min[1]));
+		int pixelsX = (int) Math.round((max[0]-min[0]));
+		
+		
 
-		FinalInterval intervalcircle = new FinalInterval(new long[] { pixelscircleX, pixelscircleY });
-		FinalInterval intervalsqrt = new FinalInterval(new long[] { pixelssqrtX, pixelssqrtY });
-
-		final Img<FloatType> houghcircleimage = new ArrayImgFactory<FloatType>().create(intervalcircle, new FloatType());
-
-		final Img<FloatType> houghsqrtimage = new ArrayImgFactory<FloatType>().create(intervalsqrt, new FloatType());
-		
-		FloatType val = new FloatType(200);
-
-		circlefunction(inputimg, houghcircleimage, val, radius);
-
-		ImageJFunctions.show(houghcircleimage).setTitle("Circle function");
+		FinalInterval intervalquad = new FinalInterval(new long[] { pixelsX, pixelsY });
 		
 		
-		sqrtfunction(inputimg, houghsqrtimage, val,center );
 
-		ImageJFunctions.show(houghsqrtimage).setTitle("Sqrt function");
+	
+		
+		final Img<FloatType> houghquadimage = new ArrayImgFactory<FloatType>().create(intervalquad, new FloatType());
 		
 		
+		
+		
+		
+		
+
+		
+		
+	push(inputimage, houghquadimage, min, max);
+
+		
+		
+		ImageJFunctions.show(houghquadimage).setTitle("Test function");
 
 	}
 }
