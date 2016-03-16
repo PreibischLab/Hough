@@ -24,13 +24,13 @@ public class PlotFunctionPush {
 
 		int n = imgout.numDimensions();
 		final int[] position = new int[n];
-
-		final int[] realposone = new int[n];
+        final int[] realposone = new int[n];
 		final int[] realpostwo = new int[n];
 		final int[] realposthree = new int[n];
 		final int[] realposfour = new int[n];
 		final int[] realposfive = new int[n];
 		final double[] realpos = new double[n];
+		
 		double functionone, functiontwo, functionthree, functionfour, functionfive;
 		int newposone, newpostwo, newposthree, newposfour, newposfive;
 		final double sigma = 100.0;
@@ -184,9 +184,6 @@ public class PlotFunctionPush {
 
 	public static void main(String[] args) {
 
-		
-
-	
 
 		double[] min = { -400, -500 };
 		double[] max = { 400, 0 };

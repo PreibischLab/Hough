@@ -39,7 +39,7 @@ public class PlotFunctionPull {
 
 		final double[] realpos = new double[n];
 
-		double radius = 200 , radiussecond = 200, sigma =15, distance, functionone, functiontwo, distancesecond;
+		double radius = 200 , radiussecond = 200, sigma =1.0, cutoff = 5*sigma, distance, distancesecond;
 
 		double[] delta = new double[n];
 
@@ -73,23 +73,24 @@ public class PlotFunctionPull {
 			// for the circle function (center and radius describes a circle)
 			Finaldistance function = new Finalfunction(realpos, center, radius, 0);
 			
-			distance = function.Circlefunction(realpos, center, radius);
+			distance = function.Circlefunctiondist(realpos, center, radius);
 
-			try
-			{
+			
 			outbound.setPosition(inputcursor);
 			
-			outbound.get().setReal(distance);
-			} catch (Exception e )
-			{
-				System.out.println( inputcursor.getIntPosition( 0 )+ " " +inputcursor.getIntPosition( 1 ));
-				System.exit(0);
-			}
-		  // outbound.get().setReal(Math.exp(-distance*distance/sigma));
+			
+			if (Math.abs(distance) < cutoff)
+				
+		    outbound.get().setReal(Math.exp(-distance*distance/sigma));
+			
+			else 
 
+			outbound.get().setReal(0);	
 		}
 		
 		}
+	
+
 	
 
 
@@ -103,13 +104,13 @@ public class PlotFunctionPull {
 		final int sizeX = 1000;
 		final int sizeY =  (int)Math.round( sizeX * ratio ); 
 
-		System.out.println( sizeX + " " + sizeY );
+		
 		
 		final Img<FloatType> houghquadimage = new ArrayImgFactory<FloatType>().create(new long[]{sizeX, sizeY}, new FloatType());
 
 		pull(houghquadimage, min, max);
         
-		//new ImageJ();
+		new ImageJ();
 		ImageJFunctions.show(houghquadimage).setTitle("Pull-Circle function");
 
 	}
