@@ -33,9 +33,9 @@ public class PlotFunctionPush {
 		
 		double functionone, functiontwo, functionthree, functionfour, functionfive;
 		int newposone, newpostwo, newposthree, newposfour, newposfive;
-		final double sigma = 100.0;
-		final double radius = 100;
-		final double radiussecond = 200;
+		final double sigma = 1.0;
+		final double radius = 10;
+		final double radiussecond = 20;
 
 		double[] delta = new double[n];
 
@@ -53,7 +53,7 @@ public class PlotFunctionPush {
 		
 		// For centering Gaussian and Quadratic function at the center of the image
 		
-		double center = (imgout.dimension(0) / 2) * delta[0] + min[0]; 
+		double center = 0; //(imgout.dimension(0) / 2) * delta[0] + min[0]; 
 		
 		final Cursor<T> inputcursor = Views.iterable(imgout).localizingCursor();
 		final RandomAccess<T> outbound = imgout.randomAccess();
@@ -66,7 +66,7 @@ public class PlotFunctionPush {
 			
 			for (int d = 0; d < n; ++d) {
 
-				realpos[d] = inputcursor.getDoublePosition(d) * delta[d] + min[0];
+				realpos[d] = inputcursor.getDoublePosition(d) * delta[d] + min[d];
 
 			}
 			// Gaussian function
@@ -185,11 +185,11 @@ public class PlotFunctionPush {
 	public static void main(String[] args) {
 
 
-		double[] min = { -400, -500 };
-		double[] max = { 400, 0 };
+		double[] min = { -40, -25};
+		double[] max = { 40, 0 };
 
 		final double ratio = (max[1]-min[1]) / (max[0]-min[0]);
-		final int sizeX = 1000;
+		final int sizeX = (int)Math.round(max[0] - min[0]);
 		final int sizeY =  (int)Math.round( sizeX * ratio ); 
 
 
