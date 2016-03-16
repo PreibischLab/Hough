@@ -7,20 +7,22 @@ import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.view.Views;
 import util.ImgLib2Util;
 
 public class PlotFunctionPush {
 	
 
-	public static <T extends RealType<T>> void push(Img<T> inputimage, RandomAccessible<T> imgout, double[] min,
+	public static <T extends RealType<T>> void push(RandomAccessibleInterval<T> imgout, double[] min,
 			double[] max) {
 
-		int n = inputimage.numDimensions();
+		int n = imgout.numDimensions();
 		final int[] position = new int[n];
 
 		final int[] realposone = new int[n];
@@ -43,17 +45,17 @@ public class PlotFunctionPush {
 		
 		
 		for (int d = 0; d < n; ++d) {
-			delta[d] = (max[d] - min[d]) / inputimage.dimension(d);
-			centercircle[d] = (inputimage.dimension(d) / 2) * delta[d] + min[d];
-			centersecond[d] = (3*inputimage.dimension(d) / 4) * delta[d] + min[d];
+			delta[d] = (max[d] - min[d]) / imgout.dimension(d);
+			centercircle[d] = 0; // (imgout.dimension(d) / 2) * delta[d] + min[d];
+			centersecond[d] = 0; // (3*imgout.dimension(d) / 4) * delta[d] + min[d];
 		}
 
 		
 		// For centering Gaussian and Quadratic function at the center of the image
 		
-		double center = (inputimage.dimension(0) / 2) * delta[0] + min[0]; 
+		double center = (imgout.dimension(0) / 2) * delta[0] + min[0]; 
 		
-		final Cursor<T> inputcursor = inputimage.localizingCursor();
+		final Cursor<T> inputcursor = Views.iterable(imgout).localizingCursor();
 		final RandomAccess<T> outbound = imgout.randomAccess();
 
 		while (inputcursor.hasNext()) {
@@ -132,7 +134,7 @@ public class PlotFunctionPush {
 			// only when in range
 
 			// Plotting for function one
-			if (newposone < inputimage.dimension(1)) {
+			if (newposone < imgout.dimension(1)) {
 
 				outbound.setPosition(realposone);
 
@@ -141,7 +143,7 @@ public class PlotFunctionPush {
 			}
 
 			// Plotting for function two
-			if (newpostwo < inputimage.dimension(1)) {
+			if (newpostwo < imgout.dimension(1)) {
 
 				outbound.setPosition(realpostwo);
 
@@ -150,7 +152,7 @@ public class PlotFunctionPush {
 			}
 
 			// Plotting for function three
-			if (newposthree < inputimage.dimension(1)) {
+			if (newposthree < imgout.dimension(1)) {
 
 				outbound.setPosition(realposthree);
 
@@ -159,7 +161,7 @@ public class PlotFunctionPush {
 			}
 		*/	
 			// Plotting for function four
-						if (newposfour < inputimage.dimension(1)) {
+						if (newposfour < imgout.dimension(1)) {
 
 							outbound.setPosition(realposfour);
 
@@ -168,7 +170,7 @@ public class PlotFunctionPush {
 						}
 						
 			// Plotting for function five
-			if (newposfive < inputimage.dimension(1)) {
+			if (newposfive < imgout.dimension(1)) {
 
 				outbound.setPosition(realposfive);
 
@@ -182,22 +184,22 @@ public class PlotFunctionPush {
 
 	public static void main(String[] args) {
 
-		final Img<FloatType> inputimage = ImgLib2Util.openAs32Bit(new File("src/main/resources/1line.tif"));
+		
 
-	//	ImageJFunctions.show(inputimage);
+	
 
-		double[] min = { -150, -150 };
-		double[] max = { 150, 150 };
+		double[] min = { -400, -500 };
+		double[] max = { 400, 0 };
 
-		int pixelsY = (int) Math.round((max[1] - min[1]));
-		int pixelsX = (int) Math.round((max[0] - min[0]));
+		final double ratio = (max[1]-min[1]) / (max[0]-min[0]);
+		final int sizeX = 1000;
+		final int sizeY =  (int)Math.round( sizeX * ratio ); 
 
-		FinalInterval intervalquad = new FinalInterval(new long[] { pixelsX, pixelsY });
 
-		final Img<FloatType> houghquadimage = new ArrayImgFactory<FloatType>().create(intervalquad, new FloatType());
+		final Img<FloatType> houghquadimage = new ArrayImgFactory<FloatType>().create(new long[]{sizeX, sizeY}, new FloatType());
 
-		push(inputimage, houghquadimage, min, max);
-new ImageJ();
+		push(houghquadimage, min, max);
+  //new ImageJ();
 		ImageJFunctions.show(houghquadimage).setTitle("Push-circle function");
 
 	}
