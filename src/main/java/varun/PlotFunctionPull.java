@@ -42,21 +42,23 @@ public class PlotFunctionPull {
 
 		final double[] realpos = new double[n];
 
-		double radius = 20 , radiussecond = 20, sigma =1.5, cutoff = 5*sigma, distance, distancesecond;
+		double radius = 200 , sigma = 0, cutoff , distance, distancesecond;
 
 		double[] delta = new double[n];
 
 		double[] center = new double[n];
 		
-		double[] centersecond = new double[n];
+		
 
 		
 		for (int d = 0; d < n; ++d) {
 			delta[d] = (max[d] - min[d]) / (imgout.dimension(d));
-			center[d] = 0; //(imgout.dimension(d) / 2)* delta[d] + min[d]; // This centers the circle at half the image size
-			centersecond[d] = 0; // (3*imgout.dimension(d) / 4) * delta[d] + min[d];
+			center[d] = 0; // Center of the circle
 			
 		}
+		
+		sigma = 1.7*Math.sqrt(delta[0]*delta[0]+delta[1]*delta[1]);
+		cutoff = 3*sigma;
 
 		final Cursor<T> inputcursor = Views.iterable( imgout ).localizingCursor();
 		final RandomAccess<T> outbound = imgout.randomAccess();
@@ -74,21 +76,33 @@ public class PlotFunctionPull {
 			}
 			
 			// for the circle function (center and radius describes a circle)
-			Finaldistance function = new Finalfunction(realpos, center, radius, 0);
+			Finalfunction circlefunction = new Finalfunction(realpos, center, radius, 0);
 			
-			distance = function.Circlefunctiondist(realpos, center, radius);
-
+			distance = circlefunction.Circlefunctiondist();
+			
+			// for a line the slope and the constant along y axis describe the curve
+			Finalfunction linefunction = new Finalfunction(realpos,10,4);
+			distancesecond = linefunction.Linefunctiondist();
+			
+		
 			
 			outbound.setPosition(inputcursor);
 			
+			outbound.get().setReal(distancesecond);
 			
-			if (Math.abs(distance) < cutoff)
+		
+			if (Math.abs(distance) < cutoff  || Math.abs(distancesecond) < cutoff )
 				
-		    outbound.get().setReal(Math.exp(-distance*distance/sigma));
+		    outbound.get().setReal(Math.exp(-distance*distance/sigma)+ Math.exp(-distancesecond*distancesecond/sigma) );
 			
-			else 
+			//else if (Math.abs(distancesecond) < cutoff)
+				
+			//	outbound.get().setReal(Math.exp(-distancesecond*distancesecond/sigma) );
 
+			else
+				
 			outbound.get().setReal(0);	
+			
 		}
 		
 		}
@@ -96,13 +110,13 @@ public class PlotFunctionPull {
 	
 
 	public static void main(String[] args) throws FileNotFoundException {
-	//	ImageJFunctions.show(inputimage);
+	
 
-		double[] min = { -50, -50 };
-		double[] max = { 50, 50 };
+		double[] min = { -500, -500 };
+		double[] max = { 500, 500 };
 
 		final double ratio = (max[1]-min[1]) / (max[0]-min[0]);
-		final int sizeX = 100;
+		final int sizeX = 1000;
 		final int sizeY =  (int)Math.round( sizeX * ratio ); 
 
 		
@@ -113,7 +127,7 @@ public class PlotFunctionPull {
 		
 		pull(houghquadimage, min, max);
         
-		//new ImageJ();
+		new ImageJ();
 		ImageJFunctions.show(houghquadimage).setTitle("Pull-Circle function");
 
 		

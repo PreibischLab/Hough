@@ -16,15 +16,11 @@ public abstract class Finaldistance {
 		
 	}
 	
-public double Circlefunctiondist(double[] realpoints, double[] funcparamone, double funcparamtwo){
+public Finaldistance ( double [] realpoints, double funcparamtwo, double funcparamthree){
 	
-	double distance;
-
-	distance = Math.abs(Math.sqrt(Math.pow((realpoints[1] - funcparamone[1]),2) 
-			+ Math.pow((realpoints[0] - funcparamone[0]),2) ) - funcparamtwo);
-
-	return distance;
-	
+	this.realpoints = realpoints;
+	this.funcparamtwo = funcparamtwo;
+	this.funcparamthree = funcparamthree;
 	
 }
 	
