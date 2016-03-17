@@ -57,8 +57,10 @@ public class PlotFunctionPull {
 			
 		}
 		
-		sigma = 1.7*Math.sqrt(delta[0]*delta[0]+delta[1]*delta[1]);
-		cutoff = 3*sigma;
+		sigma = 0.7*Math.sqrt(delta[0]*delta[0]+delta[1]*delta[1]); //Ensures resolution for small of big size boxes
+		
+		
+		cutoff = 5*sigma;
 
 		final Cursor<T> inputcursor = Views.iterable( imgout ).localizingCursor();
 		final RandomAccess<T> outbound = imgout.randomAccess();
@@ -95,9 +97,7 @@ public class PlotFunctionPull {
 				
 		    outbound.get().setReal(Math.exp(-distance*distance/sigma)+ Math.exp(-distancesecond*distancesecond/sigma) );
 			
-			//else if (Math.abs(distancesecond) < cutoff)
-				
-			//	outbound.get().setReal(Math.exp(-distancesecond*distancesecond/sigma) );
+			
 
 			else
 				
@@ -113,10 +113,10 @@ public class PlotFunctionPull {
 	
 
 		double[] min = { -500, -500 };
-		double[] max = { 500, 500 };
+		double[] max = { 500, 0 };
 
 		final double ratio = (max[1]-min[1]) / (max[0]-min[0]);
-		final int sizeX = 1000;
+		final int sizeX = 500;
 		final int sizeY =  (int)Math.round( sizeX * ratio ); 
 
 		
