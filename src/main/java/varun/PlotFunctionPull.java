@@ -56,9 +56,9 @@ public class PlotFunctionPull {
 
 		}
 
-		sigma = 0.7 * Math.sqrt(sigmasq); // Ensures resolution for small of big
+		// sigmasq = Math.pow(delta[0], 2) + Math.pow(delta[1], 2);
+		sigma =  Math.sqrt(sigmasq); // Ensures resolution for small of big
 											// size boxes
-
 		cutoff = 5 * sigma;
 
 		final Cursor<T> inputcursor = Views.iterable(imgout).localizingCursor();
@@ -114,11 +114,32 @@ public class PlotFunctionPull {
 
 				}
 
+				/** Sin function, x=secondrealpos  A*sin(B*x+C) **/
+				
 				Finalfunction sinfunction = new Finalfunction(secondrealpos, 10, 10, 4);
-
 				final double functionvalue = sinfunction.Sinfunction();
 				final double functionderiv = sinfunction.DerivSinfunction();
-
+            
+				
+				/** Quadratic function, x=secondrealpos, A*x^2+B*x+C **/
+			/*	
+				Finalfunction Quadfunction = new Finalfunction(secondrealpos, 0.01,0.02, 4);
+				final double functionvalue = Quadfunction.Quadfunction();
+				final double functionderiv = Quadfunction.DerivQuadfunction();
+				
+			*/
+				/** Cubic function, x=secondrealpos, A*x^3+B*x^2+C*x+D **/
+			/*	
+				Finalfunction Cubicfunction = new Finalfunction(secondrealpos, 1.1,0.1,-4.1, 4);
+				final double functionvalue = Cubicfunction.Cubicfunction();
+				final double functionderiv = Cubicfunction.DerivCubicfunction();
+				
+				/** Biquad function, x=secondrealpos, A*x^4+B*x^3+C*x^2+D*x+E **/
+			/*	
+				Finalfunction Biquadfunction = new Finalfunction(secondrealpos,2.1,-2.4,-2.4,1.8,4.0);
+				final double functionvalue = Biquadfunction.Biquadfunction();
+				final double functionderiv = Biquadfunction.DerivBiquadfunction();
+			*/	
 				Finalfunction Normalline = new Finalfunction(realpos, -1.0 / functionderiv,
 						secondrealpos[0] / functionderiv + functionvalue);
 				final double distanceline = Normalline.Linefunctiondist();
@@ -130,13 +151,14 @@ public class PlotFunctionPull {
 					actualposition[0] = secondrealpos[0];
 					actualposition[1] = functionvalue;
 
-					distance = Finalfunction.Generalfunctiondist(actualposition, realpos);
+					distance = Finaldistance.Generalfunctiondist(actualposition, realpos);
 				}
 
 			}
 
 			if (Math.abs(distance) < cutoff)
 
+			//	outbound.get().setReal(distance);
 				outbound.get().setReal(Math.exp(-distance * distance / sigmasq));
 
 			else
@@ -149,11 +171,11 @@ public class PlotFunctionPull {
 
 	public static void main(String[] args) throws FileNotFoundException {
 
-		double[] min = { -100, -100 };
-		double[] max = { 100, 100 };
+		double[] min = { -60, -20 };
+		double[] max = { 60, 20 };
 
 		final double ratio = (max[1] - min[1]) / (max[0] - min[0]);
-		final int sizeX = 400;
+		final int sizeX = 350;
 		final int sizeY = (int) Math.round(sizeX * ratio);
 
 		final Img<FloatType> houghquadimage = new ArrayImgFactory<FloatType>().create(new long[] { sizeX, sizeY },
@@ -161,7 +183,7 @@ public class PlotFunctionPull {
 
 		pull(houghquadimage, min, max);
 
-		// new ImageJ();
+		 new ImageJ();
 		ImageJFunctions.show(houghquadimage).setTitle("Pull function");
 
 	}

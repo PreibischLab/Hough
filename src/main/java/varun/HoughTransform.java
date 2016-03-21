@@ -67,7 +67,7 @@ public class HoughTransform {
 				if (inputcursor.get().compareTo(threshold) > 0){
  
 				
-				double rho = Math.cos( Math.toRadians( angle ) ) * position[0] + Math.sin( Math.toRadians( angle ) ) * position[1];
+				double rho = Math.cos( Math.toRadians( angle ) ) * realpos[0] + Math.sin( Math.toRadians( angle ) ) * realpos[1];
 
 			
 				point[0] = angle;
@@ -108,7 +108,7 @@ public class HoughTransform {
 
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 
-		FloatType val = new FloatType(200); 
+		FloatType val = new FloatType(20); 
 		
 		Houghspace(inputimg, houghimage, min, max, val);
  
