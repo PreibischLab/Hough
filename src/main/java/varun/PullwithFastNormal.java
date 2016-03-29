@@ -1,35 +1,27 @@
 package varun;
 
-import java.io.File;
 import java.io.FileNotFoundException;
-
-import javax.annotation.Generated;
-
 import ij.ImageJ;
 import net.imglib2.Cursor;
-import net.imglib2.FinalInterval;
 import net.imglib2.Localizable;
+import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealCursor;
+import net.imglib2.RealLocalizable;
+import net.imglib2.RealPointSampleList;
+import net.imglib2.RealRandomAccess;
+import net.imglib2.RealRandomAccessible;
+import net.imglib2.algorithm.region.hypersphere.HyperSphereCursor;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.neighborsearch.NearestNeighborSearch;
-import net.imglib2.roi.EllipseRegionOfInterest;
-import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
-import util.ImgLib2Util;
 
-public class PlotFunctionPull {
-	// function: (x-x0)^2 +(y-y0)^2 = R^2
-
-	// for every pixel in the output image, compute the distance to the
-	// function
-	// intensity = distance_function (circle)
-	// %% in general intensity = sum_f gauss( distance_f ); f ... function
+public class PullwithFastNormal {
 
 	public static <T extends RealType<T>> void pull(RandomAccessibleInterval<T> imgout, double[] min, double[] max) {
 
@@ -42,7 +34,7 @@ public class PlotFunctionPull {
 		final double[] secondposition = new double[n];
 		final double[] secondrealpos = new double[n];
 		double[] actualposition = new double[n];
-
+		double[] tmpactualposition = new double[n];
 		double sigmasq = 0, sigma;
 
 		double[] delta = new double[n];
@@ -51,65 +43,73 @@ public class PlotFunctionPull {
 
 			delta[d] = (max[d] - min[d]) / (imgout.dimension(d));
 
-			sigmasq += Math.pow(delta[d], 2);
+			sigmasq += Math.pow( delta[d], 2);
 
 		}
-		sigma =  Math.sqrt(sigmasq);
 
-		final Cursor<T> inputcursor = Views.iterable(imgout).localizingCursor();
-
-		final RandomAccess<T> outbound = imgout.randomAccess();
-		
+		sigma = Math.sqrt(sigmasq);
 		double[] center = { 1, 2 }; double radius = 40;
+		final Cursor<T> inputcursor = Views.iterable(imgout).localizingCursor();
+		final RandomAccess<T> outbound = imgout.randomAccess();
+		final RandomAccess<T> circle = imgout.randomAccess();
+		final RandomAccess<T> gauss = imgout.randomAccess();
+		
+		double initialtheta = 0; 
+		circle.setPosition(Math.round(center[0]+radius*Math.cos(Math.toRadians(initialtheta))),0);
+		circle.setPosition(Math.round(center[1]+radius*Math.sin(Math.toRadians(initialtheta))),1);
+		
+		
 		while (inputcursor.hasNext()) {
 			inputcursor.fwd();
 			inputcursor.localize(position);
-			final Cursor<T> second = Views.iterable(imgout).localizingCursor();
 
 			// Forward transformation
 			for (int d = 0; d < n; ++d)
 				realpos[d] = position[d] * delta[d] + min[d];
+			
 			outbound.setPosition(inputcursor);
 			double mindistance = Double.MAX_VALUE;
 			double secmindistance = Double.MAX_VALUE;
 			// To set the pixel intensity to the distance from the curve
 			double distance = 0;
-			double intensity = 0;
-
-			Finalfunction circlefunction = new Finalfunction(realpos, center,
-					  radius, 0);
-					  
-					  distance = circlefunction.Circlefunctiondist();
+			double intensity;
 			
-	/*		while (second.hasNext()) {
-				second.fwd();
-				second.localize(secondposition);
-
-				// Forward transformation
-				for (int d = 0; d < n; ++d)
-					secondrealpos[d] = secondposition[d] * delta[d] + min[d];
-
+		for (double theta = initialtheta + 1; theta<180; ++theta){
+			
+			double x = center[0]+radius*Math.cos(Math.toRadians(theta));
+			double y = center[1]+radius*Math.sin(Math.toRadians(theta));
+			
+			circle.move(Math.round((x-center[0])/radius), 0);
+			circle.move(Math.round((y-center[1])/radius), 1);
+			
+			
+			final double distanceline = Finaldistance.disttocurve(new double[] {x-center[0],y-center[1]}, realpos, y-center[1],
+					-(x-center[0])/(y-center[1]));
+			if (distanceline <= mindistance) {
+				mindistance = distanceline;
+				actualposition[0] = x-center[0];
+				actualposition[1] = y-center[1];
+				distance = Finaldistance.Generalfunctiondist(actualposition, realpos);
+				secmindistance = Math.min(distance, secmindistance);
 				
-				Finalfunction function = new Finalfunction(secondrealpos, 0.01, 0.0,0.4);
-				final double functionvalue = function.Quadfunction();
-				final double functionderiv = function.DerivQuadfunction();
-				// This gives the distance from realpos to the Normal line
-				// constructed at point secondrealpos
-				final double distanceline = Finaldistance.disttocurve(secondrealpos, realpos, functionvalue,
-						functionderiv);
-				if (distanceline <= mindistance) {
-					mindistance = distanceline;
-					actualposition[0] = secondrealpos[0];
-					actualposition[1] = functionvalue;
-					distance = Finaldistance.Generalfunctiondist(actualposition, realpos);
-					if (distance <= secmindistance)
-						secmindistance = distance;
-				}
-				*/
-				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
-				outbound.get().setReal(intensity);
+			}
+			
+			
+			intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-secmindistance * secmindistance / (2 * sigmasq));
+			outbound.get().setReal(intensity);
+			
 			
 		}
+		
+			
+			
+		
+			
+				
+			
+		}
+		
+
 	}
 
 	public static void main(String[] args) throws FileNotFoundException {
@@ -118,8 +118,8 @@ public class PlotFunctionPull {
 		double[] max = { 50, 50 };
 
 		final double ratio = (max[1] - min[1]) / (max[0] - min[0]);
-		final int sizeX = 300;
-		final int sizeY = (int) Math.round(sizeX * ratio);
+		final long sizeX = 300;
+		final long sizeY = Math.round(sizeX * ratio);
 
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(new long[] { sizeX, sizeY },
 				new FloatType());
@@ -129,7 +129,7 @@ public class PlotFunctionPull {
 		long totalTime = endTime - startTime;
 		System.out.println("Normal line finding time :" + totalTime);
 
-		new ImageJ();
+		 new ImageJ();
 		ImageJFunctions.show(houghimage).setTitle("Pull Normal line finding function");
 
 	}

@@ -67,7 +67,7 @@ public class HoughTransform {
 				if (inputcursor.get().compareTo(threshold) > 0){
  
 				
-				double rho = Math.cos( Math.toRadians( angle ) ) * realpos[0] + Math.sin( Math.toRadians( angle ) ) * realpos[1];
+				double rho = Math.cos( Math.toRadians( angle ) ) * position[0] + Math.sin( Math.toRadians( angle ) ) * position[1];
 
 			
 				point[0] = angle;

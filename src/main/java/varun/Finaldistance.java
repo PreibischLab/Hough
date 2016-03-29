@@ -1,5 +1,9 @@
 package varun;
 
+import net.imglib2.Cursor;
+import net.imglib2.Localizable;
+import net.imglib2.type.numeric.RealType;
+
 public abstract class Finaldistance {
 
 	double[] realpoints;
@@ -58,11 +62,30 @@ public abstract class Finaldistance {
 
 	}
 	public static double Generalfunctiondist(double[] secondpos, double[] firstpos) {
-		double distance = 0;
-
+		double distance ;
+	
 		distance = Math.pow((secondpos[0] - firstpos[0]), 2) + Math.pow((secondpos[1] - firstpos[1]), 2);
 
 		return Math.sqrt(distance);
 	}	
 
+	public static <T extends RealType<T>> double  disttocurve(double[] secondrealpos,double[] realpos,
+			double functionvalue, double functionderiv){
+            
+		Finalfunction Normalline = new Finalfunction(realpos, -1.0 / functionderiv,
+				secondrealpos[0] / functionderiv + functionvalue);
+	final double	 distanceline = Normalline.Linefunctiondist();
+	
+	return distanceline;
+	}
+	
+	public static <T extends RealType<T>> double  disttocurvetangent(double[] secondrealpos,double[] realpos,
+			double functionvalue, double functionderiv){
+		Finalfunction Tangentline = new Finalfunction(realpos,  functionderiv,
+				 functionvalue- secondrealpos[0]*functionderiv);
+	final double	 distanceline = Tangentline.Linefunctiondist();
+	
+	return distanceline;
+	}
+	
 }
