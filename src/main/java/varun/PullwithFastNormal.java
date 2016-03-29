@@ -48,65 +48,52 @@ public class PullwithFastNormal {
 		}
 
 		sigma = Math.sqrt(sigmasq);
-		double[] center = { 1, 2 }; double radius = 40;
+		double[] center = { -10,10 }; double radius = 40;
 		final Cursor<T> inputcursor = Views.iterable(imgout).localizingCursor();
 		final RandomAccess<T> outbound = imgout.randomAccess();
 		final RandomAccess<T> circle = imgout.randomAccess();
-		final RandomAccess<T> gauss = imgout.randomAccess();
-		
-		double initialtheta = 0; 
-		circle.setPosition(Math.round(center[0]+radius*Math.cos(Math.toRadians(initialtheta))),0);
-		circle.setPosition(Math.round(center[1]+radius*Math.sin(Math.toRadians(initialtheta))),1);
 		
 		
 		while (inputcursor.hasNext()) {
 			inputcursor.fwd();
 			inputcursor.localize(position);
-
+			
 			// Forward transformation
 			for (int d = 0; d < n; ++d)
 				realpos[d] = position[d] * delta[d] + min[d];
 			
 			outbound.setPosition(inputcursor);
+			
 			double mindistance = Double.MAX_VALUE;
 			double secmindistance = Double.MAX_VALUE;
 			// To set the pixel intensity to the distance from the curve
 			double distance = 0;
 			double intensity;
-			
-		for (double theta = initialtheta + 1; theta<180; ++theta){
-			
-			double x = center[0]+radius*Math.cos(Math.toRadians(theta));
-			double y = center[1]+radius*Math.sin(Math.toRadians(theta));
-			
-			circle.move(Math.round((x-center[0])/radius), 0);
-			circle.move(Math.round((y-center[1])/radius), 1);
-			
-			
-			final double distanceline = Finaldistance.disttocurve(new double[] {x-center[0],y-center[1]}, realpos, y-center[1],
-					-(x-center[0])/(y-center[1]));
-			if (distanceline <= mindistance) {
-				mindistance = distanceline;
-				actualposition[0] = x-center[0];
-				actualposition[1] = y-center[1];
-				distance = Finaldistance.Generalfunctiondist(actualposition, realpos);
-				secmindistance = Math.min(distance, secmindistance);
+			for (double theta =0; theta<=360;++theta){
+				circle.setPosition(Math.round(center[0]-radius*Math.sin(Math.toRadians(theta))), 0);
+				circle.setPosition(Math.round((center[1]+radius*Math.cos(Math.toRadians(theta)))), 1);
+				double newx=  circle.getDoublePosition(0);
+				double newy=  circle.getDoublePosition(1);
+				
+				
+				final double distanceline = Finaldistance.disttocurve(new double[] {newx,newy}, realpos, newy,
+						-(newx-center[0])/(newy-center[1]));
+				if (distanceline <= mindistance) {
+					mindistance = distanceline;
+					actualposition[0] = newx;
+					actualposition[1] = newy;
+					distance = Finaldistance.Generalfunctiondist(actualposition, realpos);
+					secmindistance = Math.min(distance, secmindistance);
+				}
+				
+				
+				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-secmindistance * secmindistance / (2 * sigmasq));
+				outbound.get().setReal(intensity);
+				
 				
 			}
 			
-			
-			intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-secmindistance * secmindistance / (2 * sigmasq));
-			outbound.get().setReal(intensity);
-			
-			
-		}
-		
-			
-			
-		
-			
-				
-			
+	
 		}
 		
 
@@ -114,11 +101,11 @@ public class PullwithFastNormal {
 
 	public static void main(String[] args) throws FileNotFoundException {
 
-		double[] min = { -50, -50 };
-		double[] max = { 50, 50 };
+		double[] min = { -100, -100 };
+		double[] max = { 100, 100 };
 
 		final double ratio = (max[1] - min[1]) / (max[0] - min[0]);
-		final long sizeX = 300;
+		final long sizeX = 200;
 		final long sizeY = Math.round(sizeX * ratio);
 
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(new long[] { sizeX, sizeY },
@@ -129,7 +116,7 @@ public class PullwithFastNormal {
 		long totalTime = endTime - startTime;
 		System.out.println("Normal line finding time :" + totalTime);
 
-		 new ImageJ();
+		// new ImageJ();
 		ImageJFunctions.show(houghimage).setTitle("Pull Normal line finding function");
 
 	}
