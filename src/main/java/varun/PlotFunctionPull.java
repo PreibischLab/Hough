@@ -55,12 +55,12 @@ public class PlotFunctionPull {
 
 		}
 		sigma =  Math.sqrt(sigmasq);
-
+System.out.println(sigma);
 		final Cursor<T> inputcursor = Views.iterable(imgout).localizingCursor();
 
 		final RandomAccess<T> outbound = imgout.randomAccess();
 		
-		double[] center = { -10, 10 }; double radius = 40;
+		double[] center = { 0, 0 }; double radius = 60;
 		while (inputcursor.hasNext()) {
 			inputcursor.fwd();
 			inputcursor.localize(position);
@@ -118,7 +118,7 @@ public class PlotFunctionPull {
 		double[] max = { 100, 100 };
 
 		final double ratio = (max[1] - min[1]) / (max[0] - min[0]);
-		final int sizeX = 200;
+		final int sizeX = 400;
 		final int sizeY = (int) Math.round(sizeX * ratio);
 
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(new long[] { sizeX, sizeY },
@@ -129,7 +129,7 @@ public class PlotFunctionPull {
 		long totalTime = endTime - startTime;
 		System.out.println("Normal line finding time :" + totalTime);
 
-	//	new ImageJ();
+		new ImageJ();
 		ImageJFunctions.show(houghimage).setTitle("Pull Normal line finding function");
 
 	}

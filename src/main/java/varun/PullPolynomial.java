@@ -41,15 +41,17 @@ public class PullPolynomial {
 
 			delta[d] = (max[d] - min[d]) / (imgout.dimension(d));
 
-			sigmasq += Math.pow(delta[d], 2);
+			sigmasq +=  0.5*Math.pow(delta[d], 2);
 
 		}
 
 		sigma = Math.sqrt(sigmasq);
-		double ampl = -80;
+
+		System.out.println(sigma);
+		double ampl = -40;
 		final Cursor<T> inputcursor = Views.iterable(imgout).localizingCursor();
 		final RandomAccess<T> outbound = imgout.randomAccess();
-		final RandomAccess<T> circle = imgout.randomAccess();
+		final RandomAccess<T> poly = imgout.randomAccess();
 		double[] gradient = { 1, 1 };
 		while (inputcursor.hasNext()) {
 			inputcursor.fwd();
@@ -65,27 +67,35 @@ public class PullPolynomial {
 
 			double distance = 0;
 			double intensity = 0;
-			double step = 1;
+			double step = 1.0;
 			double t = min[0];
 
-			
 			while (true) {
-				
-				Finalfunction function = new Finalfunction(new double[] {t,0}, ampl, 50);
+				// Gauss function //
+				Finalfunction function = new Finalfunction(new double[] { t, 0 }, ampl, 50);
 				final double functionvalue = function.Gaussianfunction();
 				final double functionderiv = function.DerivGaussianfunction();
-				
+
+				// Sin function //
+				/*
+				 * Finalfunction function = new Finalfunction(new double[]
+				 * {t,0}, ampl, 0); final double functionvalue =
+				 * function.Sinfunction(); final double functionderiv =
+				 * function.DerivSinfunction();
+				 */
 				gradient[0] = 1;
 				gradient[1] = functionderiv;
-				
-				if (Math.abs(functionderiv)>=0.5*ampl)
-				step = 0.1;
-				
-				circle.setPosition(Math.round(t + gradient[0]), 0);
-				circle.setPosition(Math.round(functionvalue + gradient[1]), 1);
 
-				double newx = circle.getDoublePosition(0);
-				double newy = circle.getDoublePosition(1);
+				// Check the slope and drive slow if it is greater than 15
+				// degree
+				if (Math.abs(Math.atan(functionvalue / t)) < 15)
+					step = 0.02;
+
+				poly.setPosition(Math.round(t + gradient[0]), 0);
+				poly.setPosition(Math.round(functionvalue + gradient[1]), 1);
+
+				double newx = poly.getDoublePosition(0);
+				double newy = poly.getDoublePosition(1);
 
 				final double distanceline = Finaldistance.disttocurve(new double[] { newx, newy }, realpos, newy,
 						functionderiv);
@@ -98,8 +108,6 @@ public class PullPolynomial {
 						secmindistance = distance;
 				}
 
-				
-				
 				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI)))
 						* Math.exp(-secmindistance * secmindistance / (2 * sigmasq));
 				outbound.get().setReal(intensity);
@@ -114,8 +122,8 @@ public class PullPolynomial {
 
 	public static void main(String[] args) throws FileNotFoundException {
 
-		double[] min = { -100, -100 };
-		double[] max = { 100, 20 };
+		double[] min = { -100, -40 };
+		double[] max = { 100, 40 };
 
 		final double ratio = (max[1] - min[1]) / (max[0] - min[0]);
 		final long sizeX = 200;
@@ -129,7 +137,7 @@ public class PullPolynomial {
 		long totalTime = endTime - startTime;
 		System.out.println("Normal line finding time :" + totalTime);
 
-		new ImageJ();
+		// new ImageJ();
 		ImageJFunctions.show(houghimage).setTitle("Pull Normal line finding function");
 
 	}

@@ -33,6 +33,7 @@ public class PullwithFastNormal {
 
 		double[] actualposition = new double[n];
 		
+
 		double sigmasq = 0, sigma;
 
 		double[] delta = new double[n];
@@ -46,45 +47,48 @@ public class PullwithFastNormal {
 		}
 
 		sigma = Math.sqrt(sigmasq);
+
+		System.out.println(sigma);
+
 		double[] center = { 0, 0 };
-		double radius = 40;
+		double radius = 60;
 		final Cursor<T> inputcursor = Views.iterable(imgout).localizingCursor();
 		final RandomAccess<T> outbound = imgout.randomAccess();
 		final RandomAccess<T> circle = imgout.randomAccess();
 		long[] gradient = new long[n];
+		
 
 		while (inputcursor.hasNext()) {
 			inputcursor.fwd();
 			inputcursor.localize(position);
-			
+
 			for (int d = 0; d < n; ++d)
 				realpos[d] = position[d] * delta[d] + min[d];
 
 			outbound.setPosition(inputcursor);
-			
+
 			double mindistance = Double.MAX_VALUE;
 			double secmindistance = Double.MAX_VALUE;
 			
 			double distance = 0;
-			double intensity= 0;
-			double step = 1;
-            double theta = 0;
-			
-			
-			while(true){
-					gradient[0] = -Math.round(radius * Math.cos(Math.toRadians(theta)));
-					gradient[1] = -Math.round(radius * Math.sin(Math.toRadians(theta)));
-					
-					if (Math.abs(gradient[0])>=0.65 || Math.abs(gradient[1])>=0.65 )
-					step = 0.05;
-						
+			double intensity = 0;
+			//Chosen constant step size for iterating over the circle
+			double step = 0.1; 
+			double theta = 0;
+
+			while (true) {
+				gradient[0] = -Math.round(radius * Math.cos(Math.toRadians(theta)));
+				gradient[1] = -Math.round(radius * Math.sin(Math.toRadians(theta)));
+				
 				for (int d = 0; d < n; ++d)
 					circle.setPosition(Math.round(center[d] + gradient[d]), d);
-				
+					
 				double newx = circle.getDoublePosition(0);
 				double newy = circle.getDoublePosition(1);
+
+			
 				
-				final double distanceline = Finaldistance.disttocurve(new double[] { newx, newy }, realpos, newy,
+				 double distanceline = Finaldistance.disttocurve(new double[] { newx, newy }, realpos, newy,
 						-(newx - center[0]) / (newy - center[1]));
 				if (distanceline <= mindistance) {
 					mindistance = distanceline;
@@ -98,9 +102,11 @@ public class PullwithFastNormal {
 				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI)))
 						* Math.exp(-secmindistance * secmindistance / (2 * sigmasq));
 				outbound.get().setReal(intensity);
-                theta+=step;
-                if (theta >=180)
-                	break;
+
+				theta += step;
+				if (theta>=360)
+					break;
+				
 			}
 		}
 
