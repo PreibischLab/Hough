@@ -46,13 +46,11 @@ public class PullPolynomial {
 		}
 
 		sigma = Math.sqrt(sigmasq);
-		double[] center = { 0, 0 };
-		double ampl = 0.5;
+		double ampl = -80;
 		final Cursor<T> inputcursor = Views.iterable(imgout).localizingCursor();
 		final RandomAccess<T> outbound = imgout.randomAccess();
 		final RandomAccess<T> circle = imgout.randomAccess();
 		double[] gradient = { 1, 1 };
-
 		while (inputcursor.hasNext()) {
 			inputcursor.fwd();
 			inputcursor.localize(position);
@@ -72,27 +70,35 @@ public class PullPolynomial {
 
 			
 			while (true) {
-				gradient[0] = 1;
-				gradient[1] = ampl * 2 * t;
 				
-				step = 0.01;
+				Finalfunction function = new Finalfunction(new double[] {t,0}, ampl, 50);
+				final double functionvalue = function.Gaussianfunction();
+				final double functionderiv = function.DerivGaussianfunction();
+				
+				gradient[0] = 1;
+				gradient[1] = functionderiv;
+				
+				if (Math.abs(functionderiv)>=0.5*ampl)
+				step = 0.1;
+				
 				circle.setPosition(Math.round(t + gradient[0]), 0);
-				circle.setPosition(Math.round(ampl * t * t + gradient[1]), 1);
+				circle.setPosition(Math.round(functionvalue + gradient[1]), 1);
 
 				double newx = circle.getDoublePosition(0);
 				double newy = circle.getDoublePosition(1);
 
 				final double distanceline = Finaldistance.disttocurve(new double[] { newx, newy }, realpos, newy,
-						ampl * 2 * t);
+						functionderiv);
 				if (distanceline <= mindistance) {
 					mindistance = distanceline;
 					actualposition[0] = newx;
 					actualposition[1] = newy;
 					distance = Finaldistance.Generalfunctiondist(actualposition, realpos);
+					if (distance < secmindistance)
+						secmindistance = distance;
 				}
 
-				if (distance < secmindistance)
-					secmindistance = distance;
+				
 				
 				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI)))
 						* Math.exp(-secmindistance * secmindistance / (2 * sigmasq));
@@ -108,8 +114,8 @@ public class PullPolynomial {
 
 	public static void main(String[] args) throws FileNotFoundException {
 
-		double[] min = { -100, 0 };
-		double[] max = { 100, 250 };
+		double[] min = { -100, -100 };
+		double[] max = { 100, 20 };
 
 		final double ratio = (max[1] - min[1]) / (max[0] - min[0]);
 		final long sizeX = 200;

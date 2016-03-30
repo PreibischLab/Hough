@@ -75,8 +75,8 @@ public class PullwithFastNormal {
 					gradient[0] = -Math.round(radius * Math.cos(Math.toRadians(theta)));
 					gradient[1] = -Math.round(radius * Math.sin(Math.toRadians(theta)));
 					
-					if (Math.abs(gradient[0])>=0.5 || Math.abs(gradient[1])>=0.5 )
-					step = 0.01;
+					if (Math.abs(gradient[0])>=0.65 || Math.abs(gradient[1])>=0.65 )
+					step = 0.05;
 						
 				for (int d = 0; d < n; ++d)
 					circle.setPosition(Math.round(center[d] + gradient[d]), d);
@@ -91,14 +91,15 @@ public class PullwithFastNormal {
 					actualposition[0] = newx;
 					actualposition[1] = newy;
 					distance = Finaldistance.Generalfunctiondist(actualposition, realpos);
-					secmindistance = Math.min(distance, secmindistance);
+					if (distance < secmindistance)
+						secmindistance = distance;
 				}
 
 				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI)))
 						* Math.exp(-secmindistance * secmindistance / (2 * sigmasq));
 				outbound.get().setReal(intensity);
                 theta+=step;
-                if (theta >=360)
+                if (theta >=180)
                 	break;
 			}
 		}
