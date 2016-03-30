@@ -73,7 +73,7 @@ public class PullwithFastNormal {
 			double distance = 0;
 			double intensity = 0;
 			//Chosen constant step size for iterating over the circle
-			double step = 0.1; 
+			double step = 0.5; 
 			double theta = 0;
 
 			while (true) {

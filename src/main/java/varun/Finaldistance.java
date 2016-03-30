@@ -71,7 +71,7 @@ public abstract class Finaldistance {
 
 	public static <T extends RealType<T>> double  disttocurve(double[] secondrealpos,double[] realpos,
 			double functionvalue, double functionderiv){
-            
+            //x= secondrealpos[0], f(x) = function value or = y for implicit curves
 		Finalfunction Normalline = new Finalfunction(realpos, -1.0 / functionderiv,
 				secondrealpos[0] / functionderiv + functionvalue);
 	final double	 distanceline = Normalline.Linefunctiondist();

@@ -67,7 +67,7 @@ public class PullPolynomial {
 
 			double distance = 0;
 			double intensity = 0;
-			double step = 1.0;
+			double step = 0.1;
 			double t = min[0];
 
 			while (true) {
@@ -86,16 +86,16 @@ public class PullPolynomial {
 				gradient[0] = 1;
 				gradient[1] = functionderiv;
 
-				// Check the slope and drive slow if it is greater than 15
-				// degree
-				if (Math.abs(Math.atan(functionvalue / t)) < 15)
-					step = 0.02;
+				
 
 				poly.setPosition(Math.round(t + gradient[0]), 0);
 				poly.setPosition(Math.round(functionvalue + gradient[1]), 1);
 
 				double newx = poly.getDoublePosition(0);
 				double newy = poly.getDoublePosition(1);
+				// If slope of the tangent is greater than 10 degrees, go slow
+				if (Math.abs(Math.toDegrees(Math.atan(functionvalue/t)))>10)
+					step = 0.02;
 
 				final double distanceline = Finaldistance.disttocurve(new double[] { newx, newy }, realpos, newy,
 						functionderiv);
