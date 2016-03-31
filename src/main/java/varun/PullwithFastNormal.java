@@ -73,37 +73,40 @@ public class PullwithFastNormal {
 			
 			double distance = 0;
 			double intensity = 0;
-			
+			double step, newstep=0;
 			double initheta = 0;
 			double theta = initheta;
-			double dtheta;
+			double dtheta=1;
 
 
 			position[0] = radius*Math.cos(Math.toRadians(initheta));
 			position[1] = radius*Math.sin(Math.toRadians(initheta));
+			
 			for (int d = 0; d < n; ++d)
 				circle.setPosition(Math.round(center[d] + position[d]), d);
 			
+			
+			 double[] newpos = new double [n];
+			 
+			for(int d=0; d<n;++d)
+             newpos[d] = circle.getDoublePosition(d);
+			
 			while (true) {
-				dtheta = Math.toRadians(theta - initheta); // Compute increment in radians
-				
-				gradient[0] = -radius*Math.sin(Math.toRadians(initheta))*dtheta;
-				gradient[1] = radius*Math.cos(Math.toRadians(initheta))*dtheta;
-				
-				circle.move(Math.round(gradient[0]),0);
-				circle.move(Math.round(gradient[1]),1);
+			    theta = initheta+dtheta;
 
-				double newx = circle.getDoublePosition(0);
-				double newy = circle.getDoublePosition(1);
+			    gradient[0] = -radius*Math.sin(Math.toRadians(theta))*Math.toRadians(dtheta);
+				gradient[1] = radius*Math.cos(Math.toRadians(theta))*Math.toRadians(dtheta);
 				
-				
-				
-				 double distanceline = Finaldistance.disttocurve(new double[] { newx, newy }, realpos, newy,
-						-(newx - center[0]) / (newy - center[1]));
+				for (int d = 0; d < n; ++d){
+					circle.move(Math.round(gradient[d]),d);
+					newpos[d] = circle.getDoublePosition(d);
+				}
+				 double distanceline = Finaldistance.disttocurve(new double[] { newpos[0], newpos[1] }, realpos, newpos[1],
+						-(newpos[0] - center[0]) / (newpos[1] - center[1]));
 				if (distanceline <= mindistance) {
 					mindistance = distanceline;
-					actualposition[0] = newx;
-					actualposition[1] = newy;
+					for (int d = 0; d < n; ++d)
+					actualposition[d] = newpos[d];
 					distance = Finaldistance.Generalfunctiondist(actualposition, realpos);
 				}
 				if (distance < secmindistance)
@@ -111,10 +114,10 @@ public class PullwithFastNormal {
 				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI)))
 						* Math.exp(-secmindistance * secmindistance / (2 * sigmasq));
 				outbound.get().setReal(intensity);
-
-				initheta = theta;
-				theta ++; //Increase in degrees
-				if (theta>=360)
+				
+				initheta= theta;
+				
+				if (theta>=180)
 					break;
 				
 			}
