@@ -73,12 +73,7 @@ public class PullwithFastNormal {
 				position[0] = radius * Math.cos(Math.toRadians(initheta));
 				position[1] = radius * Math.sin(Math.toRadians(initheta));
 
-				for (int d = 0; d < n; ++d) {
-					circle.setPosition(Math.round(center[d] + position[d]), d);
-					newpos[d] = circle.getDoublePosition(d);
-				}
 				// Compute the gradient for incrementing current position
-				
 				theta = initheta + dtheta;
 				gradient[0] = -radius * Math.sin(Math.toRadians(theta)) * Math.toRadians(dtheta);
 				gradient[1] = radius * Math.cos(Math.toRadians(theta)) * Math.toRadians(dtheta);
@@ -108,7 +103,7 @@ public class PullwithFastNormal {
 						secmindistance = distance;
 				}
 
-				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI)))
+				intensity = (1.0 / (sigma * Math.sqrt(2 * Math.PI)))
 						* Math.exp(-secmindistance * secmindistance / (2 * sigmasq));
 				outbound.get().setReal(intensity);
 
