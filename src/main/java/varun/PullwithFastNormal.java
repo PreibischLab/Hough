@@ -13,6 +13,7 @@ import net.imglib2.RealLocalizable;
 import net.imglib2.RealPointSampleList;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
+import net.imglib2.RealRandomAccessibleRealInterval;
 import net.imglib2.algorithm.region.hypersphere.HyperSphereCursor;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
@@ -40,7 +41,7 @@ public class PullwithFastNormal {
 
 		for (int d = 0; d < n; ++d) {
 
-			delta[d] = (max[d] - min[d]) / (imgout.dimension(d));
+			delta[d] = (max[d] - min[d]) / (imgout.realMax(d)-imgout.realMin(d)+1);
 
 			sigmasq += Math.pow(delta[d], 2);
 
@@ -51,11 +52,11 @@ public class PullwithFastNormal {
 		System.out.println(sigma);
 
 		double[] center = { 0, 0 };
-		double radius = 60;
+		double radius = 40;
 		final Cursor<T> inputcursor = Views.iterable(imgout).localizingCursor();
 		final RandomAccess<T> outbound = imgout.randomAccess();
 		final RandomAccess<T> circle = imgout.randomAccess();
-		long[] gradient = new long[n];
+		double[] gradient = new double[n];
 		
 
 		while (inputcursor.hasNext()) {
@@ -72,21 +73,30 @@ public class PullwithFastNormal {
 			
 			double distance = 0;
 			double intensity = 0;
-			//Chosen constant step size for iterating over the circle
-			double step = 0.5; 
-			double theta = 0;
+			
+			double initheta = 0;
+			double theta = initheta;
+			double dtheta;
 
+
+			position[0] = radius*Math.cos(Math.toRadians(initheta));
+			position[1] = radius*Math.sin(Math.toRadians(initheta));
+			for (int d = 0; d < n; ++d)
+				circle.setPosition(Math.round(center[d] + position[d]), d);
+			
 			while (true) {
-				gradient[0] = -Math.round(radius * Math.cos(Math.toRadians(theta)));
-				gradient[1] = -Math.round(radius * Math.sin(Math.toRadians(theta)));
+				dtheta = Math.toRadians(theta - initheta); // Compute increment in radians
 				
-				for (int d = 0; d < n; ++d)
-					circle.setPosition(Math.round(center[d] + gradient[d]), d);
-					
+				gradient[0] = -radius*Math.sin(Math.toRadians(initheta))*dtheta;
+				gradient[1] = radius*Math.cos(Math.toRadians(initheta))*dtheta;
+				
+				circle.move(Math.round(gradient[0]),0);
+				circle.move(Math.round(gradient[1]),1);
+
 				double newx = circle.getDoublePosition(0);
 				double newy = circle.getDoublePosition(1);
-
-			
+				
+				
 				
 				 double distanceline = Finaldistance.disttocurve(new double[] { newx, newy }, realpos, newy,
 						-(newx - center[0]) / (newy - center[1]));
@@ -95,15 +105,15 @@ public class PullwithFastNormal {
 					actualposition[0] = newx;
 					actualposition[1] = newy;
 					distance = Finaldistance.Generalfunctiondist(actualposition, realpos);
-					if (distance < secmindistance)
-						secmindistance = distance;
 				}
-
+				if (distance < secmindistance)
+					secmindistance = distance;
 				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI)))
 						* Math.exp(-secmindistance * secmindistance / (2 * sigmasq));
 				outbound.get().setReal(intensity);
 
-				theta += step;
+				initheta = theta;
+				theta ++; //Increase in degrees
 				if (theta>=360)
 					break;
 				
@@ -118,7 +128,7 @@ public class PullwithFastNormal {
 		double[] max = { 100, 100 };
 
 		final double ratio = (max[1] - min[1]) / (max[0] - min[0]);
-		final long sizeX = 400;
+		final long sizeX = 200;
 		final long sizeY = Math.round(sizeX * ratio);
 
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(new long[] { sizeX, sizeY },

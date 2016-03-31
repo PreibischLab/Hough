@@ -41,18 +41,18 @@ public class PullPolynomial {
 
 			delta[d] = (max[d] - min[d]) / (imgout.dimension(d));
 
-			sigmasq +=  0.5*Math.pow(delta[d], 2);
+			sigmasq +=  Math.pow(delta[d], 2);
 
 		}
 
 		sigma = Math.sqrt(sigmasq);
 
-		System.out.println(sigma);
-		double ampl = -40;
+		System.out.println("sigma :"+sigma);
+		double ampl = 0.2;
 		final Cursor<T> inputcursor = Views.iterable(imgout).localizingCursor();
 		final RandomAccess<T> outbound = imgout.randomAccess();
 		final RandomAccess<T> poly = imgout.randomAccess();
-		double[] gradient = { 1, 1 };
+		double[] gradient = new double[n];
 		while (inputcursor.hasNext()) {
 			inputcursor.fwd();
 			inputcursor.localize(position);
@@ -67,38 +67,32 @@ public class PullPolynomial {
 
 			double distance = 0;
 			double intensity = 0;
-			double step = 0.1;
-			double t = min[0];
-
-			while (true) {
-				// Gauss function //
-				Finalfunction function = new Finalfunction(new double[] { t, 0 }, ampl, 50);
-				final double functionvalue = function.Gaussianfunction();
-				final double functionderiv = function.DerivGaussianfunction();
-
-				// Sin function //
-				/*
-				 * Finalfunction function = new Finalfunction(new double[]
-				 * {t,0}, ampl, 0); final double functionvalue =
-				 * function.Sinfunction(); final double functionderiv =
-				 * function.DerivSinfunction();
-				 */
-				gradient[0] = 1;
-				gradient[1] = functionderiv;
-
+			double step=1;
+			double init = min[0];
+			double t = init;
+			double deltat;
 				
+				position[0] = init;
+				position[1] = ampl*init*init;
+				for (int d = 0; d < n; ++d)
+					poly.setPosition(Math.round(position[d]), d);
+			  
+			while (true) {
+				deltat= (t-init);
+	   			
+				gradient[0] = (deltat);
+				gradient[1] = 2*ampl*init*deltat;
 
-				poly.setPosition(Math.round(t + gradient[0]), 0);
-				poly.setPosition(Math.round(functionvalue + gradient[1]), 1);
+				poly.move(Math.round(gradient[0]),0);
+				poly.move(Math.round(gradient[1]),1);
 
 				double newx = poly.getDoublePosition(0);
 				double newy = poly.getDoublePosition(1);
-				// If slope of the tangent is greater than 10 degrees, go slow
-				if (Math.abs(Math.toDegrees(Math.atan(functionvalue/t)))>10)
-					step = 0.02;
+			
+
 
 				final double distanceline = Finaldistance.disttocurve(new double[] { newx, newy }, realpos, newy,
-						functionderiv);
+						gradient[1]/deltat);
 				if (distanceline <= mindistance) {
 					mindistance = distanceline;
 					actualposition[0] = newx;
@@ -111,7 +105,9 @@ public class PullPolynomial {
 				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI)))
 						* Math.exp(-secmindistance * secmindistance / (2 * sigmasq));
 				outbound.get().setReal(intensity);
-				t += step;
+				
+				init=t;
+				t +=step;
 
 				if (t >= max[0])
 					break;
@@ -122,8 +118,8 @@ public class PullPolynomial {
 
 	public static void main(String[] args) throws FileNotFoundException {
 
-		double[] min = { -100, -40 };
-		double[] max = { 100, 40 };
+		double[] min = { -200, -200 };
+		double[] max = { 200, 200 };
 
 		final double ratio = (max[1] - min[1]) / (max[0] - min[0]);
 		final long sizeX = 200;

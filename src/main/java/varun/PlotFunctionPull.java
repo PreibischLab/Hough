@@ -60,7 +60,7 @@ System.out.println(sigma);
 
 		final RandomAccess<T> outbound = imgout.randomAccess();
 		
-		double[] center = { 0, 0 }; double radius = 60;
+		double[] center = { 0, 0 }; double radius = 40;
 		while (inputcursor.hasNext()) {
 			inputcursor.fwd();
 			inputcursor.localize(position);
@@ -118,7 +118,7 @@ System.out.println(sigma);
 		double[] max = { 100, 100 };
 
 		final double ratio = (max[1] - min[1]) / (max[0] - min[0]);
-		final int sizeX = 400;
+		final int sizeX = 200;
 		final int sizeY = (int) Math.round(sizeX * ratio);
 
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(new long[] { sizeX, sizeY },
