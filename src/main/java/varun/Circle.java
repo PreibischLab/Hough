@@ -1,3 +1,4 @@
+
 package varun;
 
 import java.io.FileNotFoundException;
@@ -22,11 +23,12 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
-public class PullwithFastNormal {
+public class Circle {
 
 	public static <T extends RealType<T>> void pull(RandomAccessibleInterval<T> imgout, double[] min, double[] max) {
 
 		int n = imgout.numDimensions();
+		final double[] inputposition = new double[n];
 		final double[] position = new double[n];
 		final double[] realpos = new double[n];
 		double[] actualposition = new double[n];
@@ -51,10 +53,9 @@ public class PullwithFastNormal {
 		// curve
 		while (inputcursor.hasNext()) {
 			inputcursor.fwd();
-			inputcursor.localize(position);
+			inputcursor.localize(inputposition);
 			for (int d = 0; d < n; ++d)
-				realpos[d] = position[d] * delta[d] + min[d];
-
+				realpos[d] = inputposition[d] * delta[d] + min[d];
 			outbound.setPosition(inputcursor);
 
 			double mindistance = Double.MAX_VALUE;
@@ -73,7 +74,12 @@ public class PullwithFastNormal {
 				position[0] = radius * Math.cos(Math.toRadians(initheta));
 				position[1] = radius * Math.sin(Math.toRadians(initheta));
 
+				for (int d = 0; d < n; ++d) {
+					circle.setPosition(Math.round(center[d] + position[d]), d);
+					newpos[d] = circle.getDoublePosition(d);
+				}
 				// Compute the gradient for incrementing current position
+				
 				theta = initheta + dtheta;
 				gradient[0] = -radius * Math.sin(Math.toRadians(theta)) * Math.toRadians(dtheta);
 				gradient[1] = radius * Math.cos(Math.toRadians(theta)) * Math.toRadians(dtheta);
@@ -103,7 +109,7 @@ public class PullwithFastNormal {
 						secmindistance = distance;
 				}
 
-				intensity = (1.0 / (sigma * Math.sqrt(2 * Math.PI)))
+				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI)))
 						* Math.exp(-secmindistance * secmindistance / (2 * sigmasq));
 				outbound.get().setReal(intensity);
 
@@ -139,3 +145,4 @@ public class PullwithFastNormal {
 
 	}
 }
+
