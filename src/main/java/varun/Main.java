@@ -10,21 +10,24 @@ import net.imglib2.type.numeric.real.FloatType;
 public class Main {
 	
 	public static void main(String[] args) {
-	double[] min = { -20, -10};
-	double[] max = { 40, 40 };
+	double[] min = { 0, -100};
+	double[] max = { 400, 100 };
 
 	final double ratio = (max[1]-min[1]) / (max[0]-min[0]);
-	final int sizeX = 800;
+	final int sizeX = 400;
 	final int sizeY =  (int)Math.round( sizeX * ratio ); 
 double [] center = {0,5};
 double radius =10;
 
 	final Img<FloatType> houghquadimage = new ArrayImgFactory<FloatType>().create(new long[]{sizeX, sizeY}, new FloatType());
 
-	PushCircle.drawCircle(houghquadimage, min,
-		 max, center,radius);
-new ImageJ();
-	ImageJFunctions.show(houghquadimage).setTitle("Push-circle function");
+	//PushCurves.drawCircle(houghquadimage, min,
+	//	 max, center,radius);
+	
+	PushCurves.DrawSine(houghquadimage, min, max, 1, 1, 0.0);
+	
+     new ImageJ();
+	ImageJFunctions.show(houghquadimage).setTitle("Moving along the curve");
 
 }
 }

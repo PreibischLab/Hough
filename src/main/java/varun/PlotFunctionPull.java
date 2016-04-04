@@ -60,7 +60,7 @@ System.out.println(sigma);
 
 		final RandomAccess<T> outbound = imgout.randomAccess();
 		
-		double[] center = { 0, 0 }; double radius = 40;
+		double[] center = { 0, 5 }; double radius = 10;
 		while (inputcursor.hasNext()) {
 			inputcursor.fwd();
 			inputcursor.localize(position);
@@ -114,11 +114,11 @@ System.out.println(sigma);
 
 	public static void main(String[] args) throws FileNotFoundException {
 
-		double[] min = { -100, -100 };
-		double[] max = { 100, 100 };
+		double[] min = { -40, -10 };
+		double[] max = { 40, 40 };
 
 		final double ratio = (max[1] - min[1]) / (max[0] - min[0]);
-		final int sizeX = 200;
+		final int sizeX = 800;
 		final int sizeY = (int) Math.round(sizeX * ratio);
 
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(new long[] { sizeX, sizeY },
@@ -130,7 +130,7 @@ System.out.println(sigma);
 		System.out.println("Normal line finding time :" + totalTime);
 
 		new ImageJ();
-		ImageJFunctions.show(houghimage).setTitle("Pull Normal line finding function");
+		ImageJFunctions.show(houghimage).setTitle("Exact distance formula");
 
 	}
 }
