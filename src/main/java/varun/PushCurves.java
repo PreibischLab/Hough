@@ -90,47 +90,43 @@ public class PushCurves {
 		}
 	}
 	
-	public static void DrawSine(Img<FloatType> imgout, double[] min, double[] max, double amplitude, double frequency, double phase ){
+	public static void DrawSine(Img<FloatType> imgout, double[] min, double[] max, double amplitude, double phase ){
 		
             int n = imgout.numDimensions();		
             double[] size = new double[n];
-            double[] location = new double[n];
     		double[] position = new double[n];
-    		double[] realpos = new double[n];
     		double[] newpos = new double[n];
     		double[] backpos = new double[n];
     		double[] sigma = new double[n];
     		double increment;
-    		double Normfactor;
     		final RandomAccess<FloatType> outbound = imgout.randomAccess();
 			double stepsize = 0.1;
 			int[] setpos = new int[n];
 			for (int d = 0; d < n; ++d)
 				size[d] = imgout.dimension(d);
-			
+
 			// Starting position, for explicit curves its easier to choose a starting point
 			position[0] = min[0];
-			position[1] = amplitude*Math.sin(Math.toRadians(frequency*min[0]+phase));
+			position[1] = amplitude*Math.sin(Math.toRadians(position[0]+phase));
 			
 			
-			sigma[0] = 1;
-			sigma[1] = 1;
+			sigma[0] = 0.7;
+			sigma[1] = 0.7;
 			while(true){
-				increment = stepsize*amplitude*frequency*Math.cos(Math.toRadians(frequency*position[0]+phase));
-				Normfactor = 1.0/Math.sqrt(1+Math.pow(amplitude*frequency*Math.cos(Math.toRadians(frequency*position[0]+phase)),2));
+				increment = stepsize*amplitude*Math.cos(Math.toRadians(position[0]+phase));
+				// Increment from starting position (min) towards max
+				newpos[0] = position[0] + stepsize;
+				newpos[1] = amplitude*Math.sin(Math.toRadians(position[0]+phase)) + increment;
 				
-				// Increment from a given position towards positive angles
-				newpos[0] = position[0] + stepsize*Normfactor;
-				newpos[1] = position[1] + increment*Normfactor;
+				for (int d =0; d<n;++d)
+				position[d] = newpos[d];
 				
-				for (int d = 0; d < n; ++d)
-					position[d] = newpos[d];
+				
 				// Transform the co-ordinates back as double[]
 				backpos = TransformCordinates.transformback(newpos, size, min, max);
 				
 				setpos[0] = (int) Math.round(backpos[0]);
 				setpos[1] = (int) Math.round(backpos[1]);
-
 
 				// To set the pixel intensity
 				AddGaussian.addGaussian(imgout, backpos, sigma);
@@ -141,12 +137,13 @@ public class PushCurves {
 
 					outbound.setPosition(setpos);
 				
-				
-				
 				// General Stopping criteria of moving along a curve, when we hit a boundary
 				if (newpos[0] >= max[0] || newpos[0] <= min[0] || newpos[1] >= max[1] || newpos[1] <= min[1])
 
 					break;
+				
+				
+					
 				
 			}
 			
