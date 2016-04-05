@@ -10,11 +10,11 @@ import net.imglib2.type.numeric.real.FloatType;
 public class Main {
 	
 	public static void main(String[] args) {
-	double[] min = { -350, -20};
-	double[] max = { 350, 20 };
+	double[] min = { 0, -20};
+	double[] max = { 360, 20 };
 
 	final double ratio = (max[1]-min[1]) / (max[0]-min[0]);
-	final int sizeX = 700;
+	final int sizeX = 360;
 	final int sizeY =  (int)Math.round( sizeX * ratio ); 
 double [] center = {0,5};
 double radius =10;
@@ -24,7 +24,7 @@ double radius =10;
 	//PushCurves.drawCircle(houghquadimage, min,
 	//	 max, center,radius);
 	
-	PushCurves.DrawSine(houghquadimage, min, max, 10, 0.0);
+	PushCurves.DrawSine(houghquadimage, min, max, 10, 80);
 	
      new ImageJ();
 	ImageJFunctions.show(houghquadimage).setTitle("Moving along the curve");

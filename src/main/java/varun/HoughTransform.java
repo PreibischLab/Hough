@@ -87,11 +87,11 @@ public class HoughTransform {
 		
 		
 		
-		final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/1line_short.tif"));
+		final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/vertical_line.tif"));
 		ImageJFunctions.show(inputimg);
 		double thetaPerPixel = 1;
 		double rhoPerPixel = 1;
-		int maxtheta = 180;
+		int maxtheta = 360;
 		
 		double size = Math
 				.sqrt((inputimg.dimension(0) * inputimg.dimension(0) + inputimg.dimension(1) * inputimg.dimension(1)));
@@ -108,7 +108,7 @@ public class HoughTransform {
 
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 
-		FloatType val = new FloatType(20); 
+		FloatType val = new FloatType(200); 
 		
 		Houghspace(inputimg, houghimage, min, max, val);
  

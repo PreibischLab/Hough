@@ -27,13 +27,13 @@ public class HoughPushCurves {
 
 				inputcursor.fwd();
 				inputcursor.localize(position);
-
+				if (inputcursor.get().compareTo(threshold) > 0){
 				Amplitude = Math.sqrt(Math.pow(position[0],2) + Math.pow(position[1], 2));
-				Phase = Math.atan2(position[0], position[1]);
-				//System.out.println(Amplitude);
+				Phase = Math.toDegrees(Math.atan2(position[0], position[1]));
 				// draw the function into the hough space
 				
 				PushCurves.DrawSine(imgout, min, max, Amplitude, Phase);
+				}
 				
 			}
 		}
@@ -42,12 +42,12 @@ public class HoughPushCurves {
 			
 			
 			
-			final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/1line.tif"));
+			final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/1line_short.tif"));
 			ImageJFunctions.show(inputimg);
-			double thetaPerPixel = 0.1;
-			double rhoPerPixel = 0.1;
+			double thetaPerPixel = 0.5;
+			double rhoPerPixel = 0.5;
+			int mintheta = 0;
 			int maxtheta = 180;
-			int mintheta = -180;
 			double size = Math
 					.sqrt((inputimg.dimension(0) * inputimg.dimension(0) + inputimg.dimension(1) * inputimg.dimension(1)));
 			int minRho = (int) -Math.round( size ); 
@@ -63,7 +63,7 @@ public class HoughPushCurves {
 
 			final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 
-			FloatType val = new FloatType(20); 
+			FloatType val = new FloatType(200); 
 			
 			Houghspace(inputimg, houghimage, min, max, val);
 	 

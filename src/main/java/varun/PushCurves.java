@@ -117,6 +117,7 @@ public class PushCurves {
 				// Increment from starting position (min) towards max
 				newpos[0] = position[0] + stepsize;
 				newpos[1] = amplitude*Math.sin(Math.toRadians(position[0]+phase)) + increment;
+						//amplitude*Math.sin(Math.toRadians(newpos[0]+phase));
 				
 				for (int d =0; d<n;++d)
 				position[d] = newpos[d];
