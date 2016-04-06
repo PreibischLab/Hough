@@ -42,10 +42,10 @@ public class HoughPushCurves {
 			
 			
 			
-			final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/1line_short.tif"));
+			final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
 			ImageJFunctions.show(inputimg);
-			double thetaPerPixel = 0.5;
-			double rhoPerPixel = 0.5;
+			double thetaPerPixel = 0.1;
+			double rhoPerPixel = 1;
 			int mintheta = 0;
 			int maxtheta = 180;
 			double size = Math
@@ -63,7 +63,7 @@ public class HoughPushCurves {
 
 			final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 
-			FloatType val = new FloatType(200); 
+			FloatType val = new FloatType(1000); 
 			
 			Houghspace(inputimg, houghimage, min, max, val);
 	 
