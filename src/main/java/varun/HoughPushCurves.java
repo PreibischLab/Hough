@@ -42,9 +42,9 @@ public class HoughPushCurves {
 			
 			
 			
-			final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/multiple_lines.tif"));
+			final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/2lines_short.tif"));
 			ImageJFunctions.show(inputimg);
-			double thetaPerPixel = 0.08;
+			double thetaPerPixel = 1;
 			double rhoPerPixel = 1;
 			int mintheta = 0;
 			int maxtheta = 180;
