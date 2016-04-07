@@ -4,6 +4,7 @@ import java.io.File;
 import ij.ImageJ;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
+import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
@@ -42,10 +43,17 @@ public class HoughPushCurves {
 			
 			
 			
-			final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/2lines_short.tif"));
+			final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/multiple_lines.tif"));
+			// Normalize the inputimg 
+			new Normalize();
+			FloatType minval = new FloatType(0);
+			FloatType maxval = new FloatType(255);
+			Normalize.normalize(inputimg, minval, maxval);
 			ImageJFunctions.show(inputimg);
-			double thetaPerPixel = 1;
-			double rhoPerPixel = 1;
+			// Set size of pixels in Hough space
+			double thetaPerPixel = 0.1;
+			double rhoPerPixel = 0.5;
+			
 			int mintheta = 0;
 			int maxtheta = 180;
 			double size = Math
@@ -59,17 +67,33 @@ public class HoughPushCurves {
 			int pixelsTheta = (int)Math.round( (maxtheta-mintheta) / thetaPerPixel );
 			int pixelsRho = (int)Math.round( (maxRho - minRho) / rhoPerPixel );
 			
+			// Size of Hough space
 			FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, pixelsRho });
 
 			final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
+			final Img<FloatType> localmaximage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 
-			FloatType val = new FloatType(200); 
+			FloatType val = new FloatType(100); 
 			
+			// Do the Hough transform
 			Houghspace(inputimg, houghimage, min, max, val);
 	 
+			// Normalize the hough image
+			Normalize.normalize(houghimage, minval, maxval);
+			
 			new ImageJ();
 			
 			ImageJFunctions.show(houghimage);
+			
+			FloatType Thresholdval = new FloatType(100); 
+			
+			// Thresholding hough image to get local maximas
+			GetLocalmaxima.Thresholding(houghimage, localmaximage, Thresholdval);
+			
+            new ImageJ();
+			
+			ImageJFunctions.show(localmaximage);
+			
 
 		}
 

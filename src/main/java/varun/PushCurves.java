@@ -137,6 +137,7 @@ public class PushCurves {
 						|| backpos[1] > imgout.realMin(1))
 
 					outbound.setPosition(setpos);
+					
 			
 				// General Stopping criteria of moving along a curve, when we hit a boundary
 				if (newpos[0] >= max[0] || newpos[0] <= min[0] || newpos[1] >= max[1] || newpos[1] <= min[1])
