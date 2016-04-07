@@ -4,8 +4,10 @@ import java.io.File;
 import ij.ImageJ;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.Img;
+import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.real.FloatType;
@@ -71,7 +73,7 @@ public class HoughPushCurves {
 			FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, pixelsRho });
 
 			final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
-			final Img<FloatType> localmaximage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
+			 Img<FloatType> localmaximage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 
 			FloatType val = new FloatType(100); 
 			
@@ -85,11 +87,12 @@ public class HoughPushCurves {
 			
 			ImageJFunctions.show(houghimage);
 			
-			FloatType Thresholdval = new FloatType(100); 
+			FloatType Thresholdval = new FloatType(200); 
 			
 			// Thresholding hough image to get local maximas
-			GetLocalmaxima.Thresholding(houghimage, localmaximage, Thresholdval);
-			
+			//GetLocalmaxima.Thresholding(houghimage, localmaximage, Thresholdval);
+			localmaximage = GetLocalmaxima.FindandDisplayLocalMaxima(houghimage,
+					new ArrayImgFactory<FloatType>());
             new ImageJ();
 			
 			ImageJFunctions.show(localmaximage);
