@@ -69,7 +69,7 @@ public class PushCurves {
 			setpos[1] = (int) Math.round(backpos[1]);
 
 			// To set the pixel intensity
-			AddGaussian.addGaussian(imgout, backpos, sigma);
+			AddGaussian.addGaussian(imgout, backpos, sigma, false);
 
 			// To make sure that the values transformed back are not out of bounds
 			if (backpos[0] < imgout.realMax(0) - imgout.realMin(0) || backpos[0] > imgout.realMin(0) || backpos[1] < imgout.realMax(1) - imgout.realMin(1)
@@ -130,8 +130,9 @@ public class PushCurves {
 				setpos[1] = (int) Math.round(backpos[1]);
 
 				// To set the pixel intensity
-				AddGaussian.addGaussian(imgout, backpos, sigma);
+				AddGaussian.addGaussian(imgout, backpos, sigma, false);
 
+				
 				// To make sure that the values transformed back are not out of bounds
 				if (backpos[0] < imgout.realMax(0) - imgout.realMin(0) || backpos[0] > imgout.realMin(0) || backpos[1] < imgout.realMax(1) - imgout.realMin(1)
 						|| backpos[1] > imgout.realMin(1))

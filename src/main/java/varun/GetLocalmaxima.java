@@ -58,9 +58,10 @@ public class GetLocalmaxima {
      // Create a new image for the output
      Img<FloatType> output = imageFactory.create( img, new FloatType() );
 
-     // define an interval that is one pixel smaller on each side in each dimension
+     // define an interval that is span number of pixel smaller on each side in each dimension
+     int span = 1;
      
-     Interval interval = Intervals.expand( img, -1 );
+     Interval interval = Intervals.expand( img, -span );
 
      // create a view on the source with this interval
      img = Views.interval( img, interval );
@@ -71,17 +72,15 @@ public class GetLocalmaxima {
 
      // instantiate a RectangleShape to access rectangular local neighborhoods
     
-     final RectangleShape shape = new RectangleShape( 1, true );
+     final RectangleShape shape = new RectangleShape( span, true );
 
      // iterate over the set of neighborhoods in the image
      for ( final Neighborhood<FloatType> localNeighborhood : shape.neighborhoods(img) )
      {
-         // what is the value that we investigate?
-         // (the center cursor runs over the image in the same iteration order as neighborhood)
          final FloatType centerValue = center.next();
 
          // keep this boolean true as long as no other value in the local neighborhood
-         // is larger or equal
+         // is smaller
          boolean isMaximum = true;
 
          // check if all pixels in the local neighborhood that are smaller
@@ -100,6 +99,7 @@ public class GetLocalmaxima {
         	 final RandomAccess<FloatType> outbound = output.randomAccess();
         	 outbound.setPosition(center);
         	 outbound.get().set(center.get());
+        	 
           
          }
      }

@@ -30,18 +30,18 @@ public class PixeltoGauss {
 	// Uses AddGaussian to add a Gaussian to a pixel position
 
 	public static void main(String[] args) throws FileNotFoundException {
-		final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/exact_circle_intensity.tif"));
+		final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/moving_along_circle.png"));
 		ImageJFunctions.show(inputimg);
 		
         int n = inputimg.numDimensions();
 		double[] position = new double[n];
-		double[] sigma = {0.8,0.5};
+		double[] sigma = {1.8,1.5};
 		Cursor<FloatType> cursor = inputimg.localizingCursor();
 		while(cursor.hasNext()){
 			cursor.fwd();
 			cursor.localize(position);
 			
-			AddGaussian.addGaussian(inputimg, position, sigma);
+			AddGaussian.addGaussian(inputimg, position, sigma, true);
 			
 		}
 		

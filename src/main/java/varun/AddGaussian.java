@@ -9,7 +9,8 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
 public class AddGaussian {
-	final public static void addGaussian( final Img< FloatType > image, final double[] location, final double[] sigma )
+	final public static void addGaussian( final Img< FloatType > image, final double[] location, final double[] sigma,
+			boolean Normalize )
 	{
 	final int numDimensions = image.numDimensions();
 	final int[] size = new int[ numDimensions ];
@@ -31,7 +32,7 @@ public class AddGaussian {
 	final RandomAccessibleInterval< FloatType > interval = Views.interval( infinite, min, max );
 	final IterableInterval< FloatType > iterable = Views.iterable( interval );
 	final Cursor< FloatType > cursor = iterable.localizingCursor();
-
+	double sum = 0;
 	while ( cursor.hasNext() )
 	{
 	cursor.fwd();
@@ -43,9 +44,22 @@ public class AddGaussian {
 	final double x = location[ d ] - cursor.getIntPosition( d );
 	value *= Math.exp( -(x * x) / two_sq_sigma[ d ] );
 	}
-
-	cursor.get().set( cursor.get().get() + (float)value );
+	
+	if (Normalize){
+      
+           sum += value;
+       
+           value /= sum;
 	}
+	
+	cursor.get().set( cursor.get().get() + (float)value );
+	
+	
+	}
+	
+	
+	
+	
 	}
 
 	public static int getSuggestedKernelDiameter( final double sigma )
