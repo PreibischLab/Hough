@@ -47,7 +47,7 @@ public class HoughPushCurves {
 
 	public static void main(String[] args) {
 
-		final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/Horizontal_line.tif"));
+		final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/intersecting_lines.tif"));
 		// Normalize the inputimg
 		new Normalize();
 		FloatType minval = new FloatType(0);
@@ -56,8 +56,8 @@ public class HoughPushCurves {
 		new ImageJ();
 		ImageJFunctions.show(inputimg);
 		// Set size of pixels in Hough space
-		double thetaPerPixel = 0.1;
-		double rhoPerPixel = 0.1;
+		double thetaPerPixel = 0.5;
+		double rhoPerPixel = 0.5;
 
 		int mintheta = 0;
 		int maxtheta = 180;
@@ -72,13 +72,13 @@ public class HoughPushCurves {
 		int pixelsTheta = (int) Math.round((maxtheta - mintheta) / thetaPerPixel);
 		int pixelsRho = (int) Math.round((maxRho - minRho) / rhoPerPixel);
 
-		final double ratio = ((max[1] - min[1])) / ((max[0] - min[0]) );
+		final double ratio = ((max[0] - min[0])) / ((max[1] - min[1]) );
 		// Size of Hough space
-		FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (int) Math.round(pixelsTheta * ratio) });
+		FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (long) (pixelsRho*ratio) });
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 		final Img<FloatType> localmaximage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 		final Img<FloatType> tmplocalmaximage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
-		FloatType val = new FloatType(10);
+		FloatType val = new FloatType(100);
 
 		// Do the Hough transform
 		Houghspace(inputimg, houghimage, min, max, val);
