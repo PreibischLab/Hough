@@ -47,12 +47,13 @@ public class HoughPushCurves {
 
 	public static void main(String[] args) {
 
-		final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/multiple_lines.tif"));
+		final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/Horizontal_line.tif"));
 		// Normalize the inputimg
 		new Normalize();
 		FloatType minval = new FloatType(0);
 		FloatType maxval = new FloatType(255);
 		Normalize.normalize(inputimg, minval, maxval);
+		new ImageJ();
 		ImageJFunctions.show(inputimg);
 		// Set size of pixels in Hough space
 		double thetaPerPixel = 0.1;
@@ -71,21 +72,21 @@ public class HoughPushCurves {
 		int pixelsTheta = (int) Math.round((maxtheta - mintheta) / thetaPerPixel);
 		int pixelsRho = (int) Math.round((maxRho - minRho) / rhoPerPixel);
 
-		final double ratio = ((max[0] - min[0]) * thetaPerPixel) / ((max[1] - min[1]) * rhoPerPixel);
+		final double ratio = ((max[1] - min[1])) / ((max[0] - min[0]) );
 		// Size of Hough space
-		FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (int) Math.round(pixelsRho * ratio) });
+		FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (int) Math.round(pixelsTheta * ratio) });
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 		final Img<FloatType> localmaximage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 		final Img<FloatType> tmplocalmaximage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
-		FloatType val = new FloatType(100);
+		FloatType val = new FloatType(10);
 
 		// Do the Hough transform
 		Houghspace(inputimg, houghimage, min, max, val);
 
 		// Normalize the hough image
-		Normalize.normalize(houghimage, minval, maxval);
+	//	Normalize.normalize(houghimage, minval, maxval);
 
-		new ImageJ();
+		
 
 		ImageJFunctions.show(houghimage);
 
@@ -94,9 +95,9 @@ public class HoughPushCurves {
 		final ExecutorService service = Executors.newFixedThreadPool(numthreads);
 		double[][] sigma = new double[inputimg.numDimensions()][inputimg.numDimensions()];
 		final double EstSigma = 1;
-		final double DesSigma = 0.1;
+		final double DesSigma = 1;
 		sigma = DifferenceOfGaussian.computeSigmas(EstSigma, 2*EstSigma, new double[] { thetaPerPixel, rhoPerPixel },
-				DesSigma , 10*DesSigma);
+				DesSigma , 2*DesSigma);
 
 		DifferenceOfGaussian.DoG(sigma[0], sigma[1], houghimage, tmplocalmaximage, localmaximage, service);
 
