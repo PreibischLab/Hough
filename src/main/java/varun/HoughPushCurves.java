@@ -61,7 +61,7 @@ public class HoughPushCurves {
 
 	public static void main(String[] args) {
 
-		final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/Horizontal_line.tif"));
+		final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/angled_lines.tif"));
 		// Normalize the inputimg
 		new Normalize();
 		FloatType minval = new FloatType(0);
@@ -86,27 +86,27 @@ public class HoughPushCurves {
 		int pixelsTheta = (int) Math.round((maxtheta - mintheta) / thetaPerPixel);
 		int pixelsRho = (int) Math.round((maxRho - minRho) / rhoPerPixel);
 
-		final double ratio = ((max[0] - min[0])) / ((max[1] - min[1]));
 		// Size of Hough space
-		FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (long) (pixelsRho * ratio) });
+		FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, pixelsRho });
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 
 		ArrayList<RefinedPeak<Point>> SubpixelMinlist =  new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
 		FloatType val = new FloatType(100);
-
+		FloatType valsec = new FloatType(200);
 		final double[] sizes = new double[inputimg.numDimensions()];
 
 		for (int d = 0; d < houghimage.numDimensions(); ++d)
 			sizes[d] = houghimage.dimension(d);
 
 		// Do the Hough transform
-		Houghspace(inputimg, houghimage, min, max, val);
+		Houghspace(inputimg, houghimage, min, max, valsec);
 
 		ImageJFunctions.show(houghimage);
-
+		final Img<FloatType> Threshhoughimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
+		GetLocalmaxmin.Thresholding(houghimage, Threshhoughimage, val);
 		// Create a Dog Detection object in Hough space
 		DogDetection<FloatType> newdog = new DogDetection<FloatType>(Views.extendMirrorSingle(houghimage), interval,
-				new double[] { pixelsTheta, pixelsRho }, 1.1, 1.1 * 1.1, DogDetection.ExtremaType.MINIMA, 10, false);
+				new double[] { thetaPerPixel, rhoPerPixel }, 1, 1.1, DogDetection.ExtremaType.MINIMA, 1, false);
 
 		// Detect minima in Scale space
 		SubpixelMinlist = newdog.getSubpixelPeaks();
@@ -142,8 +142,8 @@ public class HoughPushCurves {
 			
 			Line newline = new Line(0, points[1]/Math.sin(Math.toRadians(points[0])), inputimg.dimension(0)
 					, points[1]/Math.sin(Math.toRadians(points[0]))-inputimg.dimension(0)/Math.tan(Math.toRadians(points[0])));
-			newline.setStrokeColor( new Color( index, 128, 128 ) );
-			newline.setStrokeWidth(0.5);
+			newline.setStrokeColor( Color.RED );
+			newline.setStrokeWidth(1);
 			o.add( newline );
 		}
 		imp.updateAndDraw();
