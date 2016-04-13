@@ -61,7 +61,7 @@ public class HoughPushCurves {
 
 	public static void main(String[] args) {
 
-		final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/angled_lines.tif"));
+		final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/Horizontal_line.tif"));
 		// Normalize the inputimg
 		new Normalize();
 		FloatType minval = new FloatType(0);
@@ -70,43 +70,41 @@ public class HoughPushCurves {
 		new ImageJ();
 		ImageJFunctions.show(inputimg);
 		// Set size of pixels in Hough space
-		double thetaPerPixel = 0.2;
-		double rhoPerPixel = 0.2;
+		double thetaPerPixel = 0.1;
+		double rhoPerPixel = 0.1;
 
-		int mintheta = 0;
+		
 		int maxtheta = 180;
 		double size = Math
 				.sqrt((inputimg.dimension(0) * inputimg.dimension(0) + inputimg.dimension(1) * inputimg.dimension(1)));
 		int minRho = (int) -Math.round(size);
 		int maxRho = -minRho;
 
-		double[] min = { mintheta, minRho };
+		double[] min = { 0, minRho };
 		double[] max = { maxtheta, maxRho };
 
-		int pixelsTheta = (int) Math.round((maxtheta - mintheta) / thetaPerPixel);
+		int pixelsTheta = (int) Math.round((maxtheta ) / thetaPerPixel);
 		int pixelsRho = (int) Math.round((maxRho - minRho) / rhoPerPixel);
 
-		// Size of Hough space
+        // Size of Hough space
 		FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, pixelsRho });
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 
 		ArrayList<RefinedPeak<Point>> SubpixelMinlist =  new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
 		FloatType val = new FloatType(100);
-		FloatType valsec = new FloatType(200);
 		final double[] sizes = new double[inputimg.numDimensions()];
 
 		for (int d = 0; d < houghimage.numDimensions(); ++d)
 			sizes[d] = houghimage.dimension(d);
+		
 
 		// Do the Hough transform
-		Houghspace(inputimg, houghimage, min, max, valsec);
+		Houghspace(inputimg, houghimage, min, max, val);
 
 		ImageJFunctions.show(houghimage);
-		final Img<FloatType> Threshhoughimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
-		GetLocalmaxmin.Thresholding(houghimage, Threshhoughimage, val);
 		// Create a Dog Detection object in Hough space
 		DogDetection<FloatType> newdog = new DogDetection<FloatType>(Views.extendMirrorSingle(houghimage), interval,
-				new double[] { thetaPerPixel, rhoPerPixel }, 1, 1.1, DogDetection.ExtremaType.MINIMA, 1, false);
+				new double[] { thetaPerPixel, rhoPerPixel }, 1, 1.1, DogDetection.ExtremaType.MINIMA, 0.1, false);
 
 		// Detect minima in Scale space
 		SubpixelMinlist = newdog.getSubpixelPeaks();
