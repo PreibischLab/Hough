@@ -33,7 +33,9 @@ public class TransformCordinates {
 		final double[] realpos = new double[n];
 
 		for (int d = 0; d < n; ++d){
+			
 			delta[d] = (max[d] - min[d]) / size[d];
+		    
 			realpos[d] = (location[d] - min[d]) / delta[d];
 		}
 		return realpos;

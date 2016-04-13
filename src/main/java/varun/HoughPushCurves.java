@@ -61,7 +61,7 @@ public class HoughPushCurves {
 
 	public static void main(String[] args) {
 
-		final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/Horizontal_line.tif"));
+		final Img<FloatType> inputimg = ImgLib2Util.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
 		// Normalize the inputimg
 		new Normalize();
 		FloatType minval = new FloatType(0);
@@ -91,7 +91,7 @@ public class HoughPushCurves {
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 
 		ArrayList<RefinedPeak<Point>> SubpixelMinlist =  new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
-		FloatType val = new FloatType(100);
+		FloatType val = new FloatType(120);
 		final double[] sizes = new double[inputimg.numDimensions()];
 
 		for (int d = 0; d < houghimage.numDimensions(); ++d)

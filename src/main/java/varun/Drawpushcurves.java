@@ -24,7 +24,7 @@ public class Drawpushcurves {
 		
 	     new ImageJ();
 		ImageJFunctions.show(Sineimage).setTitle("Sine by push");
-
+/*
 	
     double [] center = {0,5};
     double radius =10;
@@ -45,6 +45,6 @@ public class Drawpushcurves {
 	new ImageJ();
 	ImageJFunctions.show(Circleimage).setTitle("Circle by push");
 
-	
+	*/
 }
 }
