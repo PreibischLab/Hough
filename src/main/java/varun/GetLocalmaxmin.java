@@ -14,6 +14,7 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPointSampleList;
+import net.imglib2.algorithm.localextrema.RefinedPeak;
 import net.imglib2.algorithm.neighborhood.Neighborhood;
 import net.imglib2.algorithm.neighborhood.RectangleShape;
 import net.imglib2.algorithm.region.hypersphere.HyperSphere;
@@ -28,6 +29,41 @@ import net.imglib2.view.Views;
 
 public class GetLocalmaxmin {
 
+	public static ArrayList<RefinedPeak<Point>> Removesimilar(ArrayList<RefinedPeak<Point>> SubpixelMinlist, 
+			double thetatolerance, double rhotolerance){
+		/********
+		 * The part below removes the close values in theta and rho coordinate 
+		 * (keeps only single of the multiple values)
+		 ********/
+
+		int j = 0;
+
+		for (int i = 0; i < SubpixelMinlist.size(); ++i) {
+
+			j = i + 1;
+			while (j < SubpixelMinlist.size()) {
+
+				if (Math.abs(SubpixelMinlist.get(i).getDoublePosition(0) - SubpixelMinlist.get(j)
+						.getDoublePosition(0))<thetatolerance && Math.abs(SubpixelMinlist.get(i).getDoublePosition(1) - SubpixelMinlist.get(j)
+								.getDoublePosition(1))<rhotolerance ) {
+
+					SubpixelMinlist.remove(j);
+
+				}
+
+				else {
+					++j;
+				}
+
+			}
+
+		}
+		
+		
+		return SubpixelMinlist;
+	}
+	
+	
 	public static void Thresholding(RandomAccessibleInterval<FloatType> img, RandomAccessibleInterval<FloatType> imgout,
 			FloatType ThresholdValue) {
 

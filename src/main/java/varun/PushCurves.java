@@ -92,7 +92,7 @@ public class PushCurves {
 		}
 	}
 
-	public static void DrawSine(Img<FloatType> imgout, double[] min, double[] max, double amplitude, double phase) {
+	public static void DrawSine(RandomAccessibleInterval<FloatType> imgout, double[] min, double[] max, double amplitude, double phase) {
 
 		int n = imgout.numDimensions();
 		double[] size = new double[n];
