@@ -1,7 +1,13 @@
 package varun;
 
+import java.awt.Color;
 import java.util.ArrayList;
 
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.gui.Line;
+import ij.gui.Overlay;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
@@ -14,6 +20,7 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPointSampleList;
+import net.imglib2.algorithm.dog.DogDetection;
 import net.imglib2.algorithm.localextrema.RefinedPeak;
 import net.imglib2.algorithm.neighborhood.Neighborhood;
 import net.imglib2.algorithm.neighborhood.RectangleShape;
@@ -23,6 +30,7 @@ import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.Cursor;
 import net.imglib2.Point;
 import net.imglib2.PointSampleList;
@@ -80,8 +88,8 @@ public class GetLocalmaxmin {
 
 			if (bound.get().compareTo(ThresholdValue) > 0) {
 
-				outbound.get().set(bound.get());
-
+				//outbound.get().set(bound.get());
+                  outbound.get().set(1);
 			}
 
 			else {
@@ -347,5 +355,64 @@ public class GetLocalmaxmin {
 		}
 
 	}
+	
+	// Detect minima in Scale space
+	public static ArrayList<RefinedPeak<Point>> ScalespaceMinima(RandomAccessibleInterval<FloatType> inputimg, FinalInterval interval,
+			double thetaPerPixel, double rhoPerPixel, double minPeakValue, double smallsigma, double bigsigma){
+		ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
+		// Create a Dog Detection object in Hough space
+				DogDetection<FloatType> newdog = new DogDetection<FloatType>(Views.extendMirrorSingle(inputimg),
+						interval, new double[] { thetaPerPixel, rhoPerPixel }, smallsigma, bigsigma, DogDetection.ExtremaType.MINIMA,
+						minPeakValue, false);
+
+				// Detect minima in Scale space
+				SubpixelMinlist = newdog.getSubpixelPeaks();
+				
+				// Remove duplicate  values in theta and rho
+				SubpixelMinlist = GetLocalmaxmin.Removesimilar(SubpixelMinlist);
+		
+		
+		return SubpixelMinlist;
+	}
+	
+	// OverlayLines
+	
+	public static void Overlaylines(RandomAccessibleInterval<FloatType> inputimg, ArrayList<RefinedPeak<Point>> SubpixelMinlist,
+			double[] sizes, double [] min, double[] max){
+		
+		double[] points = new double[inputimg.numDimensions()];
+
+		ImageStack stack = new ImageStack((int) inputimg.dimension(0), (int) inputimg.dimension(1));
+
+		stack.addSlice(ImageJFunctions.wrap(inputimg, "").getProcessor());
+		new ImageJ();
+
+		ImagePlus imp = new ImagePlus("scale space hough", stack);
+		imp.show();
+
+		Overlay o = imp.getOverlay();
+
+		if (o == null) {
+			o = new Overlay();
+			imp.setOverlay(o);
+		}
+
+		o.clear();
+		for (int index = 0; index < SubpixelMinlist.size(); ++index) {
+			points = TransformCordinates.transformfwd(new double[] { SubpixelMinlist.get(index).getDoublePosition(0),
+					SubpixelMinlist.get(index).getDoublePosition(1) }, sizes, min, max);
+			System.out.println(" Found Peaks at :" + "Theta: " + points[0] + " Rho: " + points[1]);
+
+			Line newline = new Line(0, points[1] / Math.sin(Math.toRadians(points[0])), inputimg.dimension(0),
+					points[1] / Math.sin(Math.toRadians(points[0]))
+							- inputimg.dimension(0) / Math.tan(Math.toRadians(points[0])));
+			newline.setStrokeColor(Color.RED);
+			newline.setStrokeWidth(0.8);
+
+			o.add(newline);
+		}
+		imp.updateAndDraw();
+	}
+	
 
 }
