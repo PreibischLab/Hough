@@ -9,6 +9,7 @@ import net.imglib2.img.Img;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
+import varun.GetLocalmaxmin.IntensityType;
 
 public class PushCurves {
 	public static void drawCircle(Img<FloatType> imgout, double[] min, double[] max, double[] center, double radius) {
@@ -92,7 +93,8 @@ public class PushCurves {
 		}
 	}
 
-	public static void DrawSine(RandomAccessibleInterval<FloatType> imgout, double[] min, double[] max, double amplitude, double phase) {
+	public static void DrawSine(RandomAccessibleInterval<FloatType> imgout, double[] min, double[] max,
+			double amplitude, double phase) {
 
 		int n = imgout.numDimensions();
 		double[] size = new double[n];
@@ -111,15 +113,12 @@ public class PushCurves {
 		// starting point
 		position[0] = min[0];
 		position[1] = amplitude * Math.sin(Math.toRadians(position[0] + phase));
-
-		sigma[0] = 0.7;
-		sigma[1] = 0.7;
+		newpos[0] = position[0];
+		newpos[1] = position[1];
+		sigma[0] = 1;
+		sigma[1] = 1;
 		while (true) {
 			increment = stepsize * amplitude * Math.cos(Math.toRadians(position[0] + phase));
-			// Increment from starting position (min) towards max
-			newpos[0] = position[0] + stepsize;
-			newpos[1] = //amplitude * Math.sin(Math.toRadians(position[0] + phase)) + increment;
-			 amplitude*Math.sin(Math.toRadians(newpos[0]+phase));
 
 			for (int d = 0; d < n; ++d)
 				position[d] = newpos[d];
@@ -139,7 +138,10 @@ public class PushCurves {
 					|| backpos[1] < imgout.realMax(1) - imgout.realMin(1) || backpos[1] > imgout.realMin(1))
 
 				outbound.setPosition(setpos);
+			// Increment from starting position (min) towards max
 
+			newpos[0] = position[0] + stepsize;
+			newpos[1] = amplitude * Math.sin(Math.toRadians(newpos[0] + phase));
 			// General Stopping criteria of moving along a curve, when we hit a
 			// boundary
 			if (newpos[0] >= max[0] || newpos[0] <= min[0] || newpos[1] >= max[1] || newpos[1] <= min[1])
@@ -199,19 +201,12 @@ public class PushCurves {
 	}
 
 	public static void Drawexactline(RandomAccessibleInterval<FloatType> imgout, double slope, double intercept,
-			double[] min, double[] max) {
+			final IntensityType setintensity) {
 
 		int n = imgout.numDimensions();
-		final int[] position = new int[n];
 		final double[] realpos = new double[n];
-		double sigmasq = 0, sigma;
-		double[] delta = new double[n];
-
-		for (int d = 0; d < n; ++d) {
-			delta[d] = (max[d] - min[d]) / (imgout.dimension(d));
-			sigmasq += Math.pow(delta[d], 2);
-
-		}
+		double sigmasq, sigma = 0.5;
+		sigmasq = sigma * sigma;
 		sigma = Math.sqrt(sigmasq);
 		final Cursor<FloatType> inputcursor = Views.iterable(imgout).localizingCursor();
 		final RandomAccess<FloatType> outbound = imgout.randomAccess();
@@ -219,11 +214,8 @@ public class PushCurves {
 		while (inputcursor.hasNext()) {
 
 			inputcursor.fwd();
-			inputcursor.localize(position);
-			// Forward transformation
-			for (int d = 0; d < n; ++d)
-				realpos[d] = position[d] * delta[d] + min[d];
-			outbound.setPosition(inputcursor);
+			inputcursor.localize(realpos);
+
 			// To set the pixel intensity as the shortest distance to the curve
 			double distance = 0;
 			double intensity = 0;
@@ -234,7 +226,17 @@ public class PushCurves {
 			outbound.setPosition(inputcursor);
 
 			intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
-			outbound.get().setReal(intensity);
+			switch (setintensity) {
+			case Original:
+				outbound.get().setReal(distance);
+				break;
+
+			case Gaussian:
+				outbound.get().setReal(intensity);
+				break;
+
+			}
+
 		}
 	}
 

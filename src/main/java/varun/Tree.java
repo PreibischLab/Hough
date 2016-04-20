@@ -10,7 +10,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
-
+import net.imglib2.algorithm.labeling.Watershed;
 import javax.management.ImmutableDescriptor;
 
 import ij.ImageJ;
@@ -24,7 +24,9 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealLocalizable;
+import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.Img;
+import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.logic.BitType;
@@ -32,6 +34,7 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import util.ImgLib2Util;
+import varun.GetLocalmaxmin.IntensityType;
 
 public class Tree {
 
@@ -357,7 +360,7 @@ public class Tree {
 			}
 
 			distancelist.add(mindistance);
-			outbound.get().setReal(mindistance);
+			outbound.get().setReal(-mindistance);
 
 		}
 
@@ -799,24 +802,28 @@ public class Tree {
 
 	public static void main(String[] args) throws FileNotFoundException {
 
-		final Img<FloatType> img = ImgLib2Util.openAs32Bit(new File("src/main/resources/test.jpg"));
+		final Img<FloatType> img = ImgLib2Util.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
 		final Img<BitType> bitimg = new ArrayImgFactory<BitType>().create(img, new BitType());
 		final Img<FloatType> imgout = new ArrayImgFactory<FloatType>().create(img, new FloatType());
 		final Img<FloatType> brimgout = new ArrayImgFactory<FloatType>().create(img, new FloatType());
 		int n = bitimg.numDimensions();
 
+		new Normalize();
+		 FloatType minval = new FloatType(0);
+		 FloatType maxval = new FloatType(255);
+		 Normalize.normalize(img, minval, maxval);
+		 
 		ArrayList<Double> bruteforce = new ArrayList<Double>();
 		ArrayList<Double> kdtree = new ArrayList<Double>();
 
-		FloatType val = new FloatType(100);
+		FloatType val = new FloatType(50);
 
 		createBitimage(img, bitimg, val);
-
-		ImageJFunctions.show(bitimg).setTitle("KD-Tree input");
+        new ImageJ();
+		ImageJFunctions.show(img).setTitle("KD-Tree input");
 
 		PointSampleList<BitType> list = new PointSampleList<BitType>(bitimg.numDimensions());
 
-		IterableInterval<BitType> view = Views.interval(bitimg, new long[] { 0, 0 }, new long[] { 500, 500 });
 		list = getList(bitimg);
 
 		PointSampleList<BitType> listonlyones = new PointSampleList<BitType>(n);
@@ -843,9 +850,22 @@ public class Tree {
 		kdtree = ConcisedistanceTransform(rootnode, listonlyzeros, imgout, new EucledianDistance());
 		long endTimesec = System.currentTimeMillis();
 		long totalTimesec = endTimesec - startTimesec;
-		System.out.println(" O(nlog^2n) : " + totalTimesec); // new ImageJ();
+		System.out.println(" O(nlog^2n) : " + totalTimesec);  new ImageJ();
+		 Normalize.normalize(imgout, minval, maxval);
 		ImageJFunctions.show(imgout).setTitle("KD-Tree output");
-
+		
+		 RandomAccessibleInterval<FloatType> tmpimgout = new ArrayImgFactory<FloatType>().create(imgout, new FloatType());
+		
+		 final double[] sigma = {1,1};
+		 
+		tmpimgout=GetLocalmaxmin.FindandDisplayLocalMaxima(imgout,
+				new ArrayImgFactory<FloatType>(), IntensityType.Gaussian,sigma);
+	
+		Normalize.normalize(Views.iterable(tmpimgout), minval, maxval);
+		
+		ImageJFunctions.show(tmpimgout).setTitle("Position of MT");
+		
+/*
 		long startTime = System.currentTimeMillis();
 		bruteforce = BruteForce(listonlyzeros, listonlyones, brimgout, new EucledianDistance());
 		long endTime = System.currentTimeMillis();
@@ -867,7 +887,7 @@ public class Tree {
 		double rate = count / kdtree.size();
 
 		System.out.println("Accuracy rate %: " + (1.0 - rate) * 100);
-
+*/
 	}
 }
 

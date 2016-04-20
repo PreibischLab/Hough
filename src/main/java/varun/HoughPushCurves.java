@@ -3,9 +3,12 @@ package varun;
 import java.awt.Color;
 import java.awt.Image;
 import java.io.File;
+import java.lang.management.ThreadInfo;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import com.sun.tools.corba.se.idl.toJavaPortable.Skeleton;
 
 import net.imglib2.algorithm.dog.DifferenceOfGaussian;
 import net.imglib2.algorithm.dog.DogDetection;
@@ -37,6 +40,7 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import util.ImgLib2Util;
+import varun.GetLocalmaxmin.IntensityType;
 
 public class HoughPushCurves {
 
@@ -69,47 +73,33 @@ public class HoughPushCurves {
 
 	public static void main(String[] args) {
 
-		final RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
+		 RandomAccessibleInterval<FloatType> inputimg = ImgLib2Util
 				.openAs32Bit(new File("src/main/resources/Horizontal_line.tif"));
 		new Normalize();
 		 FloatType minval = new FloatType(0);
 		 FloatType maxval = new FloatType(255);
-		 Normalize.normalize(Views.iterable(biginputimg), minval, maxval);
-		 
-		
-		// Preprocess the image and store it as new imputimg
-		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
-				new FloatType());
-		
-		 FloatType ThresholdValue = new FloatType(10);
-		// Kernels.Edgedetector(biginputimg);
-		// double filterradius = 1.0;
-		// GetLocalmaxmin.MeanFilter(biginputimg,tmpinputimg,filterradius, ThresholdValue);
-		// Thresholding the inputimage
-		// GetLocalmaxmin.Thresholding(biginputimg, inputimg, ThresholdValue);
-			inputimg = biginputimg;
-		 
-		 
 		 Normalize.normalize(Views.iterable(inputimg), minval, maxval);
-		 
+		
+			
+			Normalize.normalize(Views.iterable(inputimg), minval, maxval);
+			
 		new ImageJ();
 		ImageJFunctions.show(inputimg);
+        int mintheta =0;
 		// Usually is 180 but to allow for detection of vertical lines allowing for 20 more degrees
-		int maxtheta = 200; 
+		int maxtheta = 190; 
 		double size = Math
 				.sqrt((inputimg.dimension(0) * inputimg.dimension(0) + inputimg.dimension(1) * inputimg.dimension(1)));
 		int minRho = (int) -Math.round(size);
 		int maxRho = -minRho;
-		// Set size of pixels in Hough space
+		// Set size of pixels in Hough spac
 		double thetaPerPixel = 0.1;
 		double rhoPerPixel = 0.1;
 
-		
-
-		double[] min = { 0, minRho };
+		double[] min = { mintheta, minRho };
 		double[] max = { maxtheta, maxRho };
 
-		int pixelsTheta = (int) Math.round((maxtheta) / thetaPerPixel);
+		int pixelsTheta = (int) Math.round((maxtheta-mintheta) / thetaPerPixel);
 		int pixelsRho = (int) Math.round((maxRho - minRho) / rhoPerPixel);
 
 		double ratio = (max[0] - min[0]) / (max[1] - min[1]);
@@ -118,31 +108,33 @@ public class HoughPushCurves {
 		FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (long) (pixelsRho * ratio) });
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 		ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
-		
-		
-		
-		FloatType val = new FloatType(100);
+		ArrayList<RefinedPeak<Point>> ReducedMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
 		final double[] sizes = new double[inputimg.numDimensions()];
-
 		for (int d = 0; d < houghimage.numDimensions(); ++d)
 			sizes[d] = houghimage.dimension(d);
+		
+		// Threshold value for doing the Hough transform
+		FloatType val = new FloatType(100);
 
 		// Do the Hough transform
 		Houghspace(inputimg, houghimage, min, max, val);
-		
-		
-		Kernels.BigButterflyKernel(houghimage);
+	//	Kernels.BigButterflyKernel(houghimage);
 		Normalize.normalize(houghimage, minval, maxval);
 		
-		ImageJFunctions.show(houghimage);
+	//	ImageJFunctions.show(houghimage);
 		
-		// Get local Minima in sclae space
+		// Get local Minima in scale space
+		double minPeakValue=0.2; double smallsigma=0.5; double bigsigma=1.2;
 		SubpixelMinlist = GetLocalmaxmin.ScalespaceMinima(houghimage, interval, thetaPerPixel, rhoPerPixel, 
-				0.5, 0.8, 1.2);
-       // Reconstruct line and overlay on the input image
-		GetLocalmaxmin.Overlaylines(inputimg,  SubpixelMinlist, sizes, 
-				 min,  max);
+				minPeakValue, smallsigma, bigsigma);
+		
+		// Reject lines shorter than the length of line specified in pixels units
+		int length =5;
+		ReducedMinlist = GetLocalmaxmin.RejectLines(inputimg,
+			SubpixelMinlist, sizes, min, max,length);
+
+		// Reconstruct lines and overlay on the input image
+		GetLocalmaxmin.Overlaylines(inputimg,  ReducedMinlist, sizes, min,  max);
 		
 	}
-
 }

@@ -21,6 +21,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPointSampleList;
 import net.imglib2.algorithm.dog.DogDetection;
+import net.imglib2.algorithm.dog.DogDetection.ExtremaType;
 import net.imglib2.algorithm.localextrema.RefinedPeak;
 import net.imglib2.algorithm.neighborhood.Neighborhood;
 import net.imglib2.algorithm.neighborhood.RectangleShape;
@@ -40,7 +41,14 @@ import net.imglib2.view.Views;
 
 public class GetLocalmaxmin {
 
-	public static ArrayList<RefinedPeak<Point>> Removesimilar(ArrayList<RefinedPeak<Point>> SubpixelMinlist) {
+	public static enum IntensityType {
+		Gaussian, Original
+	}
+
+	protected IntensityType intensityType;
+
+	public static ArrayList<RefinedPeak<Point>> Removesimilar(ArrayList<RefinedPeak<Point>> SubpixelMinlist,
+			double thetatolerance, double rhotolerance) {
 		/********
 		 * The part below removes the close values in theta and rho coordinate
 		 * (keeps only one of the multiple values)
@@ -54,9 +62,9 @@ public class GetLocalmaxmin {
 			while (j < SubpixelMinlist.size()) {
 
 				if (Math.abs(SubpixelMinlist.get(i).getDoublePosition(0)
-						- SubpixelMinlist.get(j).getDoublePosition(0)) == 0 
+						- SubpixelMinlist.get(j).getDoublePosition(0)) <= thetatolerance
 						&& Math.abs(SubpixelMinlist.get(i).getDoublePosition(1)
-								- SubpixelMinlist.get(j).getDoublePosition(1)) == 0 ) {
+								- SubpixelMinlist.get(j).getDoublePosition(1)) <= rhotolerance) {
 
 					SubpixelMinlist.remove(j);
 
@@ -73,9 +81,99 @@ public class GetLocalmaxmin {
 		return SubpixelMinlist;
 	}
 
-	public static void Thresholding(RandomAccessibleInterval<FloatType> img, RandomAccessibleInterval<FloatType> imgout,
-			FloatType ThresholdValue) {
+	public static ArrayList<RefinedPeak<Point>> RejectLines(RandomAccessibleInterval<FloatType> inputimg,
+			 ArrayList<RefinedPeak<Point>> SubpixelMinlist, double[] sizes,
+			double[] min, double[] max, int pixeljump) {
 
+		int n = inputimg.numDimensions();
+		ArrayList<RefinedPeak<Point>> ReducedMinlist = new ArrayList<RefinedPeak<Point>>(n);
+		
+		for (int index = 0; index < SubpixelMinlist.size(); ++index) {
+			double[] rhothetapoints = new double[n];
+			double[] location = new double[n];
+			double[] position = new double[n];
+			long[] newpos = new long[n];
+			double[] minposition = {Double.MAX_VALUE,Double.MAX_VALUE};
+			rhothetapoints = TransformCordinates.transformfwd(new double[] {
+					SubpixelMinlist.get(index).getDoublePosition(0), SubpixelMinlist.get(index).getDoublePosition(1) },
+					sizes, min, max);
+
+			double slope = -1.0 / Math.tan(Math.toRadians(rhothetapoints[0]));
+			double intercept = rhothetapoints[1] / Math.sin(Math.toRadians(rhothetapoints[0]));
+			final RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(inputimg, new FloatType());
+          
+			// Draw the exact line for the detected Hough space parameters
+			PushCurves.Drawexactline(imgout, slope, intercept, IntensityType.Gaussian);
+			
+			FloatType minval = new FloatType(0);
+			 FloatType maxval = new FloatType(255);
+			 Normalize.normalize(Views.iterable(imgout), minval, maxval);
+			// ImageJFunctions.show(imgout);
+				
+			FloatType Pixelfwd =  new FloatType(0);
+			FloatType Pixelini = new FloatType(0);
+			float Pixeldiff, Pixelsum;
+			final RandomAccess<FloatType> outbound = inputimg.randomAccess();
+			Cursor<FloatType> cursor = Views.iterable(imgout).localizingCursor();
+			int count = 0;
+			
+			// Compare each detected line with the ROI in the input image to reject or accept the line
+			
+			while (cursor.hasNext()) {
+
+				cursor.fwd();
+				cursor.localize(location);
+				// To get a starting min point on the line  
+				if (Math.round(location[1]-slope*location[0]-intercept) ==0) {
+					
+					for (int d = 0; d < n; ++d){
+						minposition[d] = Math.min(minposition[d], location[d]);
+						position[d] = minposition[d];
+					}
+				}
+			}
+			newpos[0] = Math.round(position[0]);
+			newpos[1] = Math.round(slope*newpos[0]+intercept);
+			outbound.setPosition(newpos);
+			Pixelini = outbound.get();
+			while(true){
+
+				outbound.move(pixeljump, 0);
+               outbound.move(Math.round(slope*(pixeljump)),1);
+               
+              System.out.println(outbound.getDoublePosition(0)+ " "+ outbound.getDoublePosition(1));
+              if (outbound.getDoublePosition(0)>=inputimg.dimension(0) || outbound.getDoublePosition(0)<=0
+                     	|| outbound.getDoublePosition(1)>= inputimg.dimension(1) || outbound.getDoublePosition(1)<=0)
+         					break;
+               
+              
+              Pixelfwd = outbound.get();  
+             
+              Pixeldiff = Pixelfwd.get()-Pixelini.get();
+				Pixelsum = Pixelfwd.get() + Pixelini.get();
+				
+				if (Pixeldiff > 5 || Pixelsum > 255) 
+					count++;
+				
+				 Pixelini = Pixelfwd;
+			}
+					if (count == 0) {
+						SubpixelMinlist.remove(index);
+						System.out.println(" Removed Peak at :" + "Theta: " + rhothetapoints[0] + " Rho: " + rhothetapoints[1]);
+					}
+					else{
+						ReducedMinlist.add(SubpixelMinlist.get(index));
+					}
+			
+		}
+		
+		return ReducedMinlist;
+	}
+
+	public static void Thresholding(RandomAccessibleInterval<FloatType> img, RandomAccessibleInterval<FloatType> imgout,
+			FloatType ThresholdValue, final IntensityType setintensity, double[] sigma) {
+
+		final double[] backpos = new double[imgout.numDimensions()];
 		final Cursor<FloatType> bound = Views.iterable(img).localizingCursor();
 
 		final RandomAccess<FloatType> outbound = imgout.randomAccess();
@@ -88,8 +186,19 @@ public class GetLocalmaxmin {
 
 			if (bound.get().compareTo(ThresholdValue) > 0) {
 
-				//outbound.get().set(bound.get());
-                  outbound.get().set(1);
+				bound.localize(backpos);
+				switch (setintensity) {
+
+				case Original:
+					outbound.get().set(bound.get());
+					break;
+
+				case Gaussian:
+					AddGaussian.addGaussian(imgout, backpos, sigma, false);
+					break;
+
+				}
+
 			}
 
 			else {
@@ -102,7 +211,7 @@ public class GetLocalmaxmin {
 	}
 
 	public static RandomAccessibleInterval<FloatType> FindandDisplayLocalMaxima(RandomAccessibleInterval<FloatType> img,
-			ImgFactory<FloatType> imageFactory) {
+			ImgFactory<FloatType> imageFactory, final IntensityType setintensity, double[] sigma) {
 
 		// Create a new image for the output
 		RandomAccessibleInterval<FloatType> output = imageFactory.create(img, new FloatType());
@@ -145,17 +254,23 @@ public class GetLocalmaxmin {
 			}
 			int n = img.numDimensions();
 			double[] position = new double[n];
-			double[] sigma = new double[n];
 			if (isMaximum) {
-				 final RandomAccess<FloatType> outbound =
-				 output.randomAccess();
-				 outbound.setPosition(center);
-				 outbound.get().set(center.get());
-				 for (int d = 0; d<n; ++d){
-					 position[d]= outbound.getDoublePosition(d);
-					 sigma[d] = 1.0;
-				 }
-				 AddGaussian.addGaussian(output,position, sigma, false);
+				final RandomAccess<FloatType> outbound = output.randomAccess();
+				outbound.setPosition(center);
+
+				center.localize(position);
+				switch (setintensity) {
+
+				case Original:
+					outbound.get().set(center.get());
+					break;
+
+				case Gaussian:
+					AddGaussian.addGaussian(output, position, sigma, false);
+					break;
+
+				}
+
 			}
 		}
 
@@ -163,7 +278,7 @@ public class GetLocalmaxmin {
 	}
 
 	public static RandomAccessibleInterval<FloatType> FindandDisplayLocalMinima(RandomAccessibleInterval<FloatType> img,
-			ImgFactory<FloatType> imageFactory) {
+			ImgFactory<FloatType> imageFactory, final IntensityType setintensity, double[] sigma) {
 
 		// Create a new image for the output
 		Img<FloatType> output = imageFactory.create(img, new FloatType());
@@ -204,12 +319,23 @@ public class GetLocalmaxmin {
 					break;
 				}
 			}
-
+			double[] position = new double[img.numDimensions()];
 			if (isMinimum) {
-				 final RandomAccess<FloatType> outbound =
-				 output.randomAccess();
-				 outbound.setPosition(center);
-				 outbound.get().set(center.get());
+
+				final RandomAccess<FloatType> outbound = output.randomAccess();
+				outbound.setPosition(center);
+				center.localize(position);
+				switch (setintensity) {
+
+				case Original:
+					outbound.get().set(center.get());
+					break;
+
+				case Gaussian:
+					AddGaussian.addGaussian(output, position, sigma, false);
+					break;
+
+				}
 
 			}
 		}
@@ -268,7 +394,7 @@ public class GetLocalmaxmin {
 
 		return Minlist;
 	}
-	
+
 	public static ArrayList<RealPoint> FindLocalMaxima(RandomAccessibleInterval<FloatType> img) {
 
 		int n = img.numDimensions();
@@ -320,66 +446,27 @@ public class GetLocalmaxmin {
 		return Maxlist;
 	}
 
-	// Do mean filtering on the inputimage
-	public static void MeanFilter(RandomAccessibleInterval<FloatType> inputimage,RandomAccessibleInterval<FloatType> outimage,
-			double sigma, FloatType ThresholdValue) {
-		
-		// Normalize the input image
-		
-		FloatType minval = new FloatType(0);
-		FloatType maxval = new FloatType(255);
-		Normalize.normalize(Views.iterable(inputimage), minval, maxval);
-		
-		
-		
-		// Mean filtering for a given sigma
-		Cursor<FloatType> cursorInput = Views.iterable(inputimage).cursor();
-		Cursor<FloatType> cursorOutput = Views.iterable(outimage).cursor();
-		FloatType mean = Views.iterable(inputimage).firstElement().createVariable();
-		while (cursorInput.hasNext()) {
-			cursorInput.fwd();
-			cursorOutput.fwd();
-			HyperSphere<FloatType> hyperSphere = new HyperSphere<FloatType>(Views.extendMirrorSingle(inputimage),
-					cursorInput, (long) sigma);
-			HyperSphereCursor<FloatType> cursorsphere = hyperSphere.cursor();
-			cursorsphere.fwd();
-			mean.set(cursorsphere.get());
-			int n = 1;
-			while (cursorsphere.hasNext()) {
-				cursorsphere.fwd();
-				n++;
-				mean.add(cursorsphere.get());
-			}
-			mean.div(new FloatType(n));
-			cursorOutput.get().set(mean);
-		}
-
-	}
-	
 	// Detect minima in Scale space
-	public static ArrayList<RefinedPeak<Point>> ScalespaceMinima(RandomAccessibleInterval<FloatType> inputimg, FinalInterval interval,
-			double thetaPerPixel, double rhoPerPixel, double minPeakValue, double smallsigma, double bigsigma){
+	public static ArrayList<RefinedPeak<Point>> ScalespaceMinima(RandomAccessibleInterval<FloatType> inputimg,
+			FinalInterval interval, double thetaPerPixel, double rhoPerPixel, double minPeakValue, double smallsigma,
+			double bigsigma) {
 		ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
 		// Create a Dog Detection object in Hough space
-				DogDetection<FloatType> newdog = new DogDetection<FloatType>(Views.extendMirrorSingle(inputimg),
-						interval, new double[] { thetaPerPixel, rhoPerPixel }, smallsigma, bigsigma, DogDetection.ExtremaType.MINIMA,
-						minPeakValue, false);
+		DogDetection<FloatType> newdog = new DogDetection<FloatType>(Views.extendMirrorSingle(inputimg), interval,
+				new double[] { thetaPerPixel, rhoPerPixel }, smallsigma, bigsigma, DogDetection.ExtremaType.MINIMA,
+				minPeakValue, true);
 
-				// Detect minima in Scale space
-				SubpixelMinlist = newdog.getSubpixelPeaks();
-				
-				// Remove duplicate  values in theta and rho
-				SubpixelMinlist = GetLocalmaxmin.Removesimilar(SubpixelMinlist);
-		
-		
+		// Detect minima in Scale space
+		SubpixelMinlist = newdog.getSubpixelPeaks();
+
 		return SubpixelMinlist;
 	}
-	
+
 	// OverlayLines
-	
-	public static void Overlaylines(RandomAccessibleInterval<FloatType> inputimg, ArrayList<RefinedPeak<Point>> SubpixelMinlist,
-			double[] sizes, double [] min, double[] max){
-		
+
+	public static void Overlaylines(RandomAccessibleInterval<FloatType> inputimg,
+			ArrayList<RefinedPeak<Point>> SubpixelMinlist, double[] sizes, double[] min, double[] max) {
+
 		double[] points = new double[inputimg.numDimensions()];
 
 		ImageStack stack = new ImageStack((int) inputimg.dimension(0), (int) inputimg.dimension(1));
@@ -406,13 +493,14 @@ public class GetLocalmaxmin {
 			Line newline = new Line(0, points[1] / Math.sin(Math.toRadians(points[0])), inputimg.dimension(0),
 					points[1] / Math.sin(Math.toRadians(points[0]))
 							- inputimg.dimension(0) / Math.tan(Math.toRadians(points[0])));
+
 			newline.setStrokeColor(Color.RED);
-			newline.setStrokeWidth(0.8);
+			newline.setStrokeWidth(0.3);
 
 			o.add(newline);
 		}
 		imp.updateAndDraw();
+
 	}
-	
 
 }

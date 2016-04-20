@@ -3,6 +3,9 @@ package varun;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.fft2.FFTConvolution;
+//import net.imglib2.algorithm.fft2.FFTConvolution;
+import net.imglib2.algorithm.region.hypersphere.HyperSphere;
+import net.imglib2.algorithm.region.hypersphere.HyperSphereCursor;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
@@ -11,6 +14,7 @@ import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.complex.ComplexFloatType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.view.Views;
 
 public class Kernels {
 
@@ -92,17 +96,32 @@ public class Kernels {
 
 	}
 
-	public static void SharpenFilter(final RandomAccessibleInterval<FloatType> inputimage) {
+	// Do mean filtering on the inputimage
+		public static void MeanFilter(RandomAccessibleInterval<FloatType> inputimage,RandomAccessibleInterval<FloatType> outimage,
+				double sigma) {
+			// Mean filtering for a given sigma
+			Cursor<FloatType> cursorInput = Views.iterable(inputimage).cursor();
+			Cursor<FloatType> cursorOutput = Views.iterable(outimage).cursor();
+			FloatType mean = Views.iterable(inputimage).firstElement().createVariable();
+			while (cursorInput.hasNext()) {
+				cursorInput.fwd();
+				cursorOutput.fwd();
+				HyperSphere<FloatType> hyperSphere = new HyperSphere<FloatType>(Views.extendMirrorSingle(inputimage),
+						cursorInput, (long) sigma);
+				HyperSphereCursor<FloatType> cursorsphere = hyperSphere.cursor();
+				cursorsphere.fwd();
+				mean.set(cursorsphere.get());
+				int n = 1;
+				while (cursorsphere.hasNext()) {
+					cursorsphere.fwd();
+					n++;
+					mean.add(cursorsphere.get());
+				}
+				mean.div(new FloatType(n));
+				cursorOutput.get().set(mean);
+			}
 
-		// create sharpening filter kernels
-		final float[] sharp = new float[] { 0, -1, 0, -1, 5, 1, 0, -1, 0 };
-
-		final Img<FloatType> SharpKernel = ArrayImgs.floats(sharp, new long[] { 3, 3 });
-
-		// apply convolution to convolve input data with kernels
-
-		new FFTConvolution<FloatType>(inputimage, SharpKernel, new ArrayImgFactory<ComplexFloatType>()).convolve();
-
-	}
+		}
+	
 
 }
