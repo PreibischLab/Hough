@@ -114,6 +114,9 @@ public class GetLocalmaxmin {
 			
 			FloatType val = new FloatType(250);
 			float Pixeldiff, Pixelsum;
+			
+			 
+	      
 			final RandomAccess<FloatType> outbound = inputimg.randomAccess();
 			Cursor<FloatType> cursor = Views.iterable(imgout).localizingCursor();
 			int count = 0;
@@ -121,16 +124,14 @@ public class GetLocalmaxmin {
 			// Compare each detected line with the ROI in the input image to
 			// reject or accept the line
 			
-			
-			
 			while (cursor.hasNext()) {
 
 				cursor.fwd();
 				cursor.localize(location);
 				
-				
 				if (cursor.get().compareTo(val)>=0){
 					outbound.setPosition(cursor);
+					 
 					Pixelini = outbound.get();
 		}
 				for (int d = 0; d<n; ++d ){
@@ -142,21 +143,17 @@ public class GetLocalmaxmin {
 			
 					if (cursor.get().compareTo(val)>=0){
 						outbound.setPosition(cursor);
+		                    
 						Pixelfwd = outbound.get();
 					}
-					for (int d = 0; d<n; ++d ){
-					if (cursor.getDoublePosition(d)<inputimg.dimension(d)-pixeljump)
-						cursor.jumpFwd(-pixeljump);
-					else
-						break;
-					}
+					
 					Pixeldiff = Pixelfwd.get() - Pixelini.get();
 					Pixelsum = Pixelfwd.get() + Pixelini.get();
-					if (Pixeldiff > 0 || Pixelsum > 255) 
+					if (Pixeldiff >= 0 && Pixelsum >= 100) 
 						count++;
 			}
 					
-					if (count == 0) {
+					if (count ==0) {
 						SubpixelMinlist.remove(index);
 						System.out.println(" Removed Peak at :" + "Theta: " + rhothetapoints[0] + " Rho: " + rhothetapoints[1]);
 					} else {

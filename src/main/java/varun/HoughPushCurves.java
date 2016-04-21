@@ -74,7 +74,7 @@ public class HoughPushCurves {
 	public static void main(String[] args) {
 
 		 RandomAccessibleInterval<FloatType> inputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/Vertical_line.tif"));
+				.openAs32Bit(new File("src/main/resources/angled_lines.tif"));
 		new Normalize();
 		 FloatType minval = new FloatType(0);
 		 FloatType maxval = new FloatType(255);
@@ -124,7 +124,7 @@ public class HoughPushCurves {
 	//	ImageJFunctions.show(houghimage);
 		
 		// Get local Minima in scale space to get Max rho-theta points of the Hough space
-		double minPeakValue=0.2; double smallsigma=0.5; double bigsigma=1.2;
+		double minPeakValue=0.3; double smallsigma=0.5; double bigsigma=1.2;
 		SubpixelMinlist = GetLocalmaxmin.ScalespaceMinima(houghimage, interval, thetaPerPixel, rhoPerPixel, 
 				minPeakValue, smallsigma, bigsigma);
 		
@@ -134,7 +134,7 @@ public class HoughPushCurves {
 					SubpixelMinlist, sizes, min, max,length);
 
 		// Reconstruct lines and overlay on the input image
-		GetLocalmaxmin.Overlaylines(inputimg,  ReducedMinlist, sizes, min,  max);
+		GetLocalmaxmin.Overlaylines(inputimg,  SubpixelMinlist, sizes, min,  max);
 		
 	}
 }
