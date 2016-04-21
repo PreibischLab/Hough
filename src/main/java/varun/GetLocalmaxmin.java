@@ -149,11 +149,12 @@ public class GetLocalmaxmin {
 					
 					Pixeldiff = Pixelfwd.get() - Pixelini.get();
 					Pixelsum = Pixelfwd.get() + Pixelini.get();
-					if (Pixeldiff >= 0 && Pixelsum >= 100) 
+					
+					if (Pixeldiff >= 0 && Pixelsum >= 255) 
 						count++;
 			}
 					
-					if (count ==0) {
+					if (count <= pixeljump) {
 						SubpixelMinlist.remove(index);
 						System.out.println(" Removed Peak at :" + "Theta: " + rhothetapoints[0] + " Rho: " + rhothetapoints[1]);
 					} else {

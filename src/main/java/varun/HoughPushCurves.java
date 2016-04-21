@@ -134,7 +134,7 @@ public class HoughPushCurves {
 					SubpixelMinlist, sizes, min, max,length);
 
 		// Reconstruct lines and overlay on the input image
-		GetLocalmaxmin.Overlaylines(inputimg,  SubpixelMinlist, sizes, min,  max);
+		GetLocalmaxmin.Overlaylines(inputimg,  ReducedMinlist, sizes, min,  max);
 		
 	}
 }
