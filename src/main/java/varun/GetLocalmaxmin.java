@@ -35,6 +35,7 @@ import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.Cursor;
 import net.imglib2.Point;
 import net.imglib2.PointSampleList;
+import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
@@ -42,7 +43,7 @@ import net.imglib2.view.Views;
 public class GetLocalmaxmin {
 
 	public static enum IntensityType {
-		Gaussian, Original
+		Gaussian, Original, One
 	}
 
 	protected IntensityType intensityType;
@@ -154,7 +155,7 @@ public class GetLocalmaxmin {
 						count++;
 			}
 					
-					if (count <= pixeljump) {
+					if (count == 0) {
 						SubpixelMinlist.remove(index);
 						System.out.println(" Removed Peak at :" + "Theta: " + rhothetapoints[0] + " Rho: " + rhothetapoints[1]);
 					} else {
@@ -193,8 +194,46 @@ public class GetLocalmaxmin {
 				case Gaussian:
 					AddGaussian.addGaussian(imgout, backpos, sigma, false);
 					break;
+				case One:
+					outbound.get().setReal(1);
+					break;
+				default:
+					outbound.get().setReal(1);
+					break;
+					
 
 				}
+
+			}
+
+			else {
+
+				outbound.get().setZero();
+
+			}
+
+		}
+	}
+	public static void ThresholdingBit(RandomAccessibleInterval<FloatType> img, RandomAccessibleInterval<BitType> imgout,
+			FloatType ThresholdValue) {
+
+		final double[] backpos = new double[imgout.numDimensions()];
+		final Cursor<FloatType> bound = Views.iterable(img).localizingCursor();
+
+		final RandomAccess<BitType> outbound = imgout.randomAccess();
+
+		while (bound.hasNext()) {
+
+			bound.fwd();
+
+			outbound.setPosition(bound);
+
+			if (bound.get().compareTo(ThresholdValue) > 0) {
+
+				bound.localize(backpos);
+				
+				
+					outbound.get().setReal(1);
 
 			}
 
@@ -265,6 +304,9 @@ public class GetLocalmaxmin {
 				case Gaussian:
 					AddGaussian.addGaussian(output, position, sigma, false);
 					break;
+				default:
+					AddGaussian.addGaussian(output, position, sigma, false);
+					break;
 
 				}
 
@@ -329,6 +371,9 @@ public class GetLocalmaxmin {
 					break;
 
 				case Gaussian:
+					AddGaussian.addGaussian(output, position, sigma, false);
+					break;
+				default:
 					AddGaussian.addGaussian(output, position, sigma, false);
 					break;
 

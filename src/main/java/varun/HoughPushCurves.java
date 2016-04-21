@@ -41,6 +41,7 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import util.ImgLib2Util;
 import varun.GetLocalmaxmin.IntensityType;
+import varun.PerformWatershedding.InverseType;
 
 public class HoughPushCurves {
 
@@ -62,7 +63,7 @@ public class HoughPushCurves {
 			if (inputcursor.get().compareTo(threshold) > 0) {
 				Amplitude = Math.sqrt(Math.pow(position[0], 2) + Math.pow(position[1], 2));
 				Phase = Math.toDegrees(Math.atan2(position[0], position[1]));
-				
+
 				// draw the function into the hough space
 
 				PushCurves.DrawSine(imgout, min, max, Amplitude, Phase);
@@ -73,21 +74,21 @@ public class HoughPushCurves {
 
 	public static void main(String[] args) {
 
-		 RandomAccessibleInterval<FloatType> inputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/angled_lines.tif"));
+		RandomAccessibleInterval<FloatType> inputimg = ImgLib2Util
+				.openAs32Bit(new File("src/main/resources/small_mt.tif"));
 		new Normalize();
-		 FloatType minval = new FloatType(0);
-		 FloatType maxval = new FloatType(255);
-		 Normalize.normalize(Views.iterable(inputimg), minval, maxval);
-		
-			
-			Normalize.normalize(Views.iterable(inputimg), minval, maxval);
-			
+		FloatType minval = new FloatType(0);
+		FloatType maxval = new FloatType(255);
+		Normalize.normalize(Views.iterable(inputimg), minval, maxval);
+
+		Normalize.normalize(Views.iterable(inputimg), minval, maxval);
+
 		new ImageJ();
-		ImageJFunctions.show(inputimg);
-        int mintheta =0;
-		// Usually is 180 but to allow for detection of vertical lines allowing for 20 more degrees
-		int maxtheta = 185; 
+		ImageJFunctions.show(inputimg).setTitle("Input image");
+		int mintheta = 0;
+		// Usually is 180 but to allow for detection of vertical lines, allowing
+		// a few more degrees
+		int maxtheta = 185;
 		double size = Math
 				.sqrt((inputimg.dimension(0) * inputimg.dimension(0) + inputimg.dimension(1) * inputimg.dimension(1)));
 		int minRho = (int) -Math.round(size);
@@ -99,7 +100,7 @@ public class HoughPushCurves {
 		double[] min = { mintheta, minRho };
 		double[] max = { maxtheta, maxRho };
 
-		int pixelsTheta = (int) Math.round((maxtheta-mintheta) / thetaPerPixel);
+		int pixelsTheta = (int) Math.round((maxtheta - mintheta) / thetaPerPixel);
 		int pixelsRho = (int) Math.round((maxRho - minRho) / rhoPerPixel);
 
 		double ratio = (max[0] - min[0]) / (max[1] - min[1]);
@@ -107,34 +108,63 @@ public class HoughPushCurves {
 		// Size of Hough space
 		FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (long) (pixelsRho * ratio) });
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
+		
 		ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
 		ArrayList<RefinedPeak<Point>> ReducedMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
+		
 		final double[] sizes = new double[inputimg.numDimensions()];
 		for (int d = 0; d < houghimage.numDimensions(); ++d)
 			sizes[d] = houghimage.dimension(d);
-		
+
 		// Threshold value for doing the Hough transform
 		FloatType val = new FloatType(100);
 
 		// Do the Hough transform
 		Houghspace(inputimg, houghimage, min, max, val);
-	//	Kernels.BigButterflyKernel(houghimage);
+		// Kernels.BigButterflyKernel(houghimage);
 		Normalize.normalize(houghimage, minval, maxval);
-		
-	//	ImageJFunctions.show(houghimage);
-		
-		// Get local Minima in scale space to get Max rho-theta points of the Hough space
-		double minPeakValue=0.3; double smallsigma=0.5; double bigsigma=1.2;
-		SubpixelMinlist = GetLocalmaxmin.ScalespaceMinima(houghimage, interval, thetaPerPixel, rhoPerPixel, 
-				minPeakValue, smallsigma, bigsigma);
-		
-		// Reject lines shorter than the length of line specified in pixels units		  
-        		int length =5;
-				ReducedMinlist = GetLocalmaxmin.RejectLines(inputimg,
-					SubpixelMinlist, sizes, min, max,length);
 
-		// Reconstruct lines and overlay on the input image
-		GetLocalmaxmin.Overlaylines(inputimg,  ReducedMinlist, sizes, min,  max);
+		ImageJFunctions.show(houghimage).setTitle("Hough transform of input image");
+
+		// Get local Minima in scale space to get Max rho-theta points of the
+		// Hough space
+		double minPeakValue = 0.3;
+		double smallsigma = 0.5;
+		double bigsigma = 1.2;
+		SubpixelMinlist = GetLocalmaxmin.ScalespaceMinima(houghimage, interval, thetaPerPixel, rhoPerPixel,
+				minPeakValue, smallsigma, bigsigma);
+
+		// Reject lines shorter than the length of line specified in pixels
+		// units
+		int length = 4;
+		ReducedMinlist = GetLocalmaxmin.RejectLines(inputimg, SubpixelMinlist, sizes, min, max, length);
+
+		// Do the distance transform, to get the seeds use inverse type and then
+		// get local maxima
+		// Local maxima in there are to be used as seeds for the watershed
+		// algorithm
+		final Img<FloatType> distimg = new ArrayImgFactory<FloatType>().create(inputimg, new FloatType());
 		
+		PerformWatershedding.DistanceTransformImage(inputimg, distimg, InverseType.Inverse);
+		
+		ImageJFunctions.show(distimg).setTitle("DT inverted to extract seeds");
+		
+		RandomAccessibleInterval<FloatType> maximg = new ArrayImgFactory<FloatType>().create(inputimg, new FloatType());
+		
+		final double[] sigma = { 1, 1 };
+		
+		maximg = GetLocalmaxmin.FindandDisplayLocalMaxima(distimg, new ArrayImgFactory<FloatType>(),
+				IntensityType.Gaussian, sigma);
+		
+		ImageJFunctions.show(maximg).setTitle("Seed Image for watershed");
+		
+		PerformWatershedding.InvertInensityMap(distimg, minval, maxval);
+		
+		ImageJFunctions.show(distimg).setTitle("DT image to perform watershed on");
+		
+		
+		// Reconstruct lines and overlay on the input image
+		GetLocalmaxmin.Overlaylines(inputimg, ReducedMinlist, sizes, min, max);
+
 	}
 }
