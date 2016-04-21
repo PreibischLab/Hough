@@ -74,21 +74,30 @@ public class HoughPushCurves {
 
 	public static void main(String[] args) {
 
+		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
+				.openAs32Bit(new File("src/main/resources/original.png"));
 		RandomAccessibleInterval<FloatType> inputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/small_mt.tif"));
+				.openAs32Bit(new File("src/main/resources/original.png"));;
+		
 		new Normalize();
 		FloatType minval = new FloatType(0);
 		FloatType maxval = new FloatType(255);
+		Normalize.normalize(Views.iterable(biginputimg), minval, maxval);
+		new ImageJ();
+		ImageJFunctions.show(biginputimg).setTitle("Original image");
+		
+		Kernels.SobelXFilter(inputimg);
+		Kernels.SobelYFilter(inputimg);
 		Normalize.normalize(Views.iterable(inputimg), minval, maxval);
-
-		Normalize.normalize(Views.iterable(inputimg), minval, maxval);
-
+		// PerformWatershedding.InvertInensityMap(biginputimg, minval, maxval);
+		
 		new ImageJ();
 		ImageJFunctions.show(inputimg).setTitle("Input image");
 		int mintheta = 0;
+		
 		// Usually is 180 but to allow for detection of vertical lines, allowing
 		// a few more degrees
-		int maxtheta = 185;
+		int maxtheta = 200;
 		double size = Math
 				.sqrt((inputimg.dimension(0) * inputimg.dimension(0) + inputimg.dimension(1) * inputimg.dimension(1)));
 		int minRho = (int) -Math.round(size);
@@ -117,7 +126,7 @@ public class HoughPushCurves {
 			sizes[d] = houghimage.dimension(d);
 
 		// Threshold value for doing the Hough transform
-		FloatType val = new FloatType(100);
+		FloatType val = new FloatType(130);
 
 		// Do the Hough transform
 		Houghspace(inputimg, houghimage, min, max, val);
@@ -128,15 +137,15 @@ public class HoughPushCurves {
 
 		// Get local Minima in scale space to get Max rho-theta points of the
 		// Hough space
-		double minPeakValue = 0.3;
-		double smallsigma = 0.5;
+		double minPeakValue = 4.0;
+		double smallsigma = 0.6;
 		double bigsigma = 1.2;
 		SubpixelMinlist = GetLocalmaxmin.ScalespaceMinima(houghimage, interval, thetaPerPixel, rhoPerPixel,
 				minPeakValue, smallsigma, bigsigma);
 
 		// Reject lines shorter than the length of line specified in pixels
 		// units
-		int length = 4;
+		int length = 6;
 		ReducedMinlist = GetLocalmaxmin.RejectLines(inputimg, SubpixelMinlist, sizes, min, max, length);
 
 		// Do the distance transform, to get the seeds use inverse type and then
@@ -164,7 +173,12 @@ public class HoughPushCurves {
 		
 		
 		// Reconstruct lines and overlay on the input image
-		GetLocalmaxmin.Overlaylines(inputimg, ReducedMinlist, sizes, min, max);
+		GetLocalmaxmin.Overlaylines(biginputimg, ReducedMinlist, sizes, min, max);
 
+		RandomAccessibleInterval<FloatType> emptyimg = new ArrayImgFactory<FloatType>().create(inputimg, new FloatType());
+		
+		// Reconstruct lines and overlay on empty image
+	//	GetLocalmaxmin.Overlaylines(emptyimg, ReducedMinlist, sizes, min, max);
+		
 	}
 }

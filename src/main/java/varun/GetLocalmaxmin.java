@@ -537,7 +537,7 @@ public class GetLocalmaxmin {
 							- inputimg.dimension(0) / Math.tan(Math.toRadians(points[0])));
 
 			newline.setStrokeColor(Color.RED);
-			newline.setStrokeWidth(0.3);
+			newline.setStrokeWidth(1.4);
 
 			o.add(newline);
 		}

@@ -63,21 +63,28 @@ public class Kernels {
 
 	}
 
-	public static void SobelFilter(final RandomAccessibleInterval<FloatType> inputimage) {
+	public static void SobelXFilter(final RandomAccessibleInterval<FloatType> inputimage) {
 
 		// create sobel edge filter kernels
-		final float[] sX = new float[] { -1, 0, 1, -2, 0, 2, -1, 0, 1 };
-		final float[] sY = new float[] { -1, -2, -1, 0, 0, 0, 1, 2, 1 };
+		final float[] sX = new float[] { 1, 0, -1, 2, 0, -2, 1, 0, -1 };
 		final Img<FloatType> sobelX = ArrayImgs.floats(sX, new long[] { 3, 3 });
-		final Img<FloatType> sobelY = ArrayImgs.floats(sY, new long[] { 3, 3 });
 
 		// apply convolution to convolve input data with kernels
 
 		new FFTConvolution<FloatType>(inputimage, sobelX, new ArrayImgFactory<ComplexFloatType>()).convolve();
+
+	}
+	public static void SobelYFilter(final RandomAccessibleInterval<FloatType> inputimage) {
+
+		// create sobel edge filter kernels
+		final float[] sY = new float[] { 1, 2, -1, 0, 0, 0, -1, -2, -1 };
+		final Img<FloatType> sobelY = ArrayImgs.floats(sY, new long[] { 3, 3 });
+
+		// apply convolution to convolve input data with kernels
+
 		new FFTConvolution<FloatType>(inputimage, sobelY, new ArrayImgFactory<ComplexFloatType>()).convolve();
 
 	}
-
 	public static void Edgedetector(final RandomAccessibleInterval<FloatType> inputimage) {
 		final float[] HorizontalEdgeFilterKernel = new float[] { 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0, 0 };
