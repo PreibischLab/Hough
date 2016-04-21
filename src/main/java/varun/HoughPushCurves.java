@@ -74,7 +74,7 @@ public class HoughPushCurves {
 	public static void main(String[] args) {
 
 		 RandomAccessibleInterval<FloatType> inputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/Horizontal_line.tif"));
+				.openAs32Bit(new File("src/main/resources/Vertical_line.tif"));
 		new Normalize();
 		 FloatType minval = new FloatType(0);
 		 FloatType maxval = new FloatType(255);
@@ -87,7 +87,7 @@ public class HoughPushCurves {
 		ImageJFunctions.show(inputimg);
         int mintheta =0;
 		// Usually is 180 but to allow for detection of vertical lines allowing for 20 more degrees
-		int maxtheta = 190; 
+		int maxtheta = 185; 
 		double size = Math
 				.sqrt((inputimg.dimension(0) * inputimg.dimension(0) + inputimg.dimension(1) * inputimg.dimension(1)));
 		int minRho = (int) -Math.round(size);
@@ -123,15 +123,15 @@ public class HoughPushCurves {
 		
 	//	ImageJFunctions.show(houghimage);
 		
-		// Get local Minima in scale space
+		// Get local Minima in scale space to get Max rho-theta points of the Hough space
 		double minPeakValue=0.2; double smallsigma=0.5; double bigsigma=1.2;
 		SubpixelMinlist = GetLocalmaxmin.ScalespaceMinima(houghimage, interval, thetaPerPixel, rhoPerPixel, 
 				minPeakValue, smallsigma, bigsigma);
 		
-		// Reject lines shorter than the length of line specified in pixels units
-		int length =5;
-		ReducedMinlist = GetLocalmaxmin.RejectLines(inputimg,
-			SubpixelMinlist, sizes, min, max,length);
+		// Reject lines shorter than the length of line specified in pixels units		  
+        		int length =5;
+				ReducedMinlist = GetLocalmaxmin.RejectLines(inputimg,
+					SubpixelMinlist, sizes, min, max,length);
 
 		// Reconstruct lines and overlay on the input image
 		GetLocalmaxmin.Overlaylines(inputimg,  ReducedMinlist, sizes, min,  max);

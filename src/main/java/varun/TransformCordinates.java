@@ -41,5 +41,29 @@ public class TransformCordinates {
 		return realpos;
 
 	}
+	
+	public static <T extends RealType<T>> double transformsinglefwd(double location, double size, double min, double max){
+		
+		double delta;
+		final double realpos;
+		
+		delta = (max - min) / size;
+		
+		realpos = location * delta - min;
+		
+		return realpos;
+	}
+	
+public static <T extends RealType<T>> double transformsingleback(double location, double size, double min, double max){
+		
+		double delta;
+		final double realpos;
+		
+		delta = (max - min) / size;
+		
+		realpos = (location  - min)/delta;
+		
+		return realpos;
+	}
 
 }

@@ -82,91 +82,90 @@ public class GetLocalmaxmin {
 	}
 
 	public static ArrayList<RefinedPeak<Point>> RejectLines(RandomAccessibleInterval<FloatType> inputimg,
-			 ArrayList<RefinedPeak<Point>> SubpixelMinlist, double[] sizes,
-			double[] min, double[] max, int pixeljump) {
+			ArrayList<RefinedPeak<Point>> SubpixelMinlist, double[] sizes, double[] min, double[] max, int pixeljump) {
 
 		int n = inputimg.numDimensions();
 		ArrayList<RefinedPeak<Point>> ReducedMinlist = new ArrayList<RefinedPeak<Point>>(n);
-		
+
 		for (int index = 0; index < SubpixelMinlist.size(); ++index) {
 			double[] rhothetapoints = new double[n];
-			double[] location = new double[n];
-			double[] position = new double[n];
-			long[] newpos = new long[n];
-			double[] minposition = {Double.MAX_VALUE,Double.MAX_VALUE};
+			
 			rhothetapoints = TransformCordinates.transformfwd(new double[] {
 					SubpixelMinlist.get(index).getDoublePosition(0), SubpixelMinlist.get(index).getDoublePosition(1) },
 					sizes, min, max);
+			double[] location = new double[n];
+			double slope, intercept;
+			
+			slope = -1.0 / Math.tan(Math.toRadians(rhothetapoints[0]));
+			intercept = rhothetapoints[1] / Math.sin(Math.toRadians(rhothetapoints[0]));
+			final RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(inputimg,
+					new FloatType());
 
-			double slope = -1.0 / Math.tan(Math.toRadians(rhothetapoints[0]));
-			double intercept = rhothetapoints[1] / Math.sin(Math.toRadians(rhothetapoints[0]));
-			final RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(inputimg, new FloatType());
-          
 			// Draw the exact line for the detected Hough space parameters
 			PushCurves.Drawexactline(imgout, slope, intercept, IntensityType.Gaussian);
-			
+
 			FloatType minval = new FloatType(0);
-			 FloatType maxval = new FloatType(255);
-			 Normalize.normalize(Views.iterable(imgout), minval, maxval);
-			// ImageJFunctions.show(imgout);
-				
-			FloatType Pixelfwd =  new FloatType(0);
+			FloatType maxval = new FloatType(255);
+			Normalize.normalize(Views.iterable(imgout), minval, maxval);
+		//	 ImageJFunctions.show(imgout);
+
+			FloatType Pixelfwd = new FloatType(0);
 			FloatType Pixelini = new FloatType(0);
+			
+			FloatType val = new FloatType(250);
 			float Pixeldiff, Pixelsum;
 			final RandomAccess<FloatType> outbound = inputimg.randomAccess();
 			Cursor<FloatType> cursor = Views.iterable(imgout).localizingCursor();
 			int count = 0;
+
+			// Compare each detected line with the ROI in the input image to
+			// reject or accept the line
 			
-			// Compare each detected line with the ROI in the input image to reject or accept the line
+			
 			
 			while (cursor.hasNext()) {
 
 				cursor.fwd();
 				cursor.localize(location);
-				// To get a starting min point on the line  
-				if (Math.round(location[1]-slope*location[0]-intercept) ==0) {
-					
-					for (int d = 0; d < n; ++d){
-						minposition[d] = Math.min(minposition[d], location[d]);
-						position[d] = minposition[d];
-					}
+				
+				
+				if (cursor.get().compareTo(val)>=0){
+					outbound.setPosition(cursor);
+					Pixelini = outbound.get();
+		}
+				for (int d = 0; d<n; ++d ){
+				if (cursor.getDoublePosition(d)<inputimg.dimension(d)-pixeljump)
+					cursor.jumpFwd(pixeljump);
+				else
+					break;
 				}
+			
+					if (cursor.get().compareTo(val)>=0){
+						outbound.setPosition(cursor);
+						Pixelfwd = outbound.get();
+					}
+					for (int d = 0; d<n; ++d ){
+					if (cursor.getDoublePosition(d)<inputimg.dimension(d)-pixeljump)
+						cursor.jumpFwd(-pixeljump);
+					else
+						break;
+					}
+					Pixeldiff = Pixelfwd.get() - Pixelini.get();
+					Pixelsum = Pixelfwd.get() + Pixelini.get();
+					if (Pixeldiff > 0 || Pixelsum > 255) 
+						count++;
 			}
-			newpos[0] = Math.round(position[0]);
-			newpos[1] = Math.round(slope*newpos[0]+intercept);
-			outbound.setPosition(newpos);
-			Pixelini = outbound.get();
-			while(true){
-
-				outbound.move(pixeljump, 0);
-               outbound.move(Math.round(slope*(pixeljump)),1);
-               
-              System.out.println(outbound.getDoublePosition(0)+ " "+ outbound.getDoublePosition(1));
-              if (outbound.getDoublePosition(0)>=inputimg.dimension(0) || outbound.getDoublePosition(0)<=0
-                     	|| outbound.getDoublePosition(1)>= inputimg.dimension(1) || outbound.getDoublePosition(1)<=0)
-         					break;
-               
-              
-              Pixelfwd = outbound.get();  
-             
-              Pixeldiff = Pixelfwd.get()-Pixelini.get();
-				Pixelsum = Pixelfwd.get() + Pixelini.get();
-				
-				if (Pixeldiff > 5 || Pixelsum > 255) 
-					count++;
-				
-				 Pixelini = Pixelfwd;
-			}
+					
 					if (count == 0) {
 						SubpixelMinlist.remove(index);
 						System.out.println(" Removed Peak at :" + "Theta: " + rhothetapoints[0] + " Rho: " + rhothetapoints[1]);
-					}
-					else{
+					} else {
 						ReducedMinlist.add(SubpixelMinlist.get(index));
 					}
-			
+				
+
 		}
-		
+
 		return ReducedMinlist;
 	}
 
