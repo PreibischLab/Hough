@@ -15,6 +15,7 @@ import net.imglib2.algorithm.dog.DogDetection;
 import net.imglib2.algorithm.edge.Edgel;
 import net.imglib2.algorithm.gauss3.Gauss3;
 import net.imglib2.algorithm.localextrema.RefinedPeak;
+import net.imglib2.algorithm.pde.Gradient;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -46,7 +47,7 @@ import varun.PerformWatershedding.InverseType;
 public class HoughPushCurves {
 
 	public static void Houghspace(RandomAccessibleInterval<FloatType> inputimage,
-			RandomAccessibleInterval<FloatType> imgout, double[] min, double[] max, FloatType threshold) {
+			RandomAccessibleInterval<FloatType> imgout, double[] min, double[] max, Float threshold) {
 
 		int n = inputimage.numDimensions();
 
@@ -60,7 +61,7 @@ public class HoughPushCurves {
 
 			inputcursor.fwd();
 			inputcursor.localize(position);
-			if (inputcursor.get().compareTo(threshold) > 0) {
+			if (inputcursor.get().get() > threshold) {
 				Amplitude = Math.sqrt(Math.pow(position[0], 2) + Math.pow(position[1], 2));
 				Phase = Math.toDegrees(Math.atan2(position[0], position[1]));
 
@@ -75,22 +76,29 @@ public class HoughPushCurves {
 	public static void main(String[] args) {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/original.png"));
-		RandomAccessibleInterval<FloatType> inputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/original.png"));;
-		
+				.openAs32Bit(new File("src/main/resources/box.png"));
+		RandomAccessibleInterval<FloatType> preinputimg = ImgLib2Util
+				.openAs32Bit(new File("src/main/resources/box_canny.png"));
+		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(preinputimg,
+				new FloatType());
 		new Normalize();
 		FloatType minval = new FloatType(0);
 		FloatType maxval = new FloatType(255);
 		Normalize.normalize(Views.iterable(biginputimg), minval, maxval);
 		new ImageJ();
 		ImageJFunctions.show(biginputimg).setTitle("Original image");
+		//Kernels.Edgedetector(inputimg);
+		//Kernels.SobelXFilter(preinputimg);
+		//Kernels.SobelYFilter(preinputimg);
+		inputimg = preinputimg;
+		//inputimg = Kernels.CannyEdge(preinputimg);
 		
-		Kernels.SobelXFilter(inputimg);
-		Kernels.SobelYFilter(inputimg);
+//GetLocalmaxmin.Thresholding(inputimg, inputimg, val, IntensityType.Gaussian, new double[]{0.5,0.5});
+		
 		Normalize.normalize(Views.iterable(inputimg), minval, maxval);
-		// PerformWatershedding.InvertInensityMap(biginputimg, minval, maxval);
-		
+	   // PerformWatershedding.InvertInensityMap(inputimg, minval, maxval);
+		// Automatic threshold determination for doing the Hough transform
+	     final Float val = GetLocalmaxmin.AutomaticThresholding(Views.iterable(inputimg));
 		new ImageJ();
 		ImageJFunctions.show(inputimg).setTitle("Input image");
 		int mintheta = 0;
@@ -125,27 +133,25 @@ public class HoughPushCurves {
 		for (int d = 0; d < houghimage.numDimensions(); ++d)
 			sizes[d] = houghimage.dimension(d);
 
-		// Threshold value for doing the Hough transform
-		FloatType val = new FloatType(130);
-
+	     System.out.println(val);
 		// Do the Hough transform
 		Houghspace(inputimg, houghimage, min, max, val);
-		// Kernels.BigButterflyKernel(houghimage);
+	//	 Kernels.BigButterflyKernel(houghimage);
 		Normalize.normalize(houghimage, minval, maxval);
 
 		ImageJFunctions.show(houghimage).setTitle("Hough transform of input image");
 
 		// Get local Minima in scale space to get Max rho-theta points of the
 		// Hough space
-		double minPeakValue = 4.0;
-		double smallsigma = 0.6;
-		double bigsigma = 1.2;
+		double minPeakValue = 5.69;
+		double smallsigma = 1;
+		double bigsigma = 1.1;
 		SubpixelMinlist = GetLocalmaxmin.ScalespaceMinima(houghimage, interval, thetaPerPixel, rhoPerPixel,
 				minPeakValue, smallsigma, bigsigma);
 
 		// Reject lines shorter than the length of line specified in pixels
 		// units
-		int length = 6;
+		int length = 4;
 		ReducedMinlist = GetLocalmaxmin.RejectLines(inputimg, SubpixelMinlist, sizes, min, max, length);
 
 		// Do the distance transform, to get the seeds use inverse type and then
@@ -160,7 +166,7 @@ public class HoughPushCurves {
 		
 		RandomAccessibleInterval<FloatType> maximg = new ArrayImgFactory<FloatType>().create(inputimg, new FloatType());
 		
-		final double[] sigma = { 1, 1 };
+		final double[] sigma = { 0.5, 0.5 };
 		
 		maximg = GetLocalmaxmin.FindandDisplayLocalMaxima(distimg, new ArrayImgFactory<FloatType>(),
 				IntensityType.Gaussian, sigma);
@@ -173,12 +179,12 @@ public class HoughPushCurves {
 		
 		
 		// Reconstruct lines and overlay on the input image
-		GetLocalmaxmin.Overlaylines(biginputimg, ReducedMinlist, sizes, min, max);
+		GetLocalmaxmin.Overlaylines(biginputimg, SubpixelMinlist, sizes, min, max);
 
 		RandomAccessibleInterval<FloatType> emptyimg = new ArrayImgFactory<FloatType>().create(inputimg, new FloatType());
 		
 		// Reconstruct lines and overlay on empty image
-	//	GetLocalmaxmin.Overlaylines(emptyimg, ReducedMinlist, sizes, min, max);
+		GetLocalmaxmin.Overlaylines(emptyimg, SubpixelMinlist, sizes, min, max);
 		
 	}
 }

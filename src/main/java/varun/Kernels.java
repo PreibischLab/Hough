@@ -1,6 +1,8 @@
 package varun;
 
 import net.imglib2.Cursor;
+import net.imglib2.RandomAccess;
+import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.fft2.FFTConvolution;
 //import net.imglib2.algorithm.fft2.FFTConvolution;
@@ -15,6 +17,7 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.complex.ComplexFloatType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
+import varun.GetLocalmaxmin.IntensityType;
 
 public class Kernels {
 
@@ -86,14 +89,12 @@ public class Kernels {
 
 	}
 	public static void Edgedetector(final RandomAccessibleInterval<FloatType> inputimage) {
-		final float[] HorizontalEdgeFilterKernel = new float[] { 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0, 0 };
+		final float[] HorizontalEdgeFilterKernel = new float[] { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
 
-		final float[] VerticalEdgeFilterKernel = new float[] { 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 4, 0, 0, 0, 0, -1,
-				0, 0, 0, 0, -1, 0, 0 };
+		final float[] VerticalEdgeFilterKernel = new float[] { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
 		
-		final Img<FloatType> HorizontalEdgeFilter = ArrayImgs.floats(HorizontalEdgeFilterKernel, new long[] { 5, 5 });
-		final Img<FloatType> VerticalEdgeFilter = ArrayImgs.floats(VerticalEdgeFilterKernel, new long[] { 5, 5 });
+		final Img<FloatType> HorizontalEdgeFilter = ArrayImgs.floats(HorizontalEdgeFilterKernel, new long[] { 3, 3 });
+		final Img<FloatType> VerticalEdgeFilter = ArrayImgs.floats(VerticalEdgeFilterKernel, new long[] { 3, 3 });
 		// apply convolution to convolve input data with kernels
 
 		new FFTConvolution<FloatType>(inputimage, HorizontalEdgeFilter, new ArrayImgFactory<ComplexFloatType>())
@@ -129,6 +130,19 @@ public class Kernels {
 			}
 
 		}
-	
+		
+		// Canny Edge detector, first get the gradient of the image, then get local maxima
+		
+		public static RandomAccessibleInterval<FloatType>  CannyEdge(RandomAccessibleInterval<FloatType> inputimg) {
+			 RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(inputimg,
+					new FloatType());
+			 RandomAccessibleInterval<FloatType> maximgout = new ArrayImgFactory<FloatType>().create(inputimg,
+						new FloatType());
+						
+		imgout = GetLocalmaxmin.GradientofImage(inputimg);
+	    maximgout =	GetLocalmaxmin.FindDirectionalLocalMaxima(imgout,
+				new ArrayImgFactory<FloatType>(), IntensityType.Gaussian, new  double[] {0.5,0.5});
 
+		return imgout;
+		}
 }
