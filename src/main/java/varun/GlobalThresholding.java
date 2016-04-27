@@ -6,8 +6,11 @@ import net.imglib2.Cursor;
 import net.imglib2.IterableInterval;
 import net.imglib2.Point;
 import net.imglib2.PointSampleList;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.RealSum;
+import net.imglib2.view.Views;
 
 public class GlobalThresholding {
 
@@ -42,7 +45,6 @@ public class GlobalThresholding {
 			if (Math.abs(Thresholdupdate - ThresholdNew) < 1.0E-2)
 				break;
 			Thresholdupdate = ThresholdNew;
-			System.out.println(ThresholdNew);
 		}
 		
 
@@ -97,5 +99,10 @@ public class GlobalThresholding {
 		return ThresholdNew;
 
 	}
-
+	public static void InvertInensityMap(RandomAccessibleInterval<FloatType> inputimg, FloatType minval, FloatType maxval){
+        // Normalize the input image
+ 		Normalize.normalize(Views.iterable(inputimg), minval, maxval);
+ 		// Now invert the normalization scale to get intensity inversion
+		Normalize.normalize(Views.iterable(inputimg), maxval, minval);
+	}
 }

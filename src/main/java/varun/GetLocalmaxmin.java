@@ -507,7 +507,7 @@ public class GetLocalmaxmin {
 			for (final FloatType value : localNeighborhood) {
 				if (centerValue.compareTo(value) < 0 && centerValue.get() < val) {
 					isMaximum = false;
-
+                    break;
 				}
 			}
 
@@ -545,6 +545,73 @@ public class GetLocalmaxmin {
 		return output;
 	}
 
+	// Find maxima only if the pixel intensity is higher than a certain
+	// threshold value
+	public static RandomAccessibleInterval<FloatType> FindDirectionalLocalMaxima(
+			RandomAccessibleInterval<FloatType> img, ImgFactory<FloatType> imageFactory,
+			final IntensityType setintensity, double[] sigma, Float val) {
+
+		RandomAccessibleInterval<FloatType> output = imageFactory.create(img, new FloatType());
+		// Construct a 5*5*5... local neighbourhood
+		int span = 2;
+
+		Interval interval = Intervals.expand(img, -span);
+
+		img = Views.interval(img, interval);
+
+		final Cursor<FloatType> center = Views.iterable(img).cursor();
+
+		final RectangleShape shape = new RectangleShape(span, true);
+
+		for (final Neighborhood<FloatType> localNeighborhood : shape.neighborhoods(img)) {
+			final FloatType centerValue = center.next();
+
+			boolean isMaximum = true;
+
+			Cursor<FloatType> localcursor = localNeighborhood.localizingCursor();
+
+			while (localcursor.hasNext()) {
+				localcursor.fwd();
+				if (centerValue.compareTo(localcursor.get()) < 0){
+					isMaximum = false;
+				    break;
+				}
+			}
+
+
+			int n = img.numDimensions();
+			double[] position = new double[n];
+			if (isMaximum) {
+				final RandomAccess<FloatType> outbound = output.randomAccess();
+				outbound.setPosition(center);
+
+				center.localize(position);
+				switch (setintensity) {
+
+				case Original:
+					outbound.get().set(center.get());
+					break;
+
+				case Gaussian:
+					AddGaussian.addGaussian(output, position, sigma, false);
+					break;
+
+				case One:
+					outbound.get().set(1);
+					break;
+
+				default:
+					AddGaussian.addGaussian(output, position, sigma, false);
+					break;
+
+				}
+
+			}
+
+		}
+
+		return output;
+	}
 
 	public static ArrayList<RefinedPeak<Point>> Removesimilar(ArrayList<RefinedPeak<Point>> SubpixelMinlist,
 			double thetatolerance, double rhotolerance) {

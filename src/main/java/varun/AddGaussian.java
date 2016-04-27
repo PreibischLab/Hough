@@ -9,6 +9,8 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
 public class AddGaussian {
+	
+	
 	final public static void addGaussian( final RandomAccessibleInterval< FloatType > image, final double[] location, final double[] sigma,
 			boolean Normalize )
 	{

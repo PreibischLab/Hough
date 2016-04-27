@@ -76,28 +76,26 @@ public class HoughPushCurves {
 	public static void main(String[] args) {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/chess.png"));
-		
-		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
-        // Storing the input image as a copy
-		inputimg = biginputimg;
+				.openAs32Bit(new File("src/main/resources/box.png"));
 		new Normalize();
 		FloatType minval = new FloatType(0);
-		FloatType maxval = new FloatType(255);
+		FloatType maxval = new FloatType(1);
 		Normalize.normalize(Views.iterable(biginputimg), minval, maxval);
+		RandomAccessibleInterval<FloatType> initialimg = new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
+		initialimg = biginputimg;
+		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
+		
+		RandomAccessibleInterval<FloatType> testinputimg = new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
+		
 		new ImageJ();
 		ImageJFunctions.show(biginputimg).setTitle("Original image");
-		inputimg = Kernels.NaiveEdge(biginputimg, minval, maxval, new double[]{1,1}, true);
-		
-		
-		//	inputimg = Kernels.SimplifiedEdge(biginputimg,
-		//		 minval,  maxval, new double[]{1,1}, true);
-		
-		Normalize.normalize(Views.iterable(inputimg), minval, maxval);
-		// PerformWatershedding.InvertInensityMap(inputimg, minval, maxval);
-
+	//	testinputimg = Kernels.NaiveEdge(biginputimg, minval, maxval, new double[]{1,1}, false);
+	//	new ImageJ();
+	//	ImageJFunctions.show(testinputimg).setTitle("Conditional Max image");
+		inputimg = Kernels.SimplifiedEdge(biginputimg,new ArrayImgFactory<FloatType>(), minval,  maxval, new double[]{1,1}, true);
 		// Automatic threshold determination for doing the Hough transform
 		final Float val = GlobalThresholding.AutomaticThresholding(Views.iterable(inputimg));
+		
 		new ImageJ();
 		ImageJFunctions.show(inputimg).setTitle("Input image");
 		int mintheta = 0;
@@ -122,8 +120,8 @@ public class HoughPushCurves {
 		double ratio = (max[0] - min[0]) / (max[1] - min[1]);
 
 		// Size of Hough space
-		FinalInterval initialinterval = new FinalInterval(new long[] { pixelsTheta, pixelsRho });
 		FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (long) (pixelsRho * ratio) });
+		FinalInterval normalinterval = new FinalInterval(new long[] { pixelsTheta, pixelsRho });
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 
 		ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
@@ -135,22 +133,22 @@ public class HoughPushCurves {
 		System.out.println(val);
 		// Do the Hough transform
 		Houghspace(inputimg, houghimage, min, max, val);
-		Normalize.normalize(houghimage, minval, maxval);
-
+       // Kernels.GeneralButterflyKernel(houghimage, rhoPerPixel, thetaPerPixel);
 		ImageJFunctions.show(houghimage).setTitle("Hough transform of input image");
 
 		// Get local Minima in scale space to get Max rho-theta points of the
 		// Hough space
-		double minPeakValue = 10;
+		double minPeakValue = 20;
 		double smallsigma = 1;
 		double bigsigma = 1.1;
-		SubpixelMinlist = GetLocalmaxmin.ScalespaceMinima(houghimage, initialinterval, thetaPerPixel, rhoPerPixel,
+		SubpixelMinlist = GetLocalmaxmin.ScalespaceMinima(houghimage, interval, thetaPerPixel, rhoPerPixel,
 				minPeakValue, smallsigma, bigsigma);
 
 		// Do the distance transform, to get the seeds use inverse type and then
 		// get local maxima
 		// Local maxima in there are to be used as seeds for the watershed
 		// algorithm
+		/*
 		final Img<FloatType> distimg = new ArrayImgFactory<FloatType>().create(inputimg, new FloatType());
 
 		PerformWatershedding.DistanceTransformImage(inputimg, distimg, InverseType.Inverse);
@@ -169,15 +167,9 @@ public class HoughPushCurves {
 		PerformWatershedding.InvertInensityMap(distimg, minval, maxval);
 
 		ImageJFunctions.show(distimg).setTitle("DT image to perform watershed on");
-
+*/
 		// Reconstruct lines and overlay on the input image
-		OverlayLines.Overlay(biginputimg, SubpixelMinlist, sizes, min, max);
-
-		RandomAccessibleInterval<FloatType> emptyimg = new ArrayImgFactory<FloatType>().create(inputimg,
-				new FloatType());
-
-		// Reconstruct lines and overlay on empty image
-		OverlayLines.Overlay(emptyimg, SubpixelMinlist, sizes, min, max);
+		OverlayLines.Overlay(initialimg, SubpixelMinlist, sizes, min, max);
 
 	}
 }

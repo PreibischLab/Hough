@@ -11,8 +11,11 @@ import net.imglib2.RealPoint;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.algorithm.fft2.FFTConvolution;
 import net.imglib2.algorithm.gradient.PartialDerivative;
+import net.imglib2.algorithm.neighborhood.CenteredRectangleShape;
 import net.imglib2.algorithm.neighborhood.Neighborhood;
+import net.imglib2.algorithm.neighborhood.RectangleNeighborhood;
 import net.imglib2.algorithm.neighborhood.RectangleShape;
+import net.imglib2.algorithm.neighborhood.RectangleShape.NeighborhoodsIterableInterval;
 //import net.imglib2.algorithm.fft2.FFTConvolution;
 import net.imglib2.algorithm.region.hypersphere.HyperSphere;
 import net.imglib2.algorithm.region.hypersphere.HyperSphereCursor;
@@ -175,31 +178,41 @@ public class Kernels {
 
 	}
 
-	
-
 	public static RandomAccessibleInterval<FloatType> SimplifiedEdge(RandomAccessibleInterval<FloatType> inputimg,
+			ImgFactory<FloatType> imageFactory,
 			FloatType minval, FloatType maxval, double[] sigma, boolean Thresholding) {
 		int n = inputimg.numDimensions();
-		RandomAccessibleInterval<FloatType> gradientimg = new ArrayImgFactory<FloatType>().create(inputimg,
+		RandomAccessibleInterval<FloatType> gradientimg = imageFactory.create(inputimg,
 				new FloatType());
-		gradientimg = GetLocalmaxmin.GradientmagnitudeImage(inputimg);
-		Cursor<FloatType> cursor = Views.iterable(inputimg).localizingCursor();
-		
-		RandomAccess<FloatType> randomAccess = inputimg.randomAccess();
-		
+		RandomAccessibleInterval<FloatType> cannyimg = imageFactory.create(inputimg,
+				new FloatType());
+		RandomAccessibleInterval<FloatType> tmpcannyimg = imageFactory.create(inputimg,
+				new FloatType());
+		RandomAccessibleInterval<FloatType> Threshcannyimg = imageFactory.create(inputimg,
+				new FloatType());
+	tmpcannyimg = GetLocalmaxmin.GradientmagnitudeImage(inputimg);
+		Cursor<FloatType> cursor = Views.iterable(gradientimg).localizingCursor();
+		RandomAccessible<FloatType> view = Views.extendMirrorSingle(inputimg);
+		RandomAccess<FloatType> randomAccess = view.randomAccess();
+
+		RandomAccessible<FloatType> gradientview = Views.extendMirrorSingle(tmpcannyimg);
+
+		final Float val = GlobalThresholding.AutomaticThresholding(Views.iterable(tmpcannyimg));
 		final double[] direction = new double[n];
-        
-        double gradient=0;
+		final double[] left = new double[n];
+		final double[] right = new double[n];
+
 		// iterate over all pixels
 		while (cursor.hasNext()) {
 			// Initialize a point
 			cursor.fwd();
-			// compute gradient and its direction in each dimension and move along the direction
-			
+			// compute gradient and its direction in each dimension and move
+			// along the direction
+			double gradient = 0;
 			for (int d = 0; d < inputimg.numDimensions(); ++d) {
 				// move one pixel back in dimension d
 				randomAccess.bck(d);
-
+				randomAccess.setPosition(cursor);
 				// get the value
 				double Back = randomAccess.get().getRealDouble();
 
@@ -214,60 +227,80 @@ public class Kernels {
 				gradient += ((Fwd - Back) * (Fwd - Back)) / 4;
 
 				direction[d] = (Fwd - Back) / 2;
-				
+
 			}
-			for (int d = 0; d < inputimg.numDimensions(); ++d) 
-				
-			direction[d] = direction[d] / gradient;
-			
-			
-			
-			
-			
-		}			
-					System.out.println(direction[0] + "  "+ direction[1]);
-					
-					
-			/*	HyperSphere<FloatType> hyperSphere = new HyperSphere<FloatType>( inputimg,randomAccess, span );
-				
-				final Float centerValue = randomAccess.getFloatPosition(d);
-				
-				boolean isMaximum = true;
+			for (int d = 0; d < inputimg.numDimensions(); ++d) {
+				if (gradient != 0)
+					direction[d] = direction[d] / gradient;
+				else
+					direction[d] = 0;
+			}
 
-				// check if all pixels in the local neighborhood that are smaller
-				for (final FloatType value : hyperSphere) {
-					// test if the center is smaller than the current pixel value
-					if (centerValue < value.get()) {
-						isMaximum = false;
-						
-					}
-				}
-				if (isMaximum) {
-					final RandomAccess<FloatType> outbound = gradientimg.randomAccess();
-					outbound.setPosition(randomAccess.getLongPosition(d),d);
-
-					randomAccess.localize(position);
-					
-						AddGaussian.addGaussian(gradientimg, position, sigma, false);
-					
-					}
-				randomAccess.move(Math.round(direction[d]),d);
-				
-				if (randomAccess.getDoublePosition(d) >= inputimg.dimension(d) || randomAccess.getDoublePosition(d) <= 0)
-					break;
-				
-				
-				}
-				
 			
-			
-			*/
-
+			cursor.get().setReal(Math.sqrt(gradient));
 		
-		return inputimg;
+
+			final int span = 2;
+
+			final HyperSphere<FloatType> localsphere = new HyperSphere<FloatType>(gradientview, cursor, span);
+
+			Cursor<FloatType> localcursor = localsphere.localizingCursor();
+			Cursor<FloatType> localcursorcopy = localsphere.localizingCursor();
+			for (int d = 0; d < n; ++d) {
+				left[d] = cursor.getDoublePosition(d) - direction[d];
+				right[d] = cursor.getDoublePosition(d) + direction[d];
+			}
+			boolean isMaximum = true;
+
+			while (localcursor.hasNext()) {
+				localcursor.fwd();
+
+				if (cursor.get().compareTo(localcursor.get()) < 0 && cursor.get().get() < val) {
+					isMaximum = false;
+					break;
+				}
+			}
+			double[] position = new double[n];
+			
+			if (isMaximum) {
+			//	final RandomAccess<FloatType> outbound = cannyimg.randomAccess();
+			//	outbound.setPosition(cursor);
+				
+				cursor.localize(position);
+
+				//AddGaussian.addGaussian(cannyimg, position, sigma, false);
+              //  outbound.get().set(1);
+				while (localcursorcopy.hasNext()) {
+					localcursorcopy.fwd();
+					final double tolerance = 5;
+
+					for (int d = 0; d < n; ++d)
+						if (Math.abs(localcursorcopy.getDoublePosition(d) - left[d]) >tolerance
+								|| (Math.abs(localcursorcopy.getDoublePosition(d) - right[d]) >tolerance)){
+					
+							cursor.get().setReal(0);
+						}
+						else{
+						//	cursor.get().setReal(1);
+							AddGaussian.addGaussian(gradientimg, position, sigma, false);
+						}
+
+				}
+
+			}
+
+		}
+	//GlobalThresholding.InvertInensityMap(cannyimg, minval, maxval);
+		// Compute global threshold for the premaximgout
+		final Float valsec = GlobalThresholding.AutomaticThresholding(Views.iterable(gradientimg));
+		if (Thresholding) {
+			GetLocalmaxmin.Thresholding(gradientimg, Threshcannyimg, valsec, IntensityType.Gaussian, sigma);
+			
+			return Threshcannyimg;
+		} else {
+			return gradientimg;
+		}
 
 	}
-
-
 
 }

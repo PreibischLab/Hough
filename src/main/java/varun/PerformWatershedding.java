@@ -95,12 +95,7 @@ int n = inputimg.numDimensions();
 		
 	}
 	
-	public static void InvertInensityMap(RandomAccessibleInterval<FloatType> inputimg, FloatType minval, FloatType maxval){
-        // Normalize the input image
- 		Normalize.normalize(Views.iterable(inputimg), minval, maxval);
- 		// Now invert the normalization scale to get intensity inversion
-		Normalize.normalize(Views.iterable(inputimg), maxval, minval);
-	}
+	
 	
 	public static void WatershedImage(RandomAccessibleInterval<FloatType> inputimg,RandomAccessibleInterval<FloatType> seedimg){
 	
