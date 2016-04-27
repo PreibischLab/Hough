@@ -263,32 +263,36 @@ public class Kernels {
 					if(localcursor.getDoublePosition(d)-left[d]==0 || localcursor.getDoublePosition(d)-right[d]==0){
 				    if (cursor.get().compareTo(localcursor.get()) < 0 ) {
 					isMaximum = false;
+					
 					break;
 				}
 			}
+				for (int d = 0; d < n; ++d)
+					// Before computing maxima check if it is along the gradient direction
+					if(Math.abs(localcursor.getDoublePosition(d)-left[d])>15.0 ||
+							Math.abs(localcursor.getDoublePosition(d)-right[d])>15.0){
+				    if (cursor.get().compareTo(localcursor.get()) >= 0 ) {
+					isMaximum = false;
+					
+					break;
+				}
+			}
+				
 			}
 			double[] position = new double[n];
 			
 			if (isMaximum) {
 				// The pixel value has already been set up
 				cursor.localize(position);
-             
+				final RandomAccess<FloatType> outbound = Threshcannyimg.randomAccess();
+				outbound.setPosition(cursor);
+				outbound.get().set(cursor.get());
+				
 			}
 
 		}
-	     // Optional to perform thresholding on the Canny Image
 		
-		// Compute global threshold for the premaximgout
-		final Float valsec = GlobalThresholding.AutomaticThresholding(Views.iterable(cannyimage));
-		// Do or not do the thresholding
-		if (Thresholding) {
-			GetLocalmaxmin.Thresholding(cannyimage, Threshcannyimg, valsec, IntensityType.Gaussian, sigma);
-			
-			return Threshcannyimg;
-		} else {
-			return cannyimage;
-		}
-
+		return Threshcannyimg;
 	}
 
 }
