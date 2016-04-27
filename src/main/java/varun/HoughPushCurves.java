@@ -92,7 +92,7 @@ public class HoughPushCurves {
 	//	testinputimg = Kernels.NaiveEdge(biginputimg, minval, maxval, new double[]{1,1}, false);
 	//	new ImageJ();
 	//	ImageJFunctions.show(testinputimg).setTitle("Conditional Max image");
-		inputimg = Kernels.SimplifiedEdge(biginputimg,new ArrayImgFactory<FloatType>(), minval,  maxval, new double[]{1,1}, true);
+		inputimg = Kernels.CannyEdge(biginputimg,new ArrayImgFactory<FloatType>(), minval,  maxval, new double[]{1,1}, false);
 		// Automatic threshold determination for doing the Hough transform
 		final Float val = GlobalThresholding.AutomaticThresholding(Views.iterable(inputimg));
 		
