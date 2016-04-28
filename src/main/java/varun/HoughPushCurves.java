@@ -119,11 +119,9 @@ public class HoughPushCurves {
 
 		// Size of Hough space
 		FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (long) (pixelsRho * ratio) });
-		FinalInterval normalinterval = new FinalInterval(new long[] { pixelsTheta, pixelsRho });
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 
 		ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
-		ArrayList<RefinedPeak<Point>> ReducedMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
 		final double[] sizes = new double[inputimg.numDimensions()];
 		for (int d = 0; d < houghimage.numDimensions(); ++d)
 			sizes[d] = houghimage.dimension(d);
@@ -146,7 +144,7 @@ public class HoughPushCurves {
 		// get local maxima
 		// Local maxima in there are to be used as seeds for the watershed
 		// algorithm
-		/*
+		
 		final Img<FloatType> distimg = new ArrayImgFactory<FloatType>().create(inputimg, new FloatType());
 
 		PerformWatershedding.DistanceTransformImage(inputimg, distimg, InverseType.Inverse);
@@ -162,10 +160,10 @@ public class HoughPushCurves {
 
 		ImageJFunctions.show(maximg).setTitle("Seed Image for watershed");
 
-		PerformWatershedding.InvertInensityMap(distimg, minval, maxval);
+		GlobalThresholding.InvertInensityMap(distimg, minval, maxval);
 
 		ImageJFunctions.show(distimg).setTitle("DT image to perform watershed on");
-*/
+
 		// Reconstruct lines and overlay on the input image
 		OverlayLines.Overlay(biginputimg, SubpixelMinlist, sizes, min, max);
 
