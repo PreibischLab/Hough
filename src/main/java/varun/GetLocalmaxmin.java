@@ -670,9 +670,7 @@ public class GetLocalmaxmin {
 			// Draw the exact line for the detected Hough space parameters
 			PushCurves.Drawexactline(imgout, slope, intercept, IntensityType.Gaussian);
 
-			FloatType minval = new FloatType(0);
-			FloatType maxval = new FloatType(255);
-			Normalize.normalize(Views.iterable(imgout), minval, maxval);
+			
 			// ImageJFunctions.show(imgout);
 
 			FloatType Pixelfwd = new FloatType(0);

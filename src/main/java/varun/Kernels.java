@@ -1,5 +1,7 @@
 package varun;
 
+import com.sun.tools.javac.util.Pair;
+
 import net.imglib2.Cursor;
 import net.imglib2.Interval;
 import net.imglib2.Localizable;
@@ -238,14 +240,14 @@ public class Kernels {
 				if (gradient != 0)
 					direction[d] = direction[d] / gradient;
 				else
-					direction[d] = 0;
+					direction[d] = Double.MAX_VALUE;
 			}
 
 			
 			cursor.get().setReal(Math.sqrt(gradient));
 		
-            // A 5*5*5* neighbourhood
-			final int span = 2;
+            // A 5*5*5.. neighbourhood for span = 2, a 3*3*3.. neighbourhood for span = 1.
+			final int span = 1;
            // Create a hypersphere at the current point in the gradient image
 			final HyperSphere<FloatType> localsphere = new HyperSphere<FloatType>(gradientview, cursor, span);
             // To get only the points which are along the gradient direction create left and right in d dimensions
@@ -255,7 +257,7 @@ public class Kernels {
 				right[d] = cursor.getDoublePosition(d) + direction[d];
 			}
 			boolean isMaximum = true;
-
+            final double tolerance = 20;
 			while (localcursor.hasNext()) {
 				localcursor.fwd();
 				for (int d = 0; d < n; ++d)
@@ -267,11 +269,13 @@ public class Kernels {
 					break;
 				}
 			}
-				for (int d = 0; d < n; ++d)
-					// Before computing maxima check if it is along the gradient direction
-					if(Math.abs(localcursor.getDoublePosition(d)-left[d])>15.0 ||
-							Math.abs(localcursor.getDoublePosition(d)-right[d])>15.0){
+				
 				    if (cursor.get().compareTo(localcursor.get()) >= 0 ) {
+				    	for (int d = 0; d < n; ++d)
+							// If it is a maxima but not near the gradient direction, reject it
+							if(Math.abs(localcursor.getDoublePosition(d)-left[d])>tolerance ||
+									Math.abs(localcursor.getDoublePosition(d)-right[d])>tolerance){
+				    	
 					isMaximum = false;
 					
 					break;
@@ -279,11 +283,9 @@ public class Kernels {
 			}
 				
 			}
-			double[] position = new double[n];
 			
 			if (isMaximum) {
-				// The pixel value has already been set up
-				cursor.localize(position);
+				
 				final RandomAccess<FloatType> outbound = Threshcannyimg.randomAccess();
 				outbound.setPosition(cursor);
 				outbound.get().set(cursor.get());
@@ -292,6 +294,18 @@ public class Kernels {
 
 		}
 		
+
+		//Supress values below the low threshold
+		final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(Views.iterable(Threshcannyimg));
+		Cursor<FloatType> cannycursor = Views.iterable(Threshcannyimg).localizingCursor();
+		while(cannycursor.hasNext()){
+			cannycursor.fwd();
+			if (cannycursor.get().get()<=Lowthreshold)
+				cannycursor.get().setZero();
+		}
+		
+		
+		ImageJFunctions.show(cannyimage).setTitle("Gradient Image");
 		return Threshcannyimg;
 	}
 

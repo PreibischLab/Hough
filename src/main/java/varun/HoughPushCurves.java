@@ -76,22 +76,20 @@ public class HoughPushCurves {
 	public static void main(String[] args) {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/box.png"));
+				.openAs32Bit(new File("src/main/resources/building.jpg"));
 		new Normalize();
 		FloatType minval = new FloatType(0);
 		FloatType maxval = new FloatType(1);
 		Normalize.normalize(Views.iterable(biginputimg), minval, maxval);
-		RandomAccessibleInterval<FloatType> initialimg = new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
-		initialimg = biginputimg;
-		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
 		
+		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
 		RandomAccessibleInterval<FloatType> testinputimg = new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
 		
 		new ImageJ();
 		ImageJFunctions.show(biginputimg).setTitle("Original image");
-	//	testinputimg = Kernels.NaiveEdge(biginputimg, minval, maxval, new double[]{1,1}, false);
-	//	new ImageJ();
-	//	ImageJFunctions.show(testinputimg).setTitle("Conditional Max image");
+		testinputimg = Kernels.NaiveEdge(biginputimg, minval, maxval, new double[]{1,1}, false);
+		new ImageJ();
+		ImageJFunctions.show(testinputimg).setTitle("Conditional Max image");
 		inputimg = Kernels.CannyEdge(biginputimg,new ArrayImgFactory<FloatType>(), minval,  maxval, new double[]{1,1}, false);
 		// Automatic threshold determination for doing the Hough transform
 		final Float val = GlobalThresholding.AutomaticThresholding(Views.iterable(inputimg));
@@ -125,7 +123,7 @@ public class HoughPushCurves {
 		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 
 		ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
-
+		ArrayList<RefinedPeak<Point>> ReducedMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
 		final double[] sizes = new double[inputimg.numDimensions()];
 		for (int d = 0; d < houghimage.numDimensions(); ++d)
 			sizes[d] = houghimage.dimension(d);
@@ -138,12 +136,12 @@ public class HoughPushCurves {
 
 		// Get local Minima in scale space to get Max rho-theta points of the
 		// Hough space
-		double minPeakValue = 20;
+		double minPeakValue = 0.37/(thetaPerPixel*rhoPerPixel);
 		double smallsigma = 1;
 		double bigsigma = 1.1;
 		SubpixelMinlist = GetLocalmaxmin.ScalespaceMinima(houghimage, interval, thetaPerPixel, rhoPerPixel,
 				minPeakValue, smallsigma, bigsigma);
-
+	
 		// Do the distance transform, to get the seeds use inverse type and then
 		// get local maxima
 		// Local maxima in there are to be used as seeds for the watershed
@@ -169,7 +167,7 @@ public class HoughPushCurves {
 		ImageJFunctions.show(distimg).setTitle("DT image to perform watershed on");
 */
 		// Reconstruct lines and overlay on the input image
-		OverlayLines.Overlay(initialimg, SubpixelMinlist, sizes, min, max);
+		OverlayLines.Overlay(biginputimg, SubpixelMinlist, sizes, min, max);
 
 	}
 }
