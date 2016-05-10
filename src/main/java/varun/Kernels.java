@@ -153,7 +153,7 @@ public class Kernels {
 	// maxima
 
 	public static RandomAccessibleInterval<FloatType> NaiveEdge(RandomAccessibleInterval<FloatType> inputimg,
-			FloatType minval, FloatType maxval, double[] sigma, boolean Thresholding) {
+			 double[] sigma, boolean Thresholding) {
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(inputimg, new FloatType());
 		RandomAccessibleInterval<FloatType> premaximgout = new ArrayImgFactory<FloatType>().create(inputimg,
 				new FloatType());
@@ -162,14 +162,13 @@ public class Kernels {
 		// Compute gradient of the image
 		imgout = GetLocalmaxmin.GradientmagnitudeImage(inputimg);
 
-		Normalize.normalize(Views.iterable(imgout), minval, maxval);
 		// Get the global threshold value for the gradient image
-		final Float val = GlobalThresholding.AutomaticThresholding(Views.iterable(imgout));
+		final Float val = GlobalThresholding.AutomaticThresholding(imgout);
 		// Do conditional maxima on the pixels above the global threshold value
 		premaximgout = GetLocalmaxmin.FindConditionalLocalMaxima(imgout, new ArrayImgFactory<FloatType>(),
 				IntensityType.Gaussian, sigma, val);
 		// Compute global threshold for the premaximgout
-		final Float valsec = GlobalThresholding.AutomaticThresholding(Views.iterable(premaximgout));
+		final Float valsec = GlobalThresholding.AutomaticThresholding(premaximgout);
 		// Choose the se the pixels below valsec to 0 or not
 		if (Thresholding) {
 			GetLocalmaxmin.Thresholding(premaximgout, maximgout, valsec, IntensityType.Gaussian, sigma);
@@ -182,7 +181,7 @@ public class Kernels {
 
 	public static RandomAccessibleInterval<FloatType> CannyEdge(RandomAccessibleInterval<FloatType> inputimg,
 			ImgFactory<FloatType> imageFactory,
-			FloatType minval, FloatType maxval, double[] sigma, boolean Thresholding) {
+			 double[] sigma, boolean Thresholding) {
 		int n = inputimg.numDimensions();
 		RandomAccessibleInterval<FloatType> cannyimage = imageFactory.create(inputimg,
 				new FloatType());
@@ -296,7 +295,7 @@ public class Kernels {
 		
 
 		//Supress values below the low threshold
-		final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(Views.iterable(Threshcannyimg));
+		final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(Threshcannyimg);
 		Cursor<FloatType> cannycursor = Views.iterable(Threshcannyimg).localizingCursor();
 		while(cannycursor.hasNext()){
 			cannycursor.fwd();

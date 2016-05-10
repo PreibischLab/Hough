@@ -22,7 +22,7 @@ public class GlobalThresholding {
 	// then set the new threshold T_N = (x1 +x2)/2, segment initial image by
 	// this value and repeat the process
 	// till (T_N - T_{N+1}<epsilon) where epsilon is a small number say 1.0E-3
-	public static Float AutomaticThresholding(IterableInterval<FloatType> inputimg) {
+	public static Float AutomaticThresholding(RandomAccessibleInterval<FloatType> inputimg) {
 		
 		FloatType min = new FloatType();
 		FloatType max = new FloatType();
@@ -35,11 +35,11 @@ public class GlobalThresholding {
 		ThresholdNew = (pair.snd.get() - pair.fst.get()) / 2;
 
 		// Get the new threshold value after segmenting the inputimage with thresholdnew
-		Thresholdupdate = SegmentbyThresholding(inputimg, ThresholdNew);
+		Thresholdupdate = SegmentbyThresholding(Views.iterable(inputimg), ThresholdNew);
 
 		while (true) {
 
-			ThresholdNew = SegmentbyThresholding(inputimg, Thresholdupdate);
+			ThresholdNew = SegmentbyThresholding(Views.iterable(inputimg), Thresholdupdate);
 
 			// Check if the new threshold value is close to the previous value
 			if (Math.abs(Thresholdupdate - ThresholdNew) < 1.0E-2)

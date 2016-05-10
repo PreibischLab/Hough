@@ -30,7 +30,6 @@ import net.imglib2.algorithm.neighborhood.Neighborhood;
 import net.imglib2.algorithm.neighborhood.RectangleShape;
 import net.imglib2.algorithm.region.hypersphere.HyperSphere;
 import net.imglib2.algorithm.region.hypersphere.HyperSphereCursor;
-import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
@@ -105,7 +104,7 @@ public class GetLocalmaxmin {
 
 	// Thresholding a FlotType to convert to BitType
 	public static void ThresholdingBit(RandomAccessibleInterval<FloatType> img,
-			RandomAccessibleInterval<BitType> imgout, FloatType ThresholdValue) {
+			RandomAccessibleInterval<BitType> imgout, Float ThresholdValue) {
 
 		final double[] backpos = new double[imgout.numDimensions()];
 		final Cursor<FloatType> bound = Views.iterable(img).localizingCursor();
@@ -117,8 +116,8 @@ public class GetLocalmaxmin {
 			bound.fwd();
 
 			outbound.setPosition(bound);
-
-			if (bound.get().compareTo(ThresholdValue) > 0) {
+        if (bound.get().get()>ThresholdValue){
+//			if (bound.get().compareTo(ThresholdValue) > 0) {
 
 				bound.localize(backpos);
 
@@ -195,8 +194,8 @@ public class GetLocalmaxmin {
 				case Gaussian:
 					AddGaussian.addGaussian(output, position, sigma, false);
 					break;
-				default:
-					AddGaussian.addGaussian(output, position, sigma, false);
+				case One:
+					outbound.get().setOne();
 					break;
 
 				}
@@ -407,9 +406,9 @@ public class GetLocalmaxmin {
 		return SubpixelMaxlist;
 	}
 
-	public static Pair<FloatType, FloatType> computeMinMaxIntensity(final IterableInterval<FloatType> inputimg) {
+	public static Pair<FloatType, FloatType> computeMinMaxIntensity(final RandomAccessibleInterval<FloatType> inputimg) {
 		// create a cursor for the image (the order does not matter)
-		final Cursor<FloatType> cursor = inputimg.cursor();
+		final Cursor<FloatType> cursor = Views.iterable(inputimg).cursor();
 
 		// initialize min and max with the first image value
 		FloatType type = cursor.next();
@@ -718,7 +717,7 @@ public class GetLocalmaxmin {
 
 			if (count == 0) {
 				SubpixelMinlist.remove(index);
-				System.out.println(" Removed Peak at :" + "Theta: " + rhothetapoints[0] + " Rho: " + rhothetapoints[1]);
+			//	System.out.println(" Removed Peak at :" + "Theta: " + rhothetapoints[0] + " Rho: " + rhothetapoints[1]);
 			} else {
 				ReducedMinlist.add(SubpixelMinlist.get(index));
 			}

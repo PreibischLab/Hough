@@ -45,7 +45,7 @@ public class OverlayLines {
 			for (int index = 0; index < SubpixelMinlist.size(); ++index) {
 				points = TransformCordinates.transformfwd(new double[] { SubpixelMinlist.get(index).getDoublePosition(0),
 						SubpixelMinlist.get(index).getDoublePosition(1) }, sizes, min, max);
-				System.out.println(" Found Peaks at :" + "Theta: " + points[0] + " Rho: " + points[1]);
+				//System.out.println(" Found Peaks at :" + "Theta: " + points[0] + " Rho: " + points[1]);
 
 				Line newline = new Line(0, points[1] / Math.sin(Math.toRadians(points[0])), inputimg.dimension(0),
 						points[1] / Math.sin(Math.toRadians(points[0]))
