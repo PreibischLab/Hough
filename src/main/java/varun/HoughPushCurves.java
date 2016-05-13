@@ -59,7 +59,6 @@ public class HoughPushCurves {
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	public static void main(String[] args) {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
@@ -75,99 +74,67 @@ public class HoughPushCurves {
 				new FloatType());
 		RandomAccessibleInterval<FloatType> testinputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
-		final double[] sigma = { 0.5, 0.5 };
-		/*
-		 * 
-		 * ImageJFunctions.show(biginputimg).setTitle("Original image");
-		 * testinputimg = Kernels.NaiveEdge(biginputimg, new double[]{1,1},
-		 * false); new ImageJ(); ImageJFunctions.show(testinputimg).setTitle(
-		 * "Conditional Max image"); inputimg =
-		 * Kernels.CannyEdge(biginputimg,new ArrayImgFactory<FloatType>(), new
-		 * double[]{1,1}, false);
-		 * 
-		 * // Automatic threshold determination for doing the Hough transform
-		 * final Float val = GlobalThresholding.AutomaticThresholding(inputimg);
-		 * 
-		 * 
-		 * ImageJFunctions.show(inputimg).setTitle("Input image"); int mintheta
-		 * = 0;
-		 * 
-		 * // Usually is 180 but to allow for detection of vertical lines,
-		 * allowing // a few more degrees int maxtheta = 200; double size = Math
-		 * .sqrt((inputimg.dimension(0) * inputimg.dimension(0) +
-		 * inputimg.dimension(1) * inputimg.dimension(1))); int minRho = (int)
-		 * -Math.round(size); int maxRho = -minRho; // Set size of pixels in
-		 * Hough spac double thetaPerPixel = 0.5; double rhoPerPixel = 0.5;
-		 * 
-		 * double[] min = { mintheta, minRho }; double[] max = { maxtheta,
-		 * maxRho };
-		 * 
-		 * int pixelsTheta = (int) Math.round((maxtheta - mintheta) /
-		 * thetaPerPixel); int pixelsRho = (int) Math.round((maxRho - minRho) /
-		 * rhoPerPixel);
-		 * 
-		 * double ratio = (max[0] - min[0]) / (max[1] - min[1]);
-		 * 
-		 * // Size of Hough space FinalInterval interval = new FinalInterval(new
-		 * long[] { pixelsTheta, (long) (pixelsRho * ratio) }); final
-		 * Img<FloatType> houghimage = new
-		 * ArrayImgFactory<FloatType>().create(interval, new FloatType());
-		 * 
-		 * ArrayList<RefinedPeak<Point>> SubpixelMinlist = new
-		 * ArrayList<RefinedPeak<Point>>(inputimg.numDimensions()); final
-		 * double[] sizes = new double[inputimg.numDimensions()]; for (int d =
-		 * 0; d < houghimage.numDimensions(); ++d) sizes[d] =
-		 * houghimage.dimension(d);
-		 * 
-		 * // Do the Hough transform Houghspace(inputimg, houghimage, min, max,
-		 * val); // Kernels.GeneralButterflyKernel(houghimage, rhoPerPixel,
-		 * thetaPerPixel); ImageJFunctions.show(houghimage).setTitle(
-		 * "Hough transform of input image"); final Float houghval =
-		 * GlobalThresholding.AutomaticThresholding(houghimage);
-		 * //System.out.println(houghval); // Get local Minima in scale space to
-		 * get Max rho-theta points of the // Hough space double minPeakValue =
-		 * houghval; //0.09/(thetaPerPixel*rhoPerPixel); double smallsigma = 1;
-		 * double bigsigma = 1.1; SubpixelMinlist =
-		 * GetLocalmaxmin.ScalespaceMinima(houghimage, interval, thetaPerPixel,
-		 * rhoPerPixel, minPeakValue, smallsigma, bigsigma);
-		 */
-		// Do the distance transform, to get the seeds use inverse type and then
-		// get local maxima
-		// Local maxima in there are to be used as seeds for the watershed
-		// algorithm
+		final double[] sigma = { 1, 1 };
+		
+		  
+		  ImageJFunctions.show(biginputimg).setTitle("Original image");
+		  testinputimg = Kernels.NaiveEdge(biginputimg, sigma); 
+		  ImageJFunctions.show(testinputimg).setTitle("Conditional Max image"); 
+		  inputimg = Kernels.CannyEdge(biginputimg,new ArrayImgFactory<FloatType>(), sigma, false);
+		  
+		  // Automatic threshold determination for doing the Hough transform
+		  final Float val = GlobalThresholding.AutomaticThresholding(inputimg);
+		  
+		  
+		  ImageJFunctions.show(inputimg).setTitle("Input image"); 
+		  int mintheta = 0;
+		  
+		  // Usually is 180 but to allow for detection of vertical lines,allowing // a few more degrees
+		  int maxtheta = 200; 
+		  double size = Math.sqrt((inputimg.dimension(0) * inputimg.dimension(0) +
+		  inputimg.dimension(1) * inputimg.dimension(1))); int minRho = (int)
+		  -Math.round(size); 
+		  int maxRho = -minRho; 
+		  // Set size of pixels in Hough space 
+		  double thetaPerPixel = 0.1; 
+		  double rhoPerPixel = 0.1;
+		  double[] min = { mintheta, minRho }; 
+		  double[] max = { maxtheta, maxRho };
+		  
+		  int pixelsTheta = (int) Math.round((maxtheta - mintheta) /
+		  thetaPerPixel); int pixelsRho = (int) Math.round((maxRho - minRho) /
+		  rhoPerPixel);
+		  
+		  double ratio = (max[0] - min[0]) / (max[1] - min[1]);
+		  
+		  // Size of Hough space 
+		  FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (long) (pixelsRho * ratio) }); 
+		  final Img<FloatType> houghimage = new
+		  ArrayImgFactory<FloatType>().create(interval, new FloatType());
+		  
+		  ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions()); 
+		  final double[] sizes = new double[inputimg.numDimensions()]; 
+		  for (int d = 0; d < houghimage.numDimensions(); ++d) 
+			  sizes[d] = houghimage.dimension(d);
+		  
+		  // Do the Hough transform 
+		  Houghspace(inputimg, houghimage, min, max,val); 
+		  ImageJFunctions.show(houghimage).setTitle("Hough transform of input image"); 
+		  final Float houghval = GlobalThresholding.AutomaticThresholding(houghimage);
+		  // Get local Minima in scale space to get Max rho-theta points 
+		  double minPeakValue = houghval; //0.09/(thetaPerPixel*rhoPerPixel); 
+		  double smallsigma = 1;
+		  double bigsigma = 1.1; 
+		  SubpixelMinlist = GetLocalmaxmin.ScalespaceMinima(houghimage, interval, thetaPerPixel,
+		  rhoPerPixel, minPeakValue, smallsigma, bigsigma);
+		 
+		// Do watershedding 
 
-		final Img<FloatType> distimg = new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
-
-		PerformWatershedding.DistanceTransformImage(biginputimg, distimg, InverseType.Straight);
-
-		ImageJFunctions.show(distimg).setTitle("DT to perform watershed on");
-		RandomAccessibleInterval<BitType> maximgBit = new ArrayImgFactory<BitType>().create(biginputimg, new BitType());
-		final Float threshold = GlobalThresholding.AutomaticThresholding(biginputimg);
-		GetLocalmaxmin.ThresholdingBit(biginputimg, maximgBit, threshold);
-        
-		// New Labeling type
-		final ImgLabeling<Integer, IntType> seedLabeling = new ImgLabeling<Integer, IntType>(
-				new ArrayImgFactory<IntType>().create(maximgBit, new IntType()));
-		// Old Labeling type
-		final NativeImgLabeling<Integer, IntType> oldseedLabeling = new NativeImgLabeling<Integer, IntType>(
-				new ArrayImgFactory<IntType>().create(maximgBit, new IntType()));
-        //The label generator for both new and old type		
-		final Iterator<Integer> labelGenerator = AllConnectedComponents.getIntegerNames(0);
-		// Getting unique labelled image (new version)
-		ConnectedComponents.labelAllConnectedComponents(maximgBit, seedLabeling, labelGenerator,
-				ConnectedComponents.StructuringElement.EIGHT_CONNECTED);
-		// Getting unique labelled image (old version)
-		AllConnectedComponents.labelAllConnectedComponents(oldseedLabeling, maximgBit, labelGenerator, 
-				AllConnectedComponents.getStructuringElement(biginputimg.numDimensions()));
-
-		ImageJFunctions.show(maximgBit).setTitle("Bit Seed Image for watershed");
-
-        ImageJFunctions.show(seedLabeling.getIndexImg()).setTitle("New-Method");
-        ImageJFunctions.show(oldseedLabeling.getStorageImg()).setTitle("Old-Method");;
-		 PerformWatershedding.OldWatersherImage(distimg, oldseedLabeling);
+		  PerformWatershedding.Dowatershedding(biginputimg);
 
 		// Reconstruct lines and overlay on the input image
-		// OverlayLines.Overlay(biginputimg, SubpixelMinlist, sizes, min, max);
+
+		  OverlayLines.Overlay(biginputimg, SubpixelMinlist, sizes, min, max);
 
 	}
 }

@@ -28,7 +28,7 @@ public class OverlayLines {
 			ImageStack stack = new ImageStack((int) inputimg.dimension(0), (int) inputimg.dimension(1));
 
 			stack.addSlice(ImageJFunctions.wrap(inputimg, "").getProcessor());
-			new ImageJ();
+			
 
 			ImagePlus imp = new ImagePlus("scale space hough", stack);
 			imp.show();
@@ -52,7 +52,7 @@ public class OverlayLines {
 								- inputimg.dimension(0) / Math.tan(Math.toRadians(points[0])));
 
 				newline.setStrokeColor(Color.RED);
-				newline.setStrokeWidth(0.8);
+				newline.setStrokeWidth(0.2);
 
 				o.add(newline);
 			}
@@ -74,7 +74,7 @@ public class OverlayLines {
 			ImageStack stack = new ImageStack((int) inputimg.dimension(0), (int) inputimg.dimension(1));
 
 			stack.addSlice(ImageJFunctions.wrap(inputimg, "").getProcessor());
-			new ImageJ();
+			
 
 			ImagePlus imp = new ImagePlus("scale space hough", stack);
 			imp.show();
@@ -89,14 +89,10 @@ public class OverlayLines {
 			o.clear();
 
 			for (int index = 0; index < Minlist.size(); ++index) {
-				points = TransformCordinates.transformfwd(
-						new double[] { Minlist.get(index).getDoublePosition(0), Minlist.get(index).getDoublePosition(1) },
-						sizes, min, max);
-				System.out.println(" Found Peaks at :" + "Theta: " + points[0] + " Rho: " + points[1]);
-
-				Line newline = new Line(0, points[1] / Math.sin(Math.toRadians(points[0])), inputimg.dimension(0),
-						points[1] / Math.sin(Math.toRadians(points[0]))
-								- inputimg.dimension(0) / Math.tan(Math.toRadians(points[0])));
+				
+				Line newline = new Line(0, Minlist.get(index).getDoublePosition(1), inputimg.dimension(0),
+						Minlist.get(index).getDoublePosition(1)
+								+ inputimg.dimension(0) * Minlist.get(index).getDoublePosition(0) );
 
 				newline.setStrokeColor(Color.RED);
 				newline.setStrokeWidth(0.8);
@@ -105,5 +101,32 @@ public class OverlayLines {
 			}
 			imp.updateAndDraw();
 		}
+		
+		
+		public static RealPoint Getmeanline(ArrayList<RefinedPeak<Point>> SubpixelMinlist, double[] sizes, double[] min, double[] max){
+			int n = sizes.length;
+			double[] points = new double[n];
+			double[] meanparam = new double[n];
+			for (int index = 0; index < SubpixelMinlist.size(); ++index) {
+				points = TransformCordinates.transformfwd(new double[] { SubpixelMinlist.get(index).getDoublePosition(0),
+						SubpixelMinlist.get(index).getDoublePosition(1) }, sizes, min, max);
+				// Mean slope
+				meanparam[0] += -1.0/ Math.tan(Math.toRadians(points[0]));
+			// Mean intercept	
+				meanparam[1] += points[1] / Math.sin(Math.toRadians(points[0]));
+			}
+			
+			
+				for (int d = 0; d< n;++d)
+					meanparam[d]=meanparam[d]/SubpixelMinlist.size();
+				
+				
+				RealPoint newpoint = new RealPoint(n);
+				newpoint.setPosition(meanparam);
+				return newpoint;
+		}
+		
+		
+		
 
 }

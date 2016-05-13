@@ -62,7 +62,6 @@ public class Kernels {
 		// apply convolution to convolve input data with kernels
 
 		new FFTConvolution<FloatType>(inputimage, Butterfly, new ArrayImgFactory<ComplexFloatType>()).convolve();
-		ImageJFunctions.show(Butterfly);
 	}
 
 	public static void BigButterflyKernel(final RandomAccessibleInterval<FloatType> inputimage) {
@@ -146,36 +145,36 @@ public class Kernels {
 			mean.div(new FloatType(n));
 			cursorOutput.get().set(mean);
 		}
-
+		
+		
 	}
 
 	// Naive Edge detector, first get the gradient of the image, then get local
-	// maxima
+	// supression
 
 	public static RandomAccessibleInterval<FloatType> NaiveEdge(RandomAccessibleInterval<FloatType> inputimg,
-			 double[] sigma, boolean Thresholding) {
-		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(inputimg, new FloatType());
+			 double[] sigma) {
 		RandomAccessibleInterval<FloatType> premaximgout = new ArrayImgFactory<FloatType>().create(inputimg,
 				new FloatType());
 		RandomAccessibleInterval<FloatType> maximgout = new ArrayImgFactory<FloatType>().create(inputimg,
 				new FloatType());
 		// Compute gradient of the image
-		imgout = GetLocalmaxmin.GradientmagnitudeImage(inputimg);
+		premaximgout = GetLocalmaxmin.GradientmagnitudeImage(inputimg);
 
-		// Get the global threshold value for the gradient image
-		final Float val = GlobalThresholding.AutomaticThresholding(imgout);
-		// Do conditional maxima on the pixels above the global threshold value
-		premaximgout = GetLocalmaxmin.FindConditionalLocalMaxima(imgout, new ArrayImgFactory<FloatType>(),
-				IntensityType.Gaussian, sigma, val);
+		
 		// Compute global threshold for the premaximgout
-		final Float valsec = GlobalThresholding.AutomaticThresholding(premaximgout);
-		// Choose the se the pixels below valsec to 0 or not
-		if (Thresholding) {
-			GetLocalmaxmin.Thresholding(premaximgout, maximgout, valsec, IntensityType.Gaussian, sigma);
-			return maximgout;
-		} else {
-			return premaximgout;
+		final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(premaximgout);
+		Cursor<FloatType> precursor = Views.iterable(premaximgout).localizingCursor();
+		RandomAccess<FloatType> outputran = maximgout.randomAccess();
+		while(precursor.hasNext()){
+			precursor.fwd();
+			outputran.setPosition(precursor);
+			if (precursor.get().get()<=Lowthreshold)
+				outputran.get().setZero();
+			else
+				outputran.get().set(precursor.get());
 		}
+		return maximgout;
 
 	}
 
@@ -304,8 +303,68 @@ public class Kernels {
 		}
 		
 		
-		ImageJFunctions.show(cannyimage).setTitle("Gradient Image");
 		return Threshcannyimg;
+	}
+	
+	public static RandomAccessibleInterval<FloatType> Meanfilterandsupress(RandomAccessibleInterval<FloatType> inputimg, double sigma){
+		// Mean filtering for a given sigma
+		
+		RandomAccessibleInterval<FloatType> outimg = new ArrayImgFactory<FloatType>().create(inputimg,
+				new FloatType());
+				Cursor<FloatType> cursorInput = Views.iterable(inputimg).cursor();
+				Cursor<FloatType> cursorOutput = Views.iterable(outimg).cursor();
+				FloatType mean = Views.iterable(inputimg).firstElement().createVariable();
+				while (cursorInput.hasNext()) {
+					cursorInput.fwd();
+					cursorOutput.fwd();
+					HyperSphere<FloatType> hyperSphere = new HyperSphere<FloatType>(Views.extendMirrorSingle(inputimg),
+							cursorInput, (long) sigma);
+					HyperSphereCursor<FloatType> cursorsphere = hyperSphere.cursor();
+					cursorsphere.fwd();
+					mean.set(cursorsphere.get());
+					int n = 1;
+					while (cursorsphere.hasNext()) {
+						cursorsphere.fwd();
+						n++;
+						mean.add(cursorsphere.get());
+					}
+					mean.div(new FloatType(n));
+					cursorOutput.get().set(mean);
+				}
+				final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(inputimg);
+				Cursor<FloatType> inputcursor = Views.iterable(inputimg).localizingCursor();
+				RandomAccess<FloatType> outputran = outimg.randomAccess();
+				while(inputcursor.hasNext()){
+					inputcursor.fwd();
+					outputran.setPosition(inputcursor);
+					if (inputcursor.get().get()<=Lowthreshold)
+						outputran.get().setZero();
+					else
+						outputran.get().set(inputcursor.get());
+				}
+			return outimg;
+		
+	}
+	
+	
+	public static RandomAccessibleInterval<FloatType> Supressthresh(RandomAccessibleInterval<FloatType> inputimg){
+		RandomAccessibleInterval<FloatType> Threshimg = new ArrayImgFactory<FloatType>().create(inputimg,
+				new FloatType());
+		//Supress values below the low threshold
+				final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(inputimg);
+				Cursor<FloatType> inputcursor = Views.iterable(inputimg).localizingCursor();
+				RandomAccess<FloatType> outputran = Threshimg.randomAccess();
+				while(inputcursor.hasNext()){
+					inputcursor.fwd();
+					outputran.setPosition(inputcursor);
+					if (inputcursor.get().get()<=Lowthreshold)
+						outputran.get().setZero();
+					else
+						outputran.get().set(inputcursor.get());
+				}
+			return Threshimg;	
+				
+				
 	}
 
 }
