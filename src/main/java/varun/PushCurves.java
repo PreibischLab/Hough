@@ -226,12 +226,22 @@ public class PushCurves {
 			outbound.setPosition(inputcursor);
 
 			intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
+			
+			if (intensity < 1.0E-2)
+				intensity = 0;
+			
 			switch (setintensity) {
 			case Original:
 				outbound.get().setReal(distance);
 				break;
 
 			case Gaussian:
+				outbound.get().setReal(intensity);
+				break;
+			case One:
+				outbound.get().setReal(intensity);
+				break;
+			default:
 				outbound.get().setReal(intensity);
 				break;
 

@@ -355,6 +355,24 @@ public class GetLocalmaxmin {
 		return Maxlist;
 	}
 
+	
+	// Detect minima in Scale space write it as an ArrayList<RefinedPeak<Point>>
+		public static ArrayList<RefinedPeak<Point>> HoughspaceMaxima(RandomAccessibleInterval<FloatType> houghimage,
+				FinalInterval interval, double[] sizes, double thetaPerPixel, double rhoPerPixel) {
+			final Float houghval = GlobalThresholding.AutomaticThresholding(houghimage);
+			ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(houghimage.numDimensions());
+
+			// Get local Minima in scale space to get Max rho-theta points
+			double minPeakValue = houghval; // 0.09/(thetaPerPixel*rhoPerPixel);
+			double smallsigma = 1;
+			double bigsigma = 1.1;
+			SubpixelMinlist = GetLocalmaxmin.ScalespaceMinima(houghimage, interval, thetaPerPixel, rhoPerPixel,
+					minPeakValue, smallsigma, bigsigma);
+			
+			return SubpixelMinlist;
+		}
+	
+	
 	// Detect minima in Scale space write it as an ArrayList<RefinedPeak<Point>>
 	public static ArrayList<RefinedPeak<Point>> ScalespaceMinima(RandomAccessibleInterval<FloatType> inputimg,
 			FinalInterval interval, double thetaPerPixel, double rhoPerPixel, double minPeakValue, double smallsigma,
@@ -434,52 +452,7 @@ public class GetLocalmaxmin {
 		return pair;
 	}
 
-	public static RandomAccessibleInterval<FloatType> GradientmagnitudeImage(
-			RandomAccessibleInterval<FloatType> inputimg) {
-
-		RandomAccessibleInterval<FloatType> gradientimg = new ArrayImgFactory<FloatType>().create(inputimg,
-				new FloatType());
-		Cursor<FloatType> cursor = Views.iterable(gradientimg).localizingCursor();
-		RandomAccessible<FloatType> view = Views.extendMirrorSingle(inputimg);
-		RandomAccess<FloatType> randomAccess = view.randomAccess();
-
-		// iterate over all pixels
-		while (cursor.hasNext()) {
-			// move the cursor to the next pixel
-			cursor.fwd();
-
-			// compute gradient and its direction in each dimension
-			double gradient = 0;
-
-			for (int d = 0; d < inputimg.numDimensions(); ++d) {
-				// set the randomaccess to the location of the cursor
-				randomAccess.setPosition(cursor);
-
-				// move one pixel back in dimension d
-				randomAccess.bck(d);
-
-				// get the value
-				double Back = randomAccess.get().getRealDouble();
-
-				// move twice forward in dimension d, i.e.
-				// one pixel above the location of the cursor
-				randomAccess.fwd(d);
-				randomAccess.fwd(d);
-
-				// get the value
-				double Fwd = randomAccess.get().getRealDouble();
-
-				gradient += ((Fwd - Back) * (Fwd - Back)) / 4;
-
-			}
-
-			cursor.get().setReal(Math.sqrt(gradient));
-
-		}
-
-		return gradientimg;
-	}
-
+	
 	// Find maxima only if the pixel intensity is higher than a certain
 	// threshold value
 	public static RandomAccessibleInterval<FloatType> FindConditionalLocalMaxima(
@@ -646,84 +619,5 @@ public class GetLocalmaxmin {
 		return SubpixelMinlist;
 	}
 
-	public static ArrayList<RefinedPeak<Point>> RejectLines(RandomAccessibleInterval<FloatType> inputimg,
-			ArrayList<RefinedPeak<Point>> SubpixelMinlist, double[] sizes, double[] min, double[] max, int pixeljump) {
-
-		int n = inputimg.numDimensions();
-		ArrayList<RefinedPeak<Point>> ReducedMinlist = new ArrayList<RefinedPeak<Point>>(n);
-
-		for (int index = 0; index < SubpixelMinlist.size(); ++index) {
-			double[] rhothetapoints = new double[n];
-
-			rhothetapoints = TransformCordinates.transformfwd(new double[] {
-					SubpixelMinlist.get(index).getDoublePosition(0), SubpixelMinlist.get(index).getDoublePosition(1) },
-					sizes, min, max);
-			double[] location = new double[n];
-			double slope, intercept;
-
-			slope = -1.0 / Math.tan(Math.toRadians(rhothetapoints[0]));
-			intercept = rhothetapoints[1] / Math.sin(Math.toRadians(rhothetapoints[0]));
-			final RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(inputimg,
-					new FloatType());
-
-			// Draw the exact line for the detected Hough space parameters
-			PushCurves.Drawexactline(imgout, slope, intercept, IntensityType.Gaussian);
-
-			
-			// ImageJFunctions.show(imgout);
-
-			FloatType Pixelfwd = new FloatType(0);
-			FloatType Pixelini = new FloatType(0);
-
-			FloatType val = new FloatType(250);
-			float Pixeldiff, Pixelsum;
-
-			final RandomAccess<FloatType> outbound = inputimg.randomAccess();
-			Cursor<FloatType> cursor = Views.iterable(imgout).localizingCursor();
-			int count = 0;
-
-			// Compare each detected line with the ROI in the input image to
-			// reject or accept the line
-
-			while (cursor.hasNext()) {
-
-				cursor.fwd();
-				cursor.localize(location);
-
-				if (cursor.get().compareTo(val) >= 0) {
-					outbound.setPosition(cursor);
-
-					Pixelini = outbound.get();
-				}
-				for (int d = 0; d < n; ++d) {
-					if (cursor.getDoublePosition(d) < inputimg.dimension(d) - pixeljump)
-						cursor.jumpFwd(pixeljump);
-					else
-						break;
-				}
-
-				if (cursor.get().compareTo(val) >= 0) {
-					outbound.setPosition(cursor);
-
-					Pixelfwd = outbound.get();
-				}
-
-				Pixeldiff = Pixelfwd.get() - Pixelini.get();
-				Pixelsum = Pixelfwd.get() + Pixelini.get();
-
-				if (Pixeldiff >= 0 && Pixelsum >= 255)
-					count++;
-			}
-
-			if (count == 0) {
-				SubpixelMinlist.remove(index);
-			//	System.out.println(" Removed Peak at :" + "Theta: " + rhothetapoints[0] + " Rho: " + rhothetapoints[1]);
-			} else {
-				ReducedMinlist.add(SubpixelMinlist.get(index));
-			}
-
-		}
-
-		return ReducedMinlist;
-	}
+	
 }

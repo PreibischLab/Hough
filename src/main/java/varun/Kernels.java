@@ -37,6 +37,54 @@ import varun.GetLocalmaxmin.IntensityType;
 
 public class Kernels {
 
+	
+	public static enum ProcessingType {
+		Horizontaledge, Verticaledge, Gradientmag, NaiveEdge, Meanfilter, SupressThresh
+	}
+	      // Any preprocessing
+
+			public static RandomAccessibleInterval<FloatType> Preprocess(final RandomAccessibleInterval<FloatType> inputimg, final ProcessingType edge){
+				
+				
+				RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(inputimg,
+						new FloatType());
+				
+				switch(edge){
+				
+				case Horizontaledge:
+					imgout = inputimg;
+					HorizontalEdge(imgout);
+					break;
+				case Meanfilter:
+					imgout = Meanfilterandsupress(inputimg, 1.0);
+					break;
+				case NaiveEdge:
+					imgout = NaiveEdge(inputimg, new double[]{1,1});
+					break;
+				case Gradientmag:
+					imgout = GradientmagnitudeImage(inputimg);
+					break;
+				case Verticaledge:
+					imgout = inputimg;
+					VerticalEdge(imgout);
+					break;
+				case SupressThresh:
+					imgout = Supressthresh(inputimg);
+					break;
+				default:
+					break;
+					
+				
+				
+				
+				}
+				
+				
+				return imgout;
+			}
+	
+	
+	
 	public static void ButterflyKernel(final RandomAccessibleInterval<FloatType> inputimage) {
 
 		final float[] butterflyKernel = new float[] { 0, -2, 0, 1, 2, 1, 0, -2, 0 };
@@ -81,27 +129,27 @@ public class Kernels {
 
 	}
 
-	public static void SobelXFilter(final RandomAccessibleInterval<FloatType> inputimage) {
+	public static void HorizontalEdge(final RandomAccessibleInterval<FloatType> inputimage) {
+		final float[] HorizontalEdgeFilterKernel = new float[] { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
 
-		// create sobel edge filter kernels
-		final float[] sX = new float[] { 1, 0, -1, 2, 0, -2, 1, 0, -1 };
-		final Img<FloatType> sobelX = ArrayImgs.floats(sX, new long[] { 3, 3 });
 
+		final Img<FloatType> HorizontalEdgeFilter = ArrayImgs.floats(HorizontalEdgeFilterKernel, new long[] { 3, 3 });
 		// apply convolution to convolve input data with kernels
 
-		new FFTConvolution<FloatType>(inputimage, sobelX, new ArrayImgFactory<ComplexFloatType>()).convolve();
+		new FFTConvolution<FloatType>(inputimage, HorizontalEdgeFilter, new ArrayImgFactory<ComplexFloatType>())
+				.convolve();
 
 	}
 
-	public static void SobelYFilter(final RandomAccessibleInterval<FloatType> inputimage) {
+	public static void VerticalEdge(final RandomAccessibleInterval<FloatType> inputimage) {
 
-		// create sobel edge filter kernels
-		final float[] sY = new float[] { 1, 2, -1, 0, 0, 0, -1, -2, -1 };
-		final Img<FloatType> sobelY = ArrayImgs.floats(sY, new long[] { 3, 3 });
+		final float[] VerticalEdgeFilterKernel = new float[] { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
 
+		final Img<FloatType> VerticalEdgeFilter = ArrayImgs.floats(VerticalEdgeFilterKernel, new long[] { 3, 3 });
 		// apply convolution to convolve input data with kernels
 
-		new FFTConvolution<FloatType>(inputimage, sobelY, new ArrayImgFactory<ComplexFloatType>()).convolve();
+		new FFTConvolution<FloatType>(inputimage, VerticalEdgeFilter, new ArrayImgFactory<ComplexFloatType>())
+				.convolve();
 
 	}
 
@@ -149,7 +197,7 @@ public class Kernels {
 		
 	}
 
-	// Naive Edge detector, first get the gradient of the image, then get local
+	// Naive Edge detector, first get the gradient of the image, then do local
 	// supression
 
 	public static RandomAccessibleInterval<FloatType> NaiveEdge(RandomAccessibleInterval<FloatType> inputimg,
@@ -159,7 +207,7 @@ public class Kernels {
 		RandomAccessibleInterval<FloatType> maximgout = new ArrayImgFactory<FloatType>().create(inputimg,
 				new FloatType());
 		// Compute gradient of the image
-		premaximgout = GetLocalmaxmin.GradientmagnitudeImage(inputimg);
+		premaximgout = GradientmagnitudeImage(inputimg);
 
 		
 		// Compute global threshold for the premaximgout
@@ -180,7 +228,7 @@ public class Kernels {
 
 	public static RandomAccessibleInterval<FloatType> CannyEdge(RandomAccessibleInterval<FloatType> inputimg,
 			ImgFactory<FloatType> imageFactory,
-			 double[] sigma, boolean Thresholding) {
+			 double[] sigma) {
 		int n = inputimg.numDimensions();
 		RandomAccessibleInterval<FloatType> cannyimage = imageFactory.create(inputimg,
 				new FloatType());
@@ -190,7 +238,7 @@ public class Kernels {
 				new FloatType());
 		
 	    // We will create local neighbourhood on this image
-		gradientimage = GetLocalmaxmin.GradientmagnitudeImage(inputimg);
+		gradientimage = GradientmagnitudeImage(inputimg);
 	    
 		// This is the intended output image so set up a cursor on it
 		Cursor<FloatType> cursor = Views.iterable(cannyimage).localizingCursor();
@@ -351,20 +399,72 @@ public class Kernels {
 		RandomAccessibleInterval<FloatType> Threshimg = new ArrayImgFactory<FloatType>().create(inputimg,
 				new FloatType());
 		//Supress values below the low threshold
+		int n = inputimg.numDimensions();
+		double[] position = new double[n];
 				final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(inputimg);
 				Cursor<FloatType> inputcursor = Views.iterable(inputimg).localizingCursor();
 				RandomAccess<FloatType> outputran = Threshimg.randomAccess();
+				final double[] sigma = { 1, 1 };
 				while(inputcursor.hasNext()){
 					inputcursor.fwd();
+					inputcursor.localize(position);
 					outputran.setPosition(inputcursor);
 					if (inputcursor.get().get()<=Lowthreshold)
 						outputran.get().setZero();
 					else
+					//	AddGaussian.addGaussian(Threshimg, position, sigma, false);
 						outputran.get().set(inputcursor.get());
 				}
 			return Threshimg;	
 				
 				
 	}
+	
+	public static RandomAccessibleInterval<FloatType> GradientmagnitudeImage(
+			RandomAccessibleInterval<FloatType> inputimg) {
+
+		RandomAccessibleInterval<FloatType> gradientimg = new ArrayImgFactory<FloatType>().create(inputimg,
+				new FloatType());
+		Cursor<FloatType> cursor = Views.iterable(gradientimg).localizingCursor();
+		RandomAccessible<FloatType> view = Views.extendMirrorSingle(inputimg);
+		RandomAccess<FloatType> randomAccess = view.randomAccess();
+
+		// iterate over all pixels
+		while (cursor.hasNext()) {
+			// move the cursor to the next pixel
+			cursor.fwd();
+
+			// compute gradient and its direction in each dimension
+			double gradient = 0;
+
+			for (int d = 0; d < inputimg.numDimensions(); ++d) {
+				// set the randomaccess to the location of the cursor
+				randomAccess.setPosition(cursor);
+
+				// move one pixel back in dimension d
+				randomAccess.bck(d);
+
+				// get the value
+				double Back = randomAccess.get().getRealDouble();
+
+				// move twice forward in dimension d, i.e.
+				// one pixel above the location of the cursor
+				randomAccess.fwd(d);
+				randomAccess.fwd(d);
+
+				// get the value
+				double Fwd = randomAccess.get().getRealDouble();
+
+				gradient += ((Fwd - Back) * (Fwd - Back)) / 4;
+
+			}
+
+			cursor.get().setReal(Math.sqrt(gradient));
+
+		}
+
+		return gradientimg;
+	}
+
 
 }

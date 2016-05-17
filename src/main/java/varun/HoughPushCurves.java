@@ -62,7 +62,7 @@ public class HoughPushCurves {
 	public static void main(String[] args) {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
+				.openAs32Bit(new File("src/main/resources/2015-01-14_Porcine_Tubulin009-1.tiff"));
 
 		new ImageJ();
 		new Normalize();
@@ -80,7 +80,7 @@ public class HoughPushCurves {
 		  ImageJFunctions.show(biginputimg).setTitle("Original image");
 		  testinputimg = Kernels.NaiveEdge(biginputimg, sigma); 
 		  ImageJFunctions.show(testinputimg).setTitle("Conditional Max image"); 
-		  inputimg = Kernels.CannyEdge(biginputimg,new ArrayImgFactory<FloatType>(), sigma, false);
+		  inputimg = Kernels.CannyEdge(biginputimg,new ArrayImgFactory<FloatType>(), sigma);
 		  
 		  // Automatic threshold determination for doing the Hough transform
 		  final Float val = GlobalThresholding.AutomaticThresholding(inputimg);
@@ -128,9 +128,7 @@ public class HoughPushCurves {
 		  SubpixelMinlist = GetLocalmaxmin.ScalespaceMinima(houghimage, interval, thetaPerPixel,
 		  rhoPerPixel, minPeakValue, smallsigma, bigsigma);
 		 
-		// Do watershedding 
 
-		  PerformWatershedding.Dowatershedding(biginputimg);
 
 		// Reconstruct lines and overlay on the input image
 
