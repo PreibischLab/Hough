@@ -39,11 +39,12 @@ public class Kernels {
 
 	
 	public static enum ProcessingType {
-		Horizontaledge, Verticaledge, Gradientmag, NaiveEdge, Meanfilter, SupressThresh
+		Horizontaledge, Verticaledge, Gradientmag, NaiveEdge, Meanfilter, SupressThresh, CannyEdge
 	}
 	      // Any preprocessing
 
-			public static RandomAccessibleInterval<FloatType> Preprocess(final RandomAccessibleInterval<FloatType> inputimg, final ProcessingType edge){
+			public static RandomAccessibleInterval<FloatType> Preprocess(final RandomAccessibleInterval<FloatType> inputimg,
+					final ProcessingType edge){
 				
 				
 				RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(inputimg,
@@ -71,7 +72,11 @@ public class Kernels {
 				case SupressThresh:
 					imgout = Supressthresh(inputimg);
 					break;
+				case CannyEdge:
+					imgout = CannyEdge(inputimg,new double[]{1,1} );
+					break;
 				default:
+					imgout = Supressthresh(inputimg);
 					break;
 					
 				
@@ -220,21 +225,20 @@ public class Kernels {
 			if (precursor.get().get()<=Lowthreshold)
 				outputran.get().setZero();
 			else
-				outputran.get().set(precursor.get());
+				outputran.get().set(precursor.get());;
 		}
 		return maximgout;
 
 	}
 
 	public static RandomAccessibleInterval<FloatType> CannyEdge(RandomAccessibleInterval<FloatType> inputimg,
-			ImgFactory<FloatType> imageFactory,
 			 double[] sigma) {
 		int n = inputimg.numDimensions();
-		RandomAccessibleInterval<FloatType> cannyimage = imageFactory.create(inputimg,
+		RandomAccessibleInterval<FloatType> cannyimage = new ArrayImgFactory<FloatType>().create(inputimg,
 				new FloatType());
-		RandomAccessibleInterval<FloatType> gradientimage = imageFactory.create(inputimg,
+		RandomAccessibleInterval<FloatType> gradientimage = new ArrayImgFactory<FloatType>().create(inputimg,
 				new FloatType());
-		RandomAccessibleInterval<FloatType> Threshcannyimg = imageFactory.create(inputimg,
+		RandomAccessibleInterval<FloatType> Threshcannyimg = new ArrayImgFactory<FloatType>().create(inputimg,
 				new FloatType());
 		
 	    // We will create local neighbourhood on this image
@@ -348,6 +352,8 @@ public class Kernels {
 			cannycursor.fwd();
 			if (cannycursor.get().get()<=Lowthreshold)
 				cannycursor.get().setZero();
+			else
+				cannycursor.get().set(cannycursor.get());
 		}
 		
 		

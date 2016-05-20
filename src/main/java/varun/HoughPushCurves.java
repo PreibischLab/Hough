@@ -58,11 +58,13 @@ public class HoughPushCurves {
 
 		}
 	}
+	
+	
 
 	public static void main(String[] args) {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/2015-01-14_Porcine_Tubulin009-1.tiff"));
+				.openAs32Bit(new File("src/main/resources/Multiple_lines.tif"));
 
 		new ImageJ();
 		new Normalize();
@@ -80,7 +82,7 @@ public class HoughPushCurves {
 		  ImageJFunctions.show(biginputimg).setTitle("Original image");
 		  testinputimg = Kernels.NaiveEdge(biginputimg, sigma); 
 		  ImageJFunctions.show(testinputimg).setTitle("Conditional Max image"); 
-		  inputimg = Kernels.CannyEdge(biginputimg,new ArrayImgFactory<FloatType>(), sigma);
+		  inputimg = Kernels.CannyEdge(biginputimg, sigma);
 		  
 		  // Automatic threshold determination for doing the Hough transform
 		  final Float val = GlobalThresholding.AutomaticThresholding(inputimg);
@@ -96,8 +98,8 @@ public class HoughPushCurves {
 		  -Math.round(size); 
 		  int maxRho = -minRho; 
 		  // Set size of pixels in Hough space 
-		  double thetaPerPixel = 0.1; 
-		  double rhoPerPixel = 0.1;
+		  double thetaPerPixel = 1; 
+		  double rhoPerPixel = 1;
 		  double[] min = { mintheta, minRho }; 
 		  double[] max = { maxtheta, maxRho };
 		  
@@ -122,7 +124,7 @@ public class HoughPushCurves {
 		  ImageJFunctions.show(houghimage).setTitle("Hough transform of input image"); 
 		  final Float houghval = GlobalThresholding.AutomaticThresholding(houghimage);
 		  // Get local Minima in scale space to get Max rho-theta points 
-		  double minPeakValue = houghval; //0.09/(thetaPerPixel*rhoPerPixel); 
+		  double minPeakValue = 0.7*houghval; //0.09/(thetaPerPixel*rhoPerPixel); 
 		  double smallsigma = 1;
 		  double bigsigma = 1.1; 
 		  SubpixelMinlist = GetLocalmaxmin.ScalespaceMinima(houghimage, interval, thetaPerPixel,
@@ -132,7 +134,7 @@ public class HoughPushCurves {
 
 		// Reconstruct lines and overlay on the input image
 
-		  OverlayLines.Overlay(biginputimg, SubpixelMinlist, sizes, min, max);
+		 // OverlayLines.Overlay(biginputimg, SubpixelMinlist, sizes, min, max);
 
 	}
 }
