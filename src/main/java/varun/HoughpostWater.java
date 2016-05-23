@@ -3,17 +3,27 @@ package varun;
 import java.io.File;
 import java.util.ArrayList;
 
+import com.sun.tools.javac.util.Pair;
+
 import ij.ImageJ;
+import net.imglib2.Cursor;
+import net.imglib2.Point;
+import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.gauss3.Gauss3;
+import net.imglib2.algorithm.localextrema.RefinedPeak;
 import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.exception.IncompatibleTypeException;
+import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import util.ImgLib2Util;
+import varun.GetLocalmaxmin.IntensityType;
 import varun.Kernels.ProcessingType;
+import varun.OverlayLines.Simulatedline;
 import varun.PerformWatershedding.Lineobjects;
 
 public class HoughpostWater {
@@ -36,7 +46,7 @@ public class HoughpostWater {
 			sigma[ d ] = 1;
 		
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
-		RandomAccessibleInterval<FloatType> tmpinputimg = new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
+		Img<FloatType> imgout= new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
 		
 		// Preprocess image
 		inputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter);
@@ -48,15 +58,20 @@ public class HoughpostWater {
 		
 		
 		ArrayList<Lineobjects> linelist = new ArrayList<Lineobjects>(biginputimg.numDimensions());
+		Img<IntType> Intimg = new ArrayImgFactory<IntType>()
+				.create(biginputimg, new IntType());
+		Pair<Img<IntType>, ArrayList<Lineobjects>> linepair = new Pair<Img<IntType>, ArrayList<Lineobjects>>(Intimg, linelist);
+		
 		// Do watershedding and Hough
-		linelist = PerformWatershedding.DowatersheddingandHough(biginputimg,inputimg);
+		linepair = PerformWatershedding.DowatersheddingandHough(biginputimg,inputimg);
 		
 		// Overlay detected lines on the image
-		OverlayLines.OverlayObject(biginputimg,linelist);
+		OverlayLines.OverlayObject(biginputimg,linepair.snd);
+		
+		OverlayLines.GetAlllines(biginputimg,imgout,linepair.fst,linepair.snd);
+		ImageJFunctions.show(imgout);
 		
 		// Do Gaussian Mask Fit
 		
-		
-	
 	}
 }

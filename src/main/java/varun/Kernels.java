@@ -265,9 +265,10 @@ public class Kernels {
 			// along the direction
 			double gradient = 0;
 			for (int d = 0; d < inputimg.numDimensions(); ++d) {
+				randomAccess.setPosition(cursor);
 				// move one pixel back in dimension d
 				randomAccess.bck(d);
-				randomAccess.setPosition(cursor);
+				
 				// get the value
 				double Back = randomAccess.get().getRealDouble();
 
