@@ -57,8 +57,7 @@ public class OverlayLines {
 		theta = linelist.get(index).Theta;
 		minX = linelist.get(index).boxXmin;
 		maxX = linelist.get(index).boxXmax;
-		minY = linelist.get(index).boxYmin;
-		maxY = linelist.get(index).boxYmax;
+		
 		
 		Line newline = new Line(minX,
 				rho / Math.sin(Math.toRadians(theta))- minX/ Math.tan(Math.toRadians(theta)),
@@ -214,16 +213,14 @@ public class OverlayLines {
 		return MainMinlist;
 	}
 
-	public static double[] GetRhoTheta(RandomAccessibleInterval<FloatType> inputimg,
-			ArrayList<RefinedPeak<Point>> SubpixelMinlist, double[] sizes, double[] min, double[] max, double minlength){
+	public static double[] GetRhoTheta(ArrayList<RefinedPeak<Point>> MainMinlist, double[] sizes, double[] min, double[] max, double minlength){
 		
-		ArrayList<RefinedPeak<Point>> MainMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
-
-		MainMinlist = ReducedList(inputimg, SubpixelMinlist, sizes, min, max, minlength);
-		int index = 0;
-		double[] points = new double[inputimg.numDimensions()];
+		double[] points = new double[sizes.length];
+		for (int index = 0; index < MainMinlist.size(); ++index) {
+		
 		points = TransformCordinates.transformfwd(new double[] { MainMinlist.get(index).getDoublePosition(0),
 				MainMinlist.get(index).getDoublePosition(1) }, sizes, min, max);
+		}
 		return points;
 	}
 	
