@@ -34,13 +34,14 @@ import varun.PerformWatershedding.Lineobjects;
 public class OverlayLines {
 	public static final class Simulatedline {
 		final int Label;
-		final Point point;
+		final double[] point;
 		final FloatType Value;
 
-		protected Simulatedline(final int Label, final Point point, final FloatType Value) {
+		protected Simulatedline(final int Label, final double[] point, final FloatType Value) {
 			this.Label = Label;
 			this.point = point;
 			this.Value = Value;
+			
 
 		}
 	}
@@ -232,25 +233,27 @@ public class OverlayLines {
 		return points;
 	}
 
-	public static void GetAlllines(RandomAccessibleInterval<FloatType> inputimg,
-			RandomAccessibleInterval<FloatType> imgout, Img<IntType> intimg, ArrayList<Lineobjects> linelist) {
-
+	public static void GetAlllines(
+			RandomAccessibleInterval<FloatType> imgout,
+			ArrayList<Simulatedline> totalsimline,
+			Img<IntType> intimg, 
+			ArrayList<Lineobjects> linelist,
+			double cutoff) {
 
 		for (int index = 0; index < linelist.size(); ++index) {
 
 			final int label = linelist.get(index).Label;
 			final double rho = linelist.get(index).Rho;
 			final double theta = linelist.get(index).Theta;
-		
-
+			
+			ArrayList<Simulatedline> simline = new ArrayList<Simulatedline>();
 			double slope = -1.0 / Math.tan(Math.toRadians(theta));
 			double intercept = rho / Math.sin(Math.toRadians(theta));
 
-			PushCurves.Drawexactline(imgout,intimg, slope, intercept, label);
-			
-
+			PushCurves.Drawexactline(imgout,simline,intimg, slope, intercept, label, cutoff);
+			for (int simindex = 0; simindex< simline.size(); ++simindex)
+			totalsimline.add(simline.get(simindex));
 		}
-
 	}
 
 }

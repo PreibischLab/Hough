@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import com.sun.tools.javah.Util.Exit;
 
 import net.imglib2.Cursor;
+import net.imglib2.Point;
+import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
@@ -13,6 +15,7 @@ import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import varun.GetLocalmaxmin.IntensityType;
+import varun.OverlayLines.Simulatedline;
 import varun.PerformWatershedding.Lineobjects;
 
 public class PushCurves {
@@ -156,8 +159,8 @@ public class PushCurves {
 
 	}
 
-	public static void DrawLine(RandomAccessibleInterval<FloatType> imgout, double[] min, double[] max,
-			double slope, double intercept) {
+	public static void DrawLine(RandomAccessibleInterval<FloatType> imgout, double[] min, double[] max, double slope,
+			double intercept) {
 
 		int n = imgout.numDimensions();
 		double[] size = new double[n];
@@ -175,7 +178,7 @@ public class PushCurves {
 		// Starting position, for explicit curves its easier to choose a
 		// starting point
 		position[0] = min[0];
-		position[1] = slope * min[0] +intercept;
+		position[1] = slope * min[0] + intercept;
 		newpos[0] = position[0];
 		newpos[1] = position[1];
 		sigma[0] = 1;
@@ -262,10 +265,7 @@ public class PushCurves {
 		}
 	}
 
-	public static void Drawexactline(
-			RandomAccessibleInterval<FloatType> imgout,
-			double slope,
-			double intercept,
+	public static void Drawexactline(RandomAccessibleInterval<FloatType> imgout, double slope, double intercept,
 			final IntensityType setintensity) {
 
 		int n = imgout.numDimensions();
@@ -291,10 +291,10 @@ public class PushCurves {
 			outbound.setPosition(inputcursor);
 
 			intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
-			
+
 			if (intensity < 1.0E-2)
 				intensity = 0;
-			
+
 			switch (setintensity) {
 			case Original:
 				outbound.get().setReal(distance);
@@ -314,20 +314,17 @@ public class PushCurves {
 
 		}
 	}
-	public static void Drawexactline(
-			RandomAccessibleInterval<FloatType> imgout,
-			Img<IntType> intimg,
-			double slope,
-			double intercept,
-			int label) {
+
+	public static void Drawexactline(RandomAccessibleInterval<FloatType> imgout, ArrayList<Simulatedline> listline,
+			Img<IntType> intimg, double slope, double intercept, int label, double cutoff) {
 
 		int n = imgout.numDimensions();
 		final double[] realpos = new double[n];
+
 		double sigmasq, sigma = 0.5;
 		sigmasq = sigma * sigma;
 		sigma = Math.sqrt(sigmasq);
 		final Cursor<FloatType> inputcursor = Views.iterable(imgout).localizingCursor();
-		final RandomAccess<FloatType> outbound = imgout.randomAccess();
 
 		while (inputcursor.hasNext()) {
 
@@ -340,28 +337,34 @@ public class PushCurves {
 
 			Finalfunction linefunction = new Finalfunction(realpos, slope, intercept);
 			distance = linefunction.Linefunctiondist();
-
+			final RandomAccess<FloatType> outbound = imgout.randomAccess();
 			outbound.setPosition(inputcursor);
 
 			intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
-			
-			if (intensity < 1.0E-2)
-				intensity = 0;
+
 			RandomAccess<IntType> ranac = intimg.randomAccess();
 			ranac.setPosition(inputcursor);
 			int i = ranac.get().get();
-			
-				if (i == label){
-				
 
-			
+			if (intensity < cutoff)
+				intensity = 0;
+
+			if (i == label) {
+
 				outbound.get().setReal(intensity);
-			
 
-			
-			
+				final double[] position = new double[n];
+				if (outbound.get().get() > 0) {
+					outbound.localize(position);
+					final Simulatedline line = new Simulatedline(label, position, outbound.get());
+					listline.add(line);
+
+				}
+
 			}
+
 		}
+
 	}
-	
+
 }

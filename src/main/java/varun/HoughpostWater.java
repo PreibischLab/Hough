@@ -46,7 +46,7 @@ public class HoughpostWater {
 			sigma[ d ] = 1;
 		
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
-		Img<FloatType> imgout= new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
+		RandomAccessibleInterval<FloatType> imgout= new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
 		
 		// Preprocess image
 		inputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter);
@@ -66,10 +66,16 @@ public class HoughpostWater {
 		linepair = PerformWatershedding.DowatersheddingandHough(biginputimg,inputimg);
 		
 		// Overlay detected lines on the image
-		OverlayLines.OverlayObject(biginputimg,linepair.snd);
+		ArrayList<Simulatedline> simline = new ArrayList<Simulatedline>();
+		// cutoff for Gaussian Intensity model
+		final double cutoff = 1.0E-5;
+		OverlayLines.GetAlllines(imgout,simline,linepair.fst,linepair.snd, cutoff);
 		
-		OverlayLines.GetAlllines(biginputimg,imgout,linepair.fst,linepair.snd);
 		ImageJFunctions.show(imgout);
+		
+		for (int index = 0; index < simline.size(); ++index)
+			System.out.println(simline.get(index).Label + " "+ simline.get(index).Value.get()+ " "+ simline.get(index).point[0]);
+		
 		
 		// Do Gaussian Mask Fit
 		
