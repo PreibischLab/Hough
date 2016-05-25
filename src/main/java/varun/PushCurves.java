@@ -316,14 +316,13 @@ public class PushCurves {
 	}
 
 	public static void Drawexactline(RandomAccessibleInterval<FloatType> imgout, ArrayList<Simulatedline> listline,
-			Img<IntType> intimg, double slope, double intercept, int label, double cutoff) {
+			Img<IntType> intimg, double slope, double intercept, int label) {
 
 		int n = imgout.numDimensions();
 		final double[] realpos = new double[n];
 
 		double sigmasq, sigma = 0.5;
 		sigmasq = sigma * sigma;
-		sigma = Math.sqrt(sigmasq);
 		final Cursor<FloatType> inputcursor = Views.iterable(imgout).localizingCursor();
 
 		while (inputcursor.hasNext()) {
@@ -346,25 +345,104 @@ public class PushCurves {
 			ranac.setPosition(inputcursor);
 			int i = ranac.get().get();
 
-			if (intensity < cutoff)
-				intensity = 0;
+			
 
 			if (i == label) {
 
 				outbound.get().setReal(intensity);
 
 				final double[] position = new double[n];
-				if (outbound.get().get() > 0) {
 					outbound.localize(position);
 					final Simulatedline line = new Simulatedline(label, position, outbound.get());
 					listline.add(line);
 
-				}
 
 			}
 
 		}
 
+	}
+	
+	public static void DrawDetectedGaussian(RandomAccessibleInterval<FloatType> imgout, final double[] parameters){
+		
+	final int n = imgout.numDimensions();	
+	final double Amplitude = parameters[0];
+	final double Mean[] = new double[n];
+	final double Sigma[] = new double[n];
+	final double position[] = new double[n]; 
+	for (int d = 0; d < n; ++d) {
+		Mean[d] = parameters[d+1];
+	}
+	for (int d = 0; d < n; ++d) {
+		Sigma[d] = parameters[n + d + 1];
+	}
+	
+	Cursor<FloatType> cursor = Views.iterable(imgout).localizingCursor();
+	
+	
+	
+	while(cursor.hasNext()){
+		cursor.fwd();
+		cursor.localize(position);
+		double numerator = 0;
+		for (int d = 0; d < n; ++d) {
+		numerator += (position[d] - Mean[d]) * (position[d] - Mean[d]) * Sigma[d]; 
+		}
+		
+	cursor.get().setReal(Amplitude * Math.exp(-numerator));
+	
+	}
+		
+	}
+	public static void DrawDetectedGaussians(RandomAccessibleInterval<FloatType> imgout, final ArrayList<double[]> parameters){
+		
+		
+		final int n = imgout.numDimensions();
+		ArrayList<Double> Amplitudelist = new ArrayList<Double>();
+		ArrayList<double[]> Meanlist = new ArrayList<double[]>();
+		ArrayList<double[]> Sigmalist = new ArrayList<double[]>();
+		for (int index = 0; index < parameters.size(); ++index){
+			
+		final double Amplitude = parameters.get(index)[0];
+		final double Mean[] = new double[n];
+		final double Sigma[] = new double[n];
+		
+		for (int d = 0; d < n; ++d) {
+			Mean[d] = parameters.get(index)[d+1];
+		}
+		for (int d = 0; d < n; ++d) {
+			Sigma[d] = parameters.get(index)[n + d + 1];
+		}
+		
+		Amplitudelist.add(Amplitude);
+		
+		Meanlist.add(Mean);
+		
+		Sigmalist.add(Sigma);
+		
+		}
+		final double position[] = new double[n]; 
+		Cursor<FloatType> cursor = Views.iterable(imgout).localizingCursor();
+		
+		
+		
+		while(cursor.hasNext()){
+			cursor.fwd();
+			cursor.localize(position);
+			
+			double Intensity = 0;
+			for (int index = 0; index<Amplitudelist.size(); ++index){
+				double numerator = 0;
+			for (int d = 0; d < n; ++d) {
+			numerator += (position[d] - Meanlist.get(index)[d]) * (position[d] - Meanlist.get(index)[d]) * Sigmalist.get(index)[d]; 
+			}
+			
+		 Intensity +=  Amplitudelist.get(index) * Math.exp(-numerator);
+			}
+		    cursor.get().setReal(Intensity);
+		
+			
+		}
 	}
 
 }

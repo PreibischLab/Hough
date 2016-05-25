@@ -237,8 +237,7 @@ public class OverlayLines {
 			RandomAccessibleInterval<FloatType> imgout,
 			ArrayList<Simulatedline> totalsimline,
 			Img<IntType> intimg, 
-			ArrayList<Lineobjects> linelist,
-			double cutoff) {
+			ArrayList<Lineobjects> linelist) {
 
 		for (int index = 0; index < linelist.size(); ++index) {
 
@@ -250,7 +249,7 @@ public class OverlayLines {
 			double slope = -1.0 / Math.tan(Math.toRadians(theta));
 			double intercept = rho / Math.sin(Math.toRadians(theta));
 
-			PushCurves.Drawexactline(imgout,simline,intimg, slope, intercept, label, cutoff);
+			PushCurves.Drawexactline(imgout,simline,intimg, slope, intercept, label);
 			for (int simindex = 0; simindex< simline.size(); ++simindex)
 			totalsimline.add(simline.get(simindex));
 		}

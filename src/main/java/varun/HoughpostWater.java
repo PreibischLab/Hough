@@ -33,6 +33,7 @@ public class HoughpostWater {
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
 				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
         // small_mt.tif image to be used for testing
+		// 2015-01-14_Seeds-1.tiff for actual
 		new ImageJ();
 		
 		new Normalize();
@@ -68,9 +69,8 @@ public class HoughpostWater {
 		// Overlay detected lines on the image
 		ArrayList<Simulatedline> simline = new ArrayList<Simulatedline>();
 		
-		// cutoff for Gaussian Intensity model
-		final double cutoff = 1.0E-5;
-		OverlayLines.GetAlllines(imgout,simline,linepair.fst,linepair.snd, cutoff);
+		//  Model lines
+		OverlayLines.GetAlllines(imgout,simline,linepair.fst,linepair.snd);
 		
 		ImageJFunctions.show(imgout);
 		
@@ -81,11 +81,17 @@ public class HoughpostWater {
 		int firstlabel = simline.get(0).Label;
 		int lastlabel = simline.get(simline.size()-1).Label;
 		double[] initialparam = new double[2*ndims + 1];
+		RandomAccessibleInterval<FloatType> gaussimg= new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
+		ArrayList<double[]> gausslist = new ArrayList<double[]>();
 		for (int label = firstlabel; label<= lastlabel; ++label){
 		initialparam = LengthDetection.makeBestGuess(simline, ndims, label);
+		gausslist.add(initialparam);
+		
 		System.out.println("Amplitude: "+initialparam[0] +" "+ "Mean X: "+ initialparam[1]+" "+ "Mean Y: "+ initialparam[2] +" "+ 
 				"SigmaX: " + 1.0/Math.sqrt(initialparam[3]) + " "+ "SigmaY: "+ 1.0/Math.sqrt(initialparam[4]));
 		}
 		
+		PushCurves.DrawDetectedGaussians(gaussimg, gausslist);
+		ImageJFunctions.show(gaussimg);
 	}
 }
