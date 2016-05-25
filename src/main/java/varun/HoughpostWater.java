@@ -32,7 +32,7 @@ public class HoughpostWater {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
 				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
-
+        // small_mt.tif image to be used for testing
 		new ImageJ();
 		
 		new Normalize();
@@ -67,17 +67,25 @@ public class HoughpostWater {
 		
 		// Overlay detected lines on the image
 		ArrayList<Simulatedline> simline = new ArrayList<Simulatedline>();
+		
 		// cutoff for Gaussian Intensity model
 		final double cutoff = 1.0E-5;
 		OverlayLines.GetAlllines(imgout,simline,linepair.fst,linepair.snd, cutoff);
 		
 		ImageJFunctions.show(imgout);
 		
-		for (int index = 0; index < simline.size(); ++index)
-			System.out.println(simline.get(index).Label + " "+ simline.get(index).Value.get()+ " "+ simline.get(index).point[0]);
 		
 		
-		// Do Gaussian Mask Fit
+		// Do Gaussian Fit
+		final int ndims = biginputimg.numDimensions();
+		int firstlabel = simline.get(0).Label;
+		int lastlabel = simline.get(simline.size()-1).Label;
+		double[] initialparam = new double[2*ndims + 1];
+		for (int label = firstlabel; label<= lastlabel; ++label){
+		initialparam = LengthDetection.makeBestGuess(simline, ndims, label);
+		System.out.println("Amplitude: "+initialparam[0] +" "+ "Mean X: "+ initialparam[1]+" "+ "Mean Y: "+ initialparam[2] +" "+ 
+				"SigmaX: " + 1.0/Math.sqrt(initialparam[3]) + " "+ "SigmaY: "+ 1.0/Math.sqrt(initialparam[4]));
+		}
 		
 	}
 }
