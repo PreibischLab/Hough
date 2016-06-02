@@ -70,8 +70,8 @@ public class OverlayLines {
 		for (int index = 0; index < linelist.size(); ++index) {
 			rho = linelist.get(index).Rho;
 			theta = linelist.get(index).Theta;
-			minX = linelist.get(index).boxXmin;
-			maxX = linelist.get(index).boxXmax;
+			minX = linelist.get(index).boxmin[0];
+			maxX = linelist.get(index).boxmax[0];
 
 			Line newline = new Line(minX,
 					rho / Math.sin(Math.toRadians(theta)) - minX / Math.tan(Math.toRadians(theta)), maxX,
@@ -250,8 +250,31 @@ public class OverlayLines {
 			double intercept = rho / Math.sin(Math.toRadians(theta));
 
 			PushCurves.Drawexactline(imgout,simline,intimg, slope, intercept, label);
+			
+			
 			for (int simindex = 0; simindex< simline.size(); ++simindex)
 			totalsimline.add(simline.get(simindex));
+		}
+	}
+	public static void GetCurrentlines(
+			RandomAccessibleInterval<FloatType> imgout,
+			Img<IntType> intimg, 
+			ArrayList<Lineobjects> linelist,
+			int currentlabel) {
+
+		for (int index = 0; index < linelist.size(); ++index) {
+
+			final int label = linelist.get(index).Label;
+			final double rho = linelist.get(index).Rho;
+			final double theta = linelist.get(index).Theta;
+		
+		if (label == currentlabel){
+			ArrayList<Simulatedline> simline = new ArrayList<Simulatedline>();
+			double slope = -1.0 / Math.tan(Math.toRadians(theta));
+			double intercept = rho / Math.sin(Math.toRadians(theta));
+
+			PushCurves.Drawexactline(imgout,simline,intimg, slope, intercept, label);
+		}
 		}
 	}
 

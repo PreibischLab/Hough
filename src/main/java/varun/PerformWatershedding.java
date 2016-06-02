@@ -34,32 +34,29 @@ import net.imglib2.view.Views;
 
 @SuppressWarnings("deprecation")
 public class PerformWatershedding {
-
+    // Objects containing the label and the correspoing rho and theta information
 	public static final class Lineobjects {
 		final int Label;
 		final double Rho;
 		final double Theta;
-		final long boxXmin;
-		final long boxXmax;
-		final long boxYmin;
-		final long boxYmax;
+		final long [] boxmin;
+		final long [] boxmax;
+		
 		
 
 		protected Lineobjects(
 				final int Label,
 				final double Rho, 
 				final double Theta, 
-				final long boxXmin, 
-				final long boxXmax, 
-				final long boxYmin, 
-				final long boxYmax) {
+				final long [] boxmin, 
+				final long [] boxmax
+				) {
 			this.Label = Label;
 			this.Rho = Rho;
 			this.Theta = Theta;
-			this.boxXmin = boxXmin;
-			this.boxXmax = boxXmax;
-			this.boxYmin = boxYmin;
-			this.boxYmax = boxYmax;
+			this.boxmin = boxmin;
+			this.boxmax = boxmax;
+			
 			
 		}
 	}
@@ -107,7 +104,7 @@ public class PerformWatershedding {
 		
 		// Declare minimum length of the line(in pixels) to be detected
 		double minlength = 0;
-		for (int label = 1; label < Maxlabel - 1; label++) {
+		for (int label = 1; label < Maxlabel-1; label++) {
 
 			System.out.println("Label Number:" +label);
 			
@@ -166,7 +163,7 @@ public class PerformWatershedding {
 			points = OverlayLines.GetRhoTheta( ReducedMinlist, sizes, min, max, minlength);
 			 
 			// This object has rho, theta, min and max dimensions of the watershedded image along x 	
-			final Lineobjects line = new Lineobjects(label, points[1], points[0], minCorner[0], maxCorner[0], minCorner[1], maxCorner[1]);
+			final Lineobjects line = new Lineobjects(label, points[1], points[0], minCorner, maxCorner);
 
 			linelist.add(line);
 			
@@ -274,7 +271,7 @@ public class PerformWatershedding {
 			points = OverlayLines.GetRhoTheta( ReducedMinlist, sizes, min, max, minlength);
 			 
 			// This object has rho, theta, min and max dimensions of the watershedded image along x 	
-			final Lineobjects line = new Lineobjects(label, points[1], points[0], minCorner[0], maxCorner[0], minCorner[1], maxCorner[1]);
+			final Lineobjects line = new Lineobjects(label, points[1], points[0], minCorner, maxCorner);
 
 			linelist.add(line);
 			
