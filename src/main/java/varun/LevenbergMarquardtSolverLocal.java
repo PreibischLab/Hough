@@ -4,7 +4,12 @@ public class LevenbergMarquardtSolverLocal {
 	/**
 	 * Calculate the current sum-squared-error
 	 */
-	public static final double chiSquared(final double[][] x, final double[] a, final double[] y, final FitFunction f)  {
+	public static final double chiSquared(
+			final double[][] x, 
+			final double[] a, 
+			final double[] y, 
+			final MicroTubuleFitfunction f)  {
+		
 		int npts = y.length;
 		double sum = 0.;
 
@@ -31,8 +36,14 @@ public class LevenbergMarquardtSolverLocal {
 	 *
 	 * @return the number of iteration used by minimization
 	 */
-	public static final int solve(double[][] x, double[] a, double[] y, FitFunction f,
-			double lambda, double termepsilon, int maxiter) throws Exception  {
+	public static final int solve(
+			double[][] x, 
+			double[] a, 
+			double[] y, 
+			MicroTubuleFitfunction f,
+			double lambda, 
+			double termepsilon, 
+			int maxiter) throws Exception  {
 		int npts = y.length;
 		int nparm = a.length;
 	

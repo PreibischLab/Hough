@@ -94,9 +94,12 @@ public class PushCurves {
 
 			// General Stopping criteria of moving along a curve, when we hit a
 			// boundary
-			if (newpos[0] >= max[0] || newpos[0] <= min[0] || newpos[1] >= max[1] || newpos[1] <= min[1])
-
-				break;
+                for (int i = 0; i < n; i++) {
+				
+				if (newpos[i] <= min[i] || newpos[i] >= max[i]) 
+				
+					break;
+				}
 
 		}
 	}
@@ -152,10 +155,12 @@ public class PushCurves {
 			newpos[1] = amplitude * Math.sin(Math.toRadians(newpos[0] + phase));
 			// General Stopping criteria of moving along a curve, when we hit a
 			// boundary
-			if (newpos[0] >= max[0] || newpos[0] <= min[0] || newpos[1] >= max[1] || newpos[1] <= min[1])
-
-				break;
-
+               for (int i = 0; i < n; i++) {
+				
+				if (newpos[i] <= min[i] || newpos[i] >= max[i]) 
+				
+					break;
+				}
 		}
 
 	}
@@ -210,9 +215,16 @@ public class PushCurves {
 			newpos[1] = slope * newpos[0] + intercept;
 			// General Stopping criteria of moving along a curve, when we hit a
 			// boundary
-			if (newpos[0] >= max[0] || newpos[0] <= min[0] || newpos[1] >= max[1] || newpos[1] <= min[1])
-
-				break;
+			
+			for (int i = 0; i < n; i++) {
+				
+				if (newpos[i] <= min[i] || newpos[i] >= max[i]) 
+				
+					break;
+				}
+				
+				
+			
 
 		}
 
@@ -319,7 +331,7 @@ public class PushCurves {
 	// This method returns the list of centroids of the HT-detected line with amplitude set to one.
 	public static void MakeHTguess(
 			RandomAccessibleInterval<FloatType> imgout, 
-			ArrayList<Simulatedline> guessline,
+			ArrayList<Labelparam> guessline,
 			Img<IntType> intimg, 
 			double slope, 
 			double intercept, 
@@ -328,6 +340,7 @@ public class PushCurves {
 		final int n = imgout.numDimensions();
 		final double[] position = new double[n];
 		final double[] newpos = new double[n];
+		
          final Cursor<FloatType> imgcursor = Views.iterable(imgout).localizingCursor();
          while(imgcursor.hasNext()){
         	 imgcursor.hasNext();
@@ -342,8 +355,8 @@ public class PushCurves {
  				newpos[0] = position[0];
  				newpos[1] = position[0]*slope + intercept;
  				final FloatType val = new FloatType(1);
- 				final Simulatedline line = new Simulatedline(label, newpos, val);
-				guessline.add(line);
+ 				final Labelparam lineparams = new Labelparam(label, newpos, val, slope);
+				guessline.add(lineparams);
 
  			}
         	 
