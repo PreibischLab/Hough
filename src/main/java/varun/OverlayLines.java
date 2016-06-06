@@ -29,6 +29,7 @@ import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import varun.GetLocalmaxmin.IntensityType;
+import varun.LengthDetection.Labelparam;
 import varun.PerformWatershedding.Lineobjects;
 
 public class OverlayLines {
@@ -236,6 +237,7 @@ public class OverlayLines {
 	public static void GetAlllines(
 			RandomAccessibleInterval<FloatType> imgout,
 			ArrayList<Simulatedline> totalsimline,
+			ArrayList<Labelparam> totalparam,
 			Img<IntType> intimg, 
 			ArrayList<Lineobjects> linelist) {
 
@@ -246,14 +248,20 @@ public class OverlayLines {
 			final double theta = linelist.get(index).Theta;
 			
 			ArrayList<Simulatedline> simline = new ArrayList<Simulatedline>();
+
+			ArrayList<Labelparam> params = new ArrayList<Labelparam>();
+			
 			double slope = -1.0 / Math.tan(Math.toRadians(theta));
 			double intercept = rho / Math.sin(Math.toRadians(theta));
 
-			PushCurves.Drawexactline(imgout,simline,intimg, slope, intercept, label);
+			PushCurves.Drawexactline(imgout,simline,params,intimg, slope, intercept, label);
 			
 			
 			for (int simindex = 0; simindex< simline.size(); ++simindex)
 			totalsimline.add(simline.get(simindex));
+			
+			for (int paramindex = 0; paramindex < params.size(); ++paramindex)
+				totalparam.add(params.get(paramindex));
 		}
 	}
 	public static void GetCurrentlines(
@@ -270,10 +278,11 @@ public class OverlayLines {
 		
 		if (label == currentlabel){
 			ArrayList<Simulatedline> simline = new ArrayList<Simulatedline>();
+			ArrayList<Labelparam> params = new ArrayList<Labelparam>();
 			double slope = -1.0 / Math.tan(Math.toRadians(theta));
 			double intercept = rho / Math.sin(Math.toRadians(theta));
 
-			PushCurves.Drawexactline(imgout,simline,intimg, slope, intercept, label);
+			PushCurves.Drawexactline(imgout,simline,params,intimg, slope,intercept, label);
 		}
 		}
 	}

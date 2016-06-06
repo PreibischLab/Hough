@@ -858,8 +858,7 @@ public class Tree {
 		
 		 final double[] sigma = {1,1};
 		 
-		tmpimgout=GetLocalmaxmin.FindandDisplayLocalMaxima(imgout,
-				new ArrayImgFactory<FloatType>(), IntensityType.Gaussian,sigma);
+		tmpimgout=GetLocalmaxmin.FindandDisplayLocalMaxima(imgout,IntensityType.Gaussian,sigma);
 	
 		Normalize.normalize(Views.iterable(tmpimgout), minval, maxval);
 		

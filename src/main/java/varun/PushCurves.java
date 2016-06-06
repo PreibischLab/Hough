@@ -94,13 +94,9 @@ public class PushCurves {
 
 			// General Stopping criteria of moving along a curve, when we hit a
 			// boundary
-                for (int i = 0; i < n; i++) {
-				
-				if (newpos[i] <= min[i] || newpos[i] >= max[i]) 
-				
-					break;
-				}
+			if (newpos[0] >= max[0] || newpos[0] <= min[0] || newpos[1] >= max[1] || newpos[1] <= min[1])
 
+				break;
 		}
 	}
 
@@ -155,12 +151,9 @@ public class PushCurves {
 			newpos[1] = amplitude * Math.sin(Math.toRadians(newpos[0] + phase));
 			// General Stopping criteria of moving along a curve, when we hit a
 			// boundary
-               for (int i = 0; i < n; i++) {
-				
-				if (newpos[i] <= min[i] || newpos[i] >= max[i]) 
-				
-					break;
-				}
+			if (newpos[0] >= max[0] || newpos[0] <= min[0] || newpos[1] >= max[1] || newpos[1] <= min[1])
+
+				break;
 		}
 
 	}
@@ -215,16 +208,10 @@ public class PushCurves {
 			newpos[1] = slope * newpos[0] + intercept;
 			// General Stopping criteria of moving along a curve, when we hit a
 			// boundary
-			
-			for (int i = 0; i < n; i++) {
-				
-				if (newpos[i] <= min[i] || newpos[i] >= max[i]) 
-				
-					break;
-				}
-				
-				
-			
+
+			if (newpos[0] >= max[0] || newpos[0] <= min[0] || newpos[1] >= max[1] || newpos[1] <= min[1])
+
+				break;
 
 		}
 
@@ -328,57 +315,111 @@ public class PushCurves {
 		}
 	}
 
-	// This method returns the list of centroids of the HT-detected line with amplitude set to one.
-	public static void MakeHTguess(
-			RandomAccessibleInterval<FloatType> imgout, 
-			ArrayList<Labelparam> guessline,
-			Img<IntType> intimg, 
-			double slope, 
-			double intercept, 
-			int label){
-		
+	// This method returns the list of centroids of the HT-detected line with
+	// amplitude set to one.
+	public static void MakeHTguess(RandomAccessibleInterval<FloatType> imgout, ArrayList<Labelparam> guessline,
+			Img<IntType> intimg, double slope, double intercept, int label) {
+
 		final int n = imgout.numDimensions();
 		final double[] position = new double[n];
-		final double[] newpos = new double[n];
-		
-         final Cursor<FloatType> imgcursor = Views.iterable(imgout).localizingCursor();
-         while(imgcursor.hasNext()){
-        	 imgcursor.hasNext();
-        	 
-        	 RandomAccess<IntType> ranac = intimg.randomAccess();
- 			ranac.setPosition(imgcursor);
- 			int i = ranac.get().get();
- 			
- 			
- 			if (i == label) {
- 				ranac.localize(position);
- 				newpos[0] = position[0];
- 				newpos[1] = position[0]*slope + intercept;
- 				final FloatType val = new FloatType(1);
- 				final Labelparam lineparams = new Labelparam(label, newpos, val, slope);
-				guessline.add(lineparams);
+		double[] newpos = new double[n];
 
- 			}
-        	 
-        	 
-         }
+		final Cursor<FloatType> imgcursor = Views.iterable(imgout).localizingCursor();
+		while (imgcursor.hasNext()) {
+			imgcursor.fwd();
+
+			RandomAccess<IntType> ranac = intimg.randomAccess();
+			ranac.setPosition(imgcursor);
+			int i = ranac.get().get();
+
+			if (i == label) {
+				ranac.localize(position);
+				if (Math.abs(position[1] - position[0] * slope - intercept) < 1) {
+					newpos = position;
+					final FloatType val = new FloatType(1);
+					final Labelparam lineparams = new Labelparam(label, newpos, val, slope, intercept);
+					guessline.add(lineparams);
+				}
+
+			}
+		}
+
+	}
+
+	// Make a guess with rho and theta
+	// @ Deprecated, prefer getting the Local Maxima first, the centroids for
+	// the Gaussians are their positions
+	public static void MakeHTguess(RandomAccessibleInterval<FloatType> imgout, ArrayList<Labelparam> guessline,
+			Img<IntType> intimg, ArrayList<Lineobjects> linelist) {
+		for (int index = 0; index < linelist.size(); ++index) {
+
+			final int label = linelist.get(index).Label;
+			final double rho = linelist.get(index).Rho;
+			final double theta = linelist.get(index).Theta;
+
+			double slope = -1.0 / Math.tan(Math.toRadians(theta));
+			double intercept = rho / Math.sin(Math.toRadians(theta));
+
+			final int n = imgout.numDimensions();
+
+			final Cursor<FloatType> imgcursor = Views.iterable(imgout).localizingCursor();
+			while (imgcursor.hasNext()) {
+				imgcursor.fwd();
+
+				RandomAccess<IntType> ranac = intimg.randomAccess();
+				ranac.setPosition(imgcursor);
+				int i = ranac.get().get();
+				final double[] position = new double[n];
+				if (i == label) {
+					ranac.localize(position);
+
+					if (Math.abs(position[1] - position[0] * slope - intercept) < 1) {
+						final FloatType val = new FloatType(1);
+						final Labelparam lineparams = new Labelparam(label, position, val, slope, intercept);
+						guessline.add(lineparams);
+
+					}
+
+				}
+			}
+		}
+
+	}
+	
+	// Compute the local maxima of your model image of the detected lines
+	// all the points in that image with value > 0 are the guess centroids
+	public static void MakeHTguess(
+			RandomAccessibleInterval<FloatType> Modelimg, 
+			PointSampleList<FloatType> centroidlist ){
+		
+		Cursor<FloatType> modelcursor = Views.iterable(Modelimg).localizingCursor();
+		
+		while(modelcursor.hasNext()){
+			modelcursor.fwd();
+			final FloatType val = new FloatType(0);
+			if (modelcursor.get().compareTo(val) > 0){
+				
+				Point centroid = new Point(modelcursor);
+				
+				centroidlist.add(centroid, modelcursor.get().copy());
+				
+				
+			}
+			
+			
+			
+		}
 		
 		
 		
 	}
-	
-	
-	
-	public static void Drawexactline(RandomAccessibleInterval<FloatType> imgout,
-			ArrayList<Simulatedline> listline,
-			Img<IntType> intimg, 
-			double slope, 
-			double intercept, 
-			int label) {
+
+	public static void Drawexactline(RandomAccessibleInterval<FloatType> imgout, ArrayList<Simulatedline> listline,
+			ArrayList<Labelparam> totalparam, Img<IntType> intimg, double slope, double intercept, int label) {
 
 		int n = imgout.numDimensions();
 		final double[] realpos = new double[n];
-
+		double[] newpos = new double[n];
 		double sigmasq, sigma = 0.5;
 		sigmasq = sigma * sigma;
 		final Cursor<FloatType> inputcursor = Views.iterable(imgout).localizingCursor();
@@ -403,112 +444,112 @@ public class PushCurves {
 			ranac.setPosition(inputcursor);
 			int i = ranac.get().get();
 
-			
-
 			if (i == label) {
 
 				outbound.get().setReal(intensity);
 
 				final double[] position = new double[n];
-					outbound.localize(position);
+				outbound.localize(position);
+
+				if (Math.abs(position[1] - position[0] * slope - intercept) < 1) {
+					final FloatType val = new FloatType(1);
+					final Labelparam lineparams = new Labelparam(label, position, outbound.get(), slope, intercept);
+					totalparam.add(lineparams);
+
 					final Simulatedline line = new Simulatedline(label, position, outbound.get());
 					listline.add(line);
-
+				}
 
 			}
 
 		}
 
 	}
-	
-	public static void DrawDetectedGaussian(RandomAccessibleInterval<FloatType> imgout, final double[] parameters, double slope){
-		
-	final int n = imgout.numDimensions();	
-	final double Amplitude = parameters[0];
-	final double Mean[] = new double[n];
-	final double Sigma[] = new double[n];
-	final double position[] = new double[n]; 
-	for (int d = 0; d < n; ++d) {
-		Mean[d] = parameters[d+1];
+
+	public static void DrawDetectedGaussian(RandomAccessibleInterval<FloatType> imgout, final double[] parameters,
+			double slope) {
+
+		final int n = imgout.numDimensions();
+		final double Amplitude = parameters[0];
+		final double Mean[] = new double[n];
+		final double Sigma[] = new double[n];
+		final double position[] = new double[n];
+		for (int d = 0; d < n; ++d) {
+			Mean[d] = parameters[d + 1];
+		}
+		for (int d = 0; d < n; ++d) {
+			Sigma[d] = parameters[n + d + 1];
+		}
+
+		Cursor<FloatType> cursor = Views.iterable(imgout).localizingCursor();
+
+		while (cursor.hasNext()) {
+			cursor.fwd();
+			cursor.localize(position);
+			double numerator = 0;
+			final double sintheta = slope / Math.sqrt(1 + slope * slope);
+			final double costheta = 1.0 / Math.sqrt(1 + slope * slope);
+			double xprime = (position[0] - Mean[0]) * costheta + (position[1] - Mean[1]) * sintheta;
+			double yprime = (position[0] - Mean[0]) * sintheta - (position[1] - Mean[1]) * costheta;
+			numerator = xprime * xprime * Sigma[0] + yprime * yprime * Sigma[1];
+			// for (int d = 0; d < n; ++d) {
+			// numerator += (position[d] - Mean[d]) * (position[d] - Mean[d]) *
+			// Sigma[d];
+			// }
+
+			cursor.get().setReal(Amplitude * Math.exp(-numerator));
+
+		}
+
 	}
-	for (int d = 0; d < n; ++d) {
-		Sigma[d] = parameters[n + d + 1];
+
+	public static void DrawDetectedGaussians(RandomAccessibleInterval<FloatType> imgout,
+			final ArrayList<double[]> parameters) {
+
+		final int n = imgout.numDimensions();
+		ArrayList<Double> Amplitudelist = new ArrayList<Double>();
+		ArrayList<double[]> Meanlist = new ArrayList<double[]>();
+		ArrayList<double[]> Sigmalist = new ArrayList<double[]>();
+		for (int index = 0; index < parameters.size(); ++index) {
+
+			final double Amplitude = parameters.get(index)[0];
+			final double Mean[] = new double[n];
+			final double Sigma[] = new double[n];
+
+			for (int d = 0; d < n; ++d) {
+				Mean[d] = parameters.get(index)[d + 1];
+			}
+			for (int d = 0; d < n; ++d) {
+				Sigma[d] = parameters.get(index)[n + d + 1];
+			}
+
+			Amplitudelist.add(Amplitude);
+
+			Meanlist.add(Mean);
+
+			Sigmalist.add(Sigma);
+
+		}
+		final double position[] = new double[n];
+		Cursor<FloatType> cursor = Views.iterable(imgout).localizingCursor();
+
+		while (cursor.hasNext()) {
+			cursor.fwd();
+			cursor.localize(position);
+
+			double Intensity = 0;
+			for (int index = 0; index < Amplitudelist.size(); ++index) {
+				double numerator = 0;
+				for (int d = 0; d < n; ++d) {
+					numerator += (position[d] - Meanlist.get(index)[d]) * (position[d] - Meanlist.get(index)[d])
+							* Sigmalist.get(index)[d];
+				}
+
+				Intensity += Amplitudelist.get(index) * Math.exp(-numerator);
+			}
+			cursor.get().setReal(Intensity);
+
+		}
 	}
-	
-	Cursor<FloatType> cursor = Views.iterable(imgout).localizingCursor();
-	
-	
-	
-	while(cursor.hasNext()){
-		cursor.fwd();
-		cursor.localize(position);
-		double numerator = 0;
-		final double sintheta = slope / Math.sqrt(1+slope*slope);
-		final double costheta = 1.0 / Math.sqrt(1+slope*slope);
-		double xprime = (position[0] - Mean[0])*costheta + (position[1] - Mean[1])*sintheta;
-		double yprime = (position[0] - Mean[0])*sintheta - (position[1] - Mean[1])*costheta;
-		numerator= xprime*xprime*Sigma[0] + yprime*yprime*Sigma[1];
-	//	for (int d = 0; d < n; ++d) {
-	//	numerator += (position[d] - Mean[d]) * (position[d] - Mean[d]) * Sigma[d]; 
-	//	}
-		
-	cursor.get().setReal(Amplitude * Math.exp(-numerator));
-	
-	}
-		
-	}
-	public static void DrawDetectedGaussians(RandomAccessibleInterval<FloatType> imgout, final ArrayList<double[]> parameters){
-		 		
-		 		
-		 		final int n = imgout.numDimensions();
-		 		ArrayList<Double> Amplitudelist = new ArrayList<Double>();
-		 		ArrayList<double[]> Meanlist = new ArrayList<double[]>();
-		 		ArrayList<double[]> Sigmalist = new ArrayList<double[]>();
-		 		for (int index = 0; index < parameters.size(); ++index){
-		 			
-		 		final double Amplitude = parameters.get(index)[0];
-		 		final double Mean[] = new double[n];
-		 		final double Sigma[] = new double[n];
-		 		
-		 		for (int d = 0; d < n; ++d) {
-		 			Mean[d] = parameters.get(index)[d+1];
-		 		}
-		 		for (int d = 0; d < n; ++d) {
-		 			Sigma[d] = parameters.get(index)[n + d + 1];
-		 		}
-		 		
-		 		Amplitudelist.add(Amplitude);
-		 		
-		 		Meanlist.add(Mean);
-		 		
-				Sigmalist.add(Sigma);
-		 		
-		 		}
-		 		final double position[] = new double[n]; 
-		 		Cursor<FloatType> cursor = Views.iterable(imgout).localizingCursor();
-		 		
-		 		
-		 		
-		 		while(cursor.hasNext()){
-		 			cursor.fwd();
-		 			cursor.localize(position);
-		 			
-		 			double Intensity = 0;
-		 			for (int index = 0; index<Amplitudelist.size(); ++index){
-		 				double numerator = 0;
-		 			for (int d = 0; d < n; ++d) {
-					numerator += (position[d] - Meanlist.get(index)[d]) * (position[d] - Meanlist.get(index)[d]) * Sigmalist.get(index)[d]; 
-		 			}
-		 			
-		 		 Intensity +=  Amplitudelist.get(index) * Math.exp(-numerator);
-		 			}
-		 		    cursor.get().setReal(Intensity);
-		 		
-		 			
-		 		}
-		 	}
-	
-	
-	
 
 }

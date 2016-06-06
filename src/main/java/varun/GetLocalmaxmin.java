@@ -41,6 +41,7 @@ import net.imglib2.PointSampleList;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.type.logic.BitType;
+import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.RealSum;
@@ -137,10 +138,10 @@ public class GetLocalmaxmin {
 	// Finds and displays Local Maxima by constructing a 3*3*3.. local
 	// neighbourhood
 	public static RandomAccessibleInterval<FloatType> FindandDisplayLocalMaxima(RandomAccessibleInterval<FloatType> img,
-			ImgFactory<FloatType> imageFactory, final IntensityType setintensity, double[] sigma) {
+			final IntensityType setintensity, double[] sigma) {
 
 		// Create a new image for the output
-		RandomAccessibleInterval<FloatType> output = imageFactory.create(img, new FloatType());
+		RandomAccessibleInterval<FloatType> output = new ArrayImgFactory<FloatType>().create(img, new FloatType());
 
 		// define an interval that is span number of pixel smaller on each side
 		// in each dimension
