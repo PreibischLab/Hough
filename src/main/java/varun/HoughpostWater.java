@@ -34,7 +34,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/mt_experiment.tif"));
+				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
 		// small_mt.tif image to be used for testing
 		// 2015-01-14_Seeds-1.tiff for actual
 		// mt_experiment.tif for big testing
@@ -62,8 +62,8 @@ public class HoughpostWater {
 				new FloatType());
 		
 		// Preprocess image
-		inputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter);
-		// inputimg = Kernels.Preprocess(tmpinputimg, ProcessingType.NaiveEdge);
+		//inputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter);
+		 inputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter);
 
 		ImageJFunctions.show(inputimg).setTitle("Preprocessed image");
 
@@ -90,10 +90,12 @@ public class HoughpostWater {
 		// Do Gaussian Fit
 		final int ndims = biginputimg.numDimensions();
 		 double[] final_param= new double[2*ndims+1];
+		 final double [] point_spread_sigma = new double[ndims];
+		 // Input the psf-sigma here to be used as a replacment for very large sigma in the solver
+		 for (int d = 0; d < ndims; ++d)
+			 point_spread_sigma[d] = 2;
 		 ArrayList<double[]> totalgausslist = new ArrayList<double[]>();
-		 double[] psf = new double[ndims];
-			for (int d = 0; d < ndims; ++d)
-				psf[d] = 5;
+		 
 			
 			
 	
@@ -102,30 +104,19 @@ public class HoughpostWater {
 		 Cursor<FloatType> listcursor = centroidlist.localizingCursor();
 		 while(listcursor.hasNext()){
 			 listcursor.fwd();
-			 final_param = MTlength.Getfinalparam(psf, listcursor, listcursor.get().get());
+			 final_param = MTlength.Getfinalparam(listcursor, listcursor.get().get(), point_spread_sigma);
+			 
+			 if (final_param[3] > 0  && final_param[4]>0 ){
 			 totalgausslist.add(final_param);
 			 
+			 System.out.println( " Amplitude: " + final_param[0] + " " + "Mean X: "
+						+ final_param[1] + " " + "Mean Y: " + final_param[2] + " " + "1/SigmaX^2: "
+						+ final_param[3] + " " + "1/SigmaY^2: "
+						+ final_param[4]);
+			 }
 		 }
 		 
-		 for (int index = 0; index < totalgausslist.size(); ++index){
-			 
-			 if (totalgausslist.get(index)[3]<=0 || totalgausslist.get(index)[4]<=0)
-				 totalgausslist.remove(index);
-			 
-
-			 if (totalgausslist.get(index)[0]<=0)
-				 totalgausslist.remove(index);
-			
-		 }
-		 for (int index = 0; index < totalgausslist.size(); ++index){
-				
-		 
-		 System.out.println( " Amplitude: " + totalgausslist.get(index)[0] + " " + "Mean X: "
-					+ totalgausslist.get(index)[1] + " " + "Mean Y: " + totalgausslist.get(index)[2] + " " + "SigmaX: "
-					+ 1.0 / Math.sqrt(totalgausslist.get(index)[3]) + " " + "SigmaY: "
-					+ 1.0 / Math.sqrt(totalgausslist.get(index)[4]));
-		 
-		 }
+		
 			 
 		 PushCurves.DrawDetectedGaussians(gaussimg, totalgausslist);	
 			ImageJFunctions.show(gaussimg).setTitle("Iterated Result");

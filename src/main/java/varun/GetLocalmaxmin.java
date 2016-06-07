@@ -210,10 +210,10 @@ public class GetLocalmaxmin {
 	// Finds and displays Local Minima by constructing a 3*3*3.. local
 	// neighbourhood
 	public static RandomAccessibleInterval<FloatType> FindandDisplayLocalMinima(RandomAccessibleInterval<FloatType> img,
-			ImgFactory<FloatType> imageFactory, final IntensityType setintensity, double[] sigma) {
+			 final IntensityType setintensity, double[] sigma) {
 
 		// Create a new image for the output
-		Img<FloatType> output = imageFactory.create(img, new FloatType());
+		Img<FloatType> output = new ArrayImgFactory<FloatType>().create(img, new FloatType());
 
 		// define an interval that is span number of pixel smaller on each side
 		// in each dimension

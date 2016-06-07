@@ -80,7 +80,7 @@ public class LengthDetection {
 	 * 
 	 */
 
-	public double[] makeBestGuess(final double[] psf, final Localizable point, final Float Value, final double[][] X, final double[] I) {
+	public double[] makeBestGuess(final Localizable point, final Float Value, final double[][] X, final double[] I) {
 		double[] start_param = new double[2 * ndims + 1];
 
 		
@@ -98,7 +98,7 @@ public class LengthDetection {
 
 		}
 
-		start_param[0] = Value;
+		start_param[0] = max_I;
 		
 		for (int j = 0; j < ndims; j++) {
 			double C = 0;
@@ -119,7 +119,7 @@ public class LengthDetection {
 	// Get final parameters for the Gaussian fit along the line, input the
 	// centroid position and value where the Gaussian has to be fitted
 	// in the image
-	public double[] Getfinalparam(final double[] psf, final Localizable point, final Float Value) throws Exception {
+	public double[] Getfinalparam(final Localizable point, final Float Value, final double[] typical_sigma) throws Exception {
 
 		
 
@@ -130,7 +130,7 @@ public class LengthDetection {
 		int label = ranac.get().get();
 		
 		
-		final PointSampleList<FloatType> datalist = gatherData(point, label);
+		 PointSampleList<FloatType> datalist = gatherData(point, label);
 		
 		
 		
@@ -153,17 +153,28 @@ public class LengthDetection {
 			index++;
 		}
 
-		final double[] start_param = makeBestGuess(psf, point, Value,X,I);
-
+		final double[] start_param = makeBestGuess( point, Value,X,I);
+		// Correct for too large sigmas: we drop estimate and replace it by user input
+				for (int j = 0; j < ndims; j++) {
+					if ( start_param [ j + ndims + 1 ] <  1 / ( typical_sigma[j] * typical_sigma[j] ) ) {
+						start_param [ j + ndims + 1 ] = 1 / ( typical_sigma[j] * typical_sigma[j] );
+					}
+				}
 		final double[] finalparam = start_param.clone();
 		int maxiter = 400;
-		double lambda = 1e-3;
-		double termepsilon = 1e-3;
+		double lambda = 0.0001;
+		double termepsilon = 0.01;
 
 	
 			LevenbergMarquardtSolverLocal.solve(X, finalparam, I, new GaussianMultiDLM(), lambda, termepsilon,
 					maxiter);
-		
+			// NaN protection: we prefer returning the crude estimate that NaN
+			for (int j = 0; j < finalparam.length; j++) {
+				if (Double.isNaN(finalparam[j]))
+					finalparam[j] = start_param[j];
+			}
+			
+			
 
 		return finalparam;
 
@@ -171,12 +182,12 @@ public class LengthDetection {
 
 	
 	private PointSampleList<FloatType> gatherData(final Localizable point, final int label){
+		
 		final PointSampleList<FloatType> datalist = new PointSampleList<FloatType>(ndims);
 		
 		Cursor<IntType> intcursor = Views.iterable(intimg).localizingCursor();
 		RandomAccess<FloatType> ranac = inputimg.randomAccess();
 		
-	final Float val =	GlobalThresholding.AutomaticThresholding(inputimg);
 		while(intcursor.hasNext()){
 			intcursor.fwd();
 			int i = intcursor.get().get();
@@ -185,7 +196,6 @@ public class LengthDetection {
 				ranac.setPosition(newpoint);
 				datalist.add(newpoint, ranac.get().copy());
 			}
-			
 		}
 		
 		return datalist;

@@ -289,11 +289,12 @@ public class PushCurves {
 			distance = linefunction.Linefunctiondist();
 
 			outbound.setPosition(inputcursor);
-
+			if (distance < sigma)
 			intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
+			else
+			intensity = 0;	
 
-			if (intensity < 1.0E-2)
-				intensity = 0;
+			
 
 			switch (setintensity) {
 			case Original:
@@ -315,76 +316,7 @@ public class PushCurves {
 		}
 	}
 
-	// This method returns the list of centroids of the HT-detected line with
-	// amplitude set to one.
-	public static void MakeHTguess(RandomAccessibleInterval<FloatType> imgout, ArrayList<Labelparam> guessline,
-			Img<IntType> intimg, double slope, double intercept, int label) {
-
-		final int n = imgout.numDimensions();
-		final double[] position = new double[n];
-		double[] newpos = new double[n];
-
-		final Cursor<FloatType> imgcursor = Views.iterable(imgout).localizingCursor();
-		while (imgcursor.hasNext()) {
-			imgcursor.fwd();
-
-			RandomAccess<IntType> ranac = intimg.randomAccess();
-			ranac.setPosition(imgcursor);
-			int i = ranac.get().get();
-
-			if (i == label) {
-				ranac.localize(position);
-				if (Math.abs(position[1] - position[0] * slope - intercept) < 1) {
-					newpos = position;
-					final FloatType val = new FloatType(1);
-					final Labelparam lineparams = new Labelparam(label, newpos, val, slope, intercept);
-					guessline.add(lineparams);
-				}
-
-			}
-		}
-
-	}
-
-	// Make a guess with rho and theta
-	// @ Deprecated, prefer getting the Local Maxima first, the centroids for
-	// the Gaussians are their positions
-	public static void MakeHTguess(RandomAccessibleInterval<FloatType> imgout, ArrayList<Labelparam> guessline,
-			Img<IntType> intimg, ArrayList<Lineobjects> linelist) {
-		for (int index = 0; index < linelist.size(); ++index) {
-
-			final int label = linelist.get(index).Label;
-			final double rho = linelist.get(index).Rho;
-			final double theta = linelist.get(index).Theta;
-
-			double slope = -1.0 / Math.tan(Math.toRadians(theta));
-			double intercept = rho / Math.sin(Math.toRadians(theta));
-
-			final int n = imgout.numDimensions();
-
-			final Cursor<FloatType> imgcursor = Views.iterable(imgout).localizingCursor();
-			while (imgcursor.hasNext()) {
-				imgcursor.fwd();
-
-				RandomAccess<IntType> ranac = intimg.randomAccess();
-				ranac.setPosition(imgcursor);
-				int i = ranac.get().get();
-				final double[] position = new double[n];
-				if (i == label) {
-					ranac.localize(position);
-
-					if (Math.abs(position[1] - position[0] * slope - intercept) < 1) {
-						final FloatType val = new FloatType(1);
-						final Labelparam lineparams = new Labelparam(label, position, val, slope, intercept);
-						guessline.add(lineparams);
-
-					}
-
-				}
-			}
-		}
-
-	}
+	
 	
 	// Compute the local maxima of your model image of the detected lines
 	// all the points in that image with value > 0 are the guess centroids
@@ -441,8 +373,11 @@ public class PushCurves {
 			final RandomAccess<FloatType> outbound = imgout.randomAccess();
 			outbound.setPosition(inputcursor);
 
+			if (distance < sigma)
 			intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
-
+			else
+			intensity = 0;	
+			
 			RandomAccess<IntType> ranac = intimg.randomAccess();
 			ranac.setPosition(inputcursor);
 			int i = ranac.get().get();
