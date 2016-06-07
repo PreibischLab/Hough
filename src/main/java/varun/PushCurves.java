@@ -414,12 +414,15 @@ public class PushCurves {
 		
 	}
 
-	public static void Drawexactline(RandomAccessibleInterval<FloatType> imgout, ArrayList<Simulatedline> listline,
-			ArrayList<Labelparam> totalparam, Img<IntType> intimg, double slope, double intercept, int label) {
+	public static void Drawexactline(
+			RandomAccessibleInterval<FloatType> imgout,
+			Img<IntType> intimg, 
+			double slope, 
+			double intercept, 
+			int label) {
 
 		int n = imgout.numDimensions();
 		final double[] realpos = new double[n];
-		double[] newpos = new double[n];
 		double sigmasq, sigma = 0.5;
 		sigmasq = sigma * sigma;
 		final Cursor<FloatType> inputcursor = Views.iterable(imgout).localizingCursor();
@@ -451,18 +454,12 @@ public class PushCurves {
 				final double[] position = new double[n];
 				outbound.localize(position);
 
-				if (Math.abs(position[1] - position[0] * slope - intercept) < 1) {
-					final FloatType val = new FloatType(1);
-					final Labelparam lineparams = new Labelparam(label, position, outbound.get(), slope, intercept);
-					totalparam.add(lineparams);
-
-					final Simulatedline line = new Simulatedline(label, position, outbound.get());
-					listline.add(line);
-				}
 
 			}
 
 		}
+		
+		
 
 	}
 

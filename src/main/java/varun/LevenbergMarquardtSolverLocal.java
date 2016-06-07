@@ -8,7 +8,7 @@ public class LevenbergMarquardtSolverLocal {
 			final double[][] x, 
 			final double[] a, 
 			final double[] y, 
-			final MicroTubuleFitfunction f)  {
+			final FitFunction f)  {
 		
 		int npts = y.length;
 		double sum = 0.;
@@ -40,7 +40,7 @@ public class LevenbergMarquardtSolverLocal {
 			double[][] x, 
 			double[] a, 
 			double[] y, 
-			MicroTubuleFitfunction f,
+			FitFunction f,
 			double lambda, 
 			double termepsilon, 
 			int maxiter) throws Exception  {

@@ -234,38 +234,35 @@ public class OverlayLines {
 		return points;
 	}
 
-	public static void GetAlllines(
+	public static RandomAccessibleInterval<FloatType> GetAlllines(
 			RandomAccessibleInterval<FloatType> imgout,
-			ArrayList<Simulatedline> totalsimline,
-			ArrayList<Labelparam> totalparam,
 			Img<IntType> intimg, 
 			ArrayList<Lineobjects> linelist) {
 
+		RandomAccessibleInterval<FloatType> maximgout = new ArrayImgFactory<FloatType>().create(imgout,
+				new FloatType());
 		for (int index = 0; index < linelist.size(); ++index) {
 
 			final int label = linelist.get(index).Label;
 			final double rho = linelist.get(index).Rho;
 			final double theta = linelist.get(index).Theta;
 			
-			ArrayList<Simulatedline> simline = new ArrayList<Simulatedline>();
-
-			ArrayList<Labelparam> params = new ArrayList<Labelparam>();
 			
 			double slope = -1.0 / Math.tan(Math.toRadians(theta));
 			double intercept = rho / Math.sin(Math.toRadians(theta));
 
-			PushCurves.Drawexactline(imgout,simline,params,intimg, slope, intercept, label);
+			PushCurves.Drawexactline(imgout,intimg, slope, intercept, label);
+			maximgout = GetLocalmaxmin.FindandDisplayLocalMaxima(imgout,
+					IntensityType.Original, new double[]{1,1});
 			
 			
-			for (int simindex = 0; simindex< simline.size(); ++simindex)
-			totalsimline.add(simline.get(simindex));
-			
-			for (int paramindex = 0; paramindex < params.size(); ++paramindex)
-				totalparam.add(params.get(paramindex));
 		}
+		
+		return maximgout;
 	}
 	public static void GetCurrentlines(
 			RandomAccessibleInterval<FloatType> imgout,
+			RandomAccessibleInterval<FloatType> maximgout,
 			Img<IntType> intimg, 
 			ArrayList<Lineobjects> linelist,
 			int currentlabel) {
@@ -277,12 +274,14 @@ public class OverlayLines {
 			final double theta = linelist.get(index).Theta;
 		
 		if (label == currentlabel){
-			ArrayList<Simulatedline> simline = new ArrayList<Simulatedline>();
-			ArrayList<Labelparam> params = new ArrayList<Labelparam>();
+			
 			double slope = -1.0 / Math.tan(Math.toRadians(theta));
 			double intercept = rho / Math.sin(Math.toRadians(theta));
 
-			PushCurves.Drawexactline(imgout,simline,params,intimg, slope,intercept, label);
+			PushCurves.Drawexactline(imgout,intimg, slope,intercept, label);
+			maximgout = GetLocalmaxmin.FindandDisplayLocalMaxima(imgout,
+					IntensityType.Original, new double[]{1,1});
+			
 		}
 		}
 	}

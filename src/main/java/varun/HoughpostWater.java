@@ -34,9 +34,10 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/small_mt.tif"));
+				.openAs32Bit(new File("src/main/resources/mt_experiment.tif"));
 		// small_mt.tif image to be used for testing
 		// 2015-01-14_Seeds-1.tiff for actual
+		// mt_experiment.tif for big testing
 		new ImageJ();
       
 		new Normalize();
@@ -50,6 +51,7 @@ public class HoughpostWater {
 		for (int d = 0; d < sigma.length; ++d)
 			sigma[d] = 1;
 
+		// Initialize empty images to be used later
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(biginputimg,
@@ -58,8 +60,7 @@ public class HoughpostWater {
 				new FloatType());
 		RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
-		RandomAccessibleInterval<FloatType> initialgaussimg = new ArrayImgFactory<FloatType>().create(biginputimg,
-				new FloatType());
+		
 		// Preprocess image
 		inputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter);
 		// inputimg = Kernels.Preprocess(tmpinputimg, ProcessingType.NaiveEdge);
@@ -75,17 +76,13 @@ public class HoughpostWater {
 		linepair = PerformWatershedding.DowatersheddingandHough(biginputimg, inputimg);
 
 		// Overlay detected lines on the image
-		ArrayList<Simulatedline> simline = new ArrayList<Simulatedline>();
 		
-		ArrayList<Labelparam> params = new ArrayList<Labelparam>();
-		ArrayList<Labelparam> lineparams = new ArrayList<Labelparam>();
 		PointSampleList<FloatType> centroidlist = new PointSampleList<FloatType>(n);
 		// Model lines
-		OverlayLines.GetAlllines(imgout, simline, params, linepair.fst, linepair.snd);
+		localmaximgout = OverlayLines.GetAlllines(imgout,linepair.fst, linepair.snd);
 
 		ImageJFunctions.show(imgout);
-		localmaximgout = GetLocalmaxmin.FindandDisplayLocalMaxima(imgout,
-				IntensityType.Original, sigma);
+		
 		ImageJFunctions.show(localmaximgout);
 		
 		PushCurves.MakeHTguess(localmaximgout, centroidlist);
@@ -94,48 +91,42 @@ public class HoughpostWater {
 		final int ndims = biginputimg.numDimensions();
 		 double[] final_param= new double[2*ndims+1];
 		 ArrayList<double[]> totalgausslist = new ArrayList<double[]>();
-		 final double[] psf = new double[ndims];
+		 double[] psf = new double[ndims];
 			for (int d = 0; d < ndims; ++d)
-				psf[d] = 2;
-			double[] pad_size = new double[ndims];
+				psf[d] = 5;
 			
-			for (int d = 0; d < ndims; d++) {
-				pad_size[d] =  (2 * psf[d] + 1);
-			}
-			
-			
-
-
-			int[] size = new int[ndims];
-			
-			for (int i = 0; i < ndims; i++) {
-			size[i] = (int) (2 * pad_size[i] + 1);
-			}
-			
-			
-			int span = 0;
-			for (int i = 0; i < ndims; i++) {
-				span = size[i]/ndims;
-				}
-			
-			Interval interval = Intervals.expand(inputimg, -span);
-
-			// create a view on the source with this interval
-			inputimg = Views.interval(inputimg, interval);
 			
 	
-		 LengthDetection MTlength = new LengthDetection(inputimg, linepair.fst, centroidlist);
+		 LengthDetection MTlength = new LengthDetection(inputimg,linepair.fst);
 		
 		 Cursor<FloatType> listcursor = centroidlist.localizingCursor();
 		 while(listcursor.hasNext()){
 			 listcursor.fwd();
 			 final_param = MTlength.Getfinalparam(psf, listcursor, listcursor.get().get());
 			 totalgausslist.add(final_param);
-			 System.out.println( " Amplitude: " + final_param[0] + " " + "Mean X: "
-						+ final_param[1] + " " + "Mean Y: " + final_param[2] + " " + "SigmaX: "
-						+ 1.0 / Math.sqrt(final_param[3]) + " " + "SigmaY: "
-						+ 1.0 / Math.sqrt(final_param[4]));
+			 
 		 }
+		 
+		 for (int index = 0; index < totalgausslist.size(); ++index){
+			 
+			 if (totalgausslist.get(index)[3]<=0 || totalgausslist.get(index)[4]<=0)
+				 totalgausslist.remove(index);
+			 
+
+			 if (totalgausslist.get(index)[0]<=0)
+				 totalgausslist.remove(index);
+			
+		 }
+		 for (int index = 0; index < totalgausslist.size(); ++index){
+				
+		 
+		 System.out.println( " Amplitude: " + totalgausslist.get(index)[0] + " " + "Mean X: "
+					+ totalgausslist.get(index)[1] + " " + "Mean Y: " + totalgausslist.get(index)[2] + " " + "SigmaX: "
+					+ 1.0 / Math.sqrt(totalgausslist.get(index)[3]) + " " + "SigmaY: "
+					+ 1.0 / Math.sqrt(totalgausslist.get(index)[4]));
+		 
+		 }
+			 
 		 PushCurves.DrawDetectedGaussians(gaussimg, totalgausslist);	
 			ImageJFunctions.show(gaussimg).setTitle("Iterated Result");
 			
