@@ -29,8 +29,7 @@ public class Extractpsfinfo {
 		
 		RandomAccessibleInterval<FloatType> localmaximgout = new ArrayImgFactory<FloatType>().create(inputimg,
 				new FloatType());
-		RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(inputimg,
-				new FloatType());
+		
 		localmaximgout = GetLocalmaxmin.FindandDisplayLocalMaxima(inputimg, IntensityType.Original, new double[]{1,1});
 		
 		PointSampleList<FloatType> centroidlist = new PointSampleList<FloatType>(ndims);
@@ -50,20 +49,15 @@ public class Extractpsfinfo {
 			 listcursor.fwd();
 			 final_param = MTlength.Getfinalparam(listcursor, listcursor.get().get(), point_spread_sigma);
 			 
-			 if (final_param[3] > 0  && final_param[4]>0 ){
+			 if (final_param[3] > 0  && final_param[4] > 0 && 1/final_param[3]!=0 && 1/final_param[4]!=0 ){
 			 totalgausslist.add(final_param);
 			 
-			 System.out.println( " Amplitude: " + final_param[0] + " " + "Mean X: "
-						+ final_param[1] + " " + "Mean Y: " + final_param[2] + " " + "1/SigmaX^2: "
-						+ final_param[3] + " " + "1/SigmaY^2: "
-						+ final_param[4]);
 			 }
 		 }
 		 
 		
 			 
-		 PushCurves.DrawDetectedGaussians(gaussimg, totalgausslist);	
-			ImageJFunctions.show(gaussimg).setTitle("Iterated Result");
+		 
 			
 		
 	}

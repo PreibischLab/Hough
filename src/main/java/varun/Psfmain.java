@@ -34,8 +34,9 @@ public class Psfmain {
 		// Initialize empty images to be used later
 				RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 						new FloatType());
-				
-				 
+				RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(inputimg,
+						new FloatType());
+				 final int n = inputimg.numDimensions();
 				 inputimg = Kernels.Preprocess(biginputimg, ProcessingType.SupressThresh);
 				 ImageJFunctions.show(inputimg);
 		Extractpsfinfo getpsf = new Extractpsfinfo(inputimg);
@@ -43,6 +44,36 @@ public class Psfmain {
 		
 		ArrayList<double[]> totalgausslist = new ArrayList<double[]>();
 		getpsf.Extractparams(totalgausslist);
+		
+		PushCurves.DrawDetectedGaussians(gaussimg, totalgausslist);	
+		ImageJFunctions.show(gaussimg).setTitle("Iterated Result");
+		
+		final double[] maxoneoversigma = { Double.MIN_VALUE, Double.MIN_VALUE };
+		final double[] oneoversigma = new double[n];
+		int maxindex = 0;
+		for (int listindex = 0; listindex < totalgausslist.size(); ++listindex){
+			
+			for (int d = 0; d < n; ++d){
+				
+				oneoversigma[d] = totalgausslist.get(listindex)[n+d+1];
+				
+				if (oneoversigma[d] > maxoneoversigma[d]){
+					
+					maxoneoversigma[d] = oneoversigma[d];
+					maxindex = listindex;
+					
+				}
+				
+			}
+			
+		}
+		
+		 System.out.println("Printing the parameters for the PSF detected :");
+		 
+		 System.out.println("Amplitude: " + totalgausslist.get(maxindex)[0] + " " + "Mean X: "
+							+ totalgausslist.get(maxindex)[1] + " " + "Mean Y: " + totalgausslist.get(maxindex)[2] + " " + "1/SigmaX^2: "
+							+ totalgausslist.get(maxindex)[3] + " " + "1/SigmaY^2: "
+							+ totalgausslist.get(maxindex)[4]);
 		
 	}
 }
