@@ -2,22 +2,16 @@ package varun;
 
 import java.util.ArrayList;
 
-import com.sun.tools.javah.Util.Exit;
-
 import net.imglib2.Cursor;
 import net.imglib2.Point;
 import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
-import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import varun.GetLocalmaxmin.IntensityType;
-import varun.LengthDetection.Labelparam;
-import varun.OverlayLines.Simulatedline;
-import varun.PerformWatershedding.Lineobjects;
 
 public class PushCurves {
 	public static void drawCircle(Img<FloatType> imgout, double[] min, double[] max, double[] center, double radius) {
@@ -335,17 +329,35 @@ public class PushCurves {
 				
 				centroidlist.add(centroid, modelcursor.get().copy());
 				
-				
 			}
-			
-			
 			
 		}
 		
-		
-		
 	}
 
+	
+	// Compute the local maxima of your model image of the detected lines
+		// all the points in that image with value > 0 are the guess centroids
+		public static void Getcentroids(
+				RandomAccessibleInterval<FloatType> Modelimg, 
+				PointSampleList<FloatType> centroidlist ){
+			
+			Cursor<FloatType> modelcursor = Views.iterable(Modelimg).localizingCursor();
+			
+			while(modelcursor.hasNext()){
+				modelcursor.fwd();
+				final FloatType val = new FloatType(0);
+				if (modelcursor.get().compareTo(val) > 0){
+					
+					Point centroid = new Point(modelcursor);
+					
+					centroidlist.add(centroid, modelcursor.get().copy());
+					
+				}
+				
+			}
+			
+		}
 	public static void Drawexactline(
 			RandomAccessibleInterval<FloatType> imgout,
 			Img<IntType> intimg, 

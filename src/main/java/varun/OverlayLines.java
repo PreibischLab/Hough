@@ -2,50 +2,27 @@ package varun;
 
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import com.sun.tools.javac.util.Pair;
 
-import ij.ImageJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.Line;
 import ij.gui.Overlay;
 import net.imglib2.Cursor;
 import net.imglib2.Point;
-import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealCursor;
-import net.imglib2.RealPoint;
-import net.imglib2.RealPointSampleList;
 import net.imglib2.algorithm.localextrema.RefinedPeak;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.labeling.NativeImgLabeling;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import varun.GetLocalmaxmin.IntensityType;
-import varun.LengthDetection.Labelparam;
-import varun.PerformWatershedding.Lineobjects;
 
 public class OverlayLines {
-	public static final class Simulatedline {
-		final int Label;
-		final double[] point;
-		final FloatType Value;
-
-		protected Simulatedline(final int Label, final double[] point, final FloatType Value) {
-			this.Label = Label;
-			this.point = point;
-			this.Value = Value;
-			
-
-		}
-	}
+	
 
 	public static void OverlayObject(RandomAccessibleInterval<FloatType> inputimg, ArrayList<Lineobjects> linelist) {
 

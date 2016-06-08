@@ -34,32 +34,7 @@ import net.imglib2.view.Views;
 
 @SuppressWarnings("deprecation")
 public class PerformWatershedding {
-    // Objects containing the label and the correspoing rho and theta information
-	public static final class Lineobjects {
-		final int Label;
-		final double Rho;
-		final double Theta;
-		final long [] boxmin;
-		final long [] boxmax;
-		
-		
-
-		protected Lineobjects(
-				final int Label,
-				final double Rho, 
-				final double Theta, 
-				final long [] boxmin, 
-				final long [] boxmax
-				) {
-			this.Label = Label;
-			this.Rho = Rho;
-			this.Theta = Theta;
-			this.boxmin = boxmin;
-			this.boxmax = boxmax;
-			
-			
-		}
-	}
+ 
 
 	public static enum InverseType {
 		Straight, Inverse
@@ -103,7 +78,7 @@ public class PerformWatershedding {
 		ArrayList<Lineobjects> linelist = new ArrayList<Lineobjects>(biginputimg.numDimensions());
 		
 		// Declare minimum length of the line(in pixels) to be detected
-		double minlength = 0;
+		double minlength = 5;
 		for (int label = 1; label < Maxlabel-1; label++) {
 
 			System.out.println("Label Number:" +label);
@@ -174,7 +149,30 @@ public class PerformWatershedding {
 		return linepair;
 	}
 
-	
+	public static RandomAccessibleInterval<IntType> Dowatersheddingonly(
+			final RandomAccessibleInterval<FloatType> biginputimg) 
+	{
+
+		// Prepare seed image for watershedding
+		NativeImgLabeling<Integer, IntType> oldseedLabeling = new NativeImgLabeling<Integer, IntType>(
+				new ArrayImgFactory<IntType>().create(biginputimg, new IntType()));
+
+		oldseedLabeling = PrepareSeedImage(biginputimg);
+
+		// Perform the distance transform
+		final Img<FloatType> distimg = new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
+
+		PerformWatershedding.DistanceTransformImage(biginputimg, distimg, InverseType.Straight);
+
+		// Do watershedding on the distance transformed image
+
+		NativeImgLabeling<Integer, IntType> outputLabeling = new NativeImgLabeling<Integer, IntType>(
+				new ArrayImgFactory<IntType>().create(biginputimg, new IntType()));
+
+		outputLabeling = GetlabeledImage(distimg, oldseedLabeling);
+		
+		return outputLabeling.getStorageImg();
+	}
 	
 	
 	public static Lineobjects Getlabelobject(
