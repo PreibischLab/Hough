@@ -76,7 +76,42 @@ public class LengthDetection {
 	}
 
 	
-	
+	private final double[] makeBestpointsGuess(final Localizable point, final double[][] X, final double[] I) {
+
+		double[] start_param = new double[2*ndims+1];
+
+		
+		double I_sum = 0;
+		double max_I = Double.NEGATIVE_INFINITY;
+		for (int i = 0; i < X.length; i++) {
+			I_sum += I[i];
+			if (I[i] > max_I) {
+				max_I = I[i];
+			}
+
+		}
+
+		start_param[0] = max_I;
+
+		
+		for (int d = 0; d < ndims; ++d) {
+
+			start_param[d + 1] = point.getDoublePosition(d);
+		}
+
+		for (int j = 0; j < ndims; j++) {
+			double C = 0;
+			double dx;
+			for (int i = 0; i < X.length; i++) {
+				dx = X[i][j] - start_param[j+1];
+				C += I[i] * dx * dx;
+			}
+			C /= I_sum;
+			start_param[ndims + j + 1] = 1 / C;
+		}
+		
+		return start_param;		
+	}
 	
 	
 	
@@ -111,6 +146,52 @@ public class LengthDetection {
 		
 		final double[] finalparam = start_param.clone();
 		int maxiter = 100;
+		double lambda = 1e-3;
+		double termepsilon = 1e-1;
+
+		LevenbergMarquardtSolverLocal.solve(X, finalparam, I, new GaussianMultiDLM(), lambda, termepsilon, maxiter);
+		
+		// NaN protection: we prefer returning the crude estimate than NaN
+		for (int j = 0; j < finalparam.length; j++) {
+			if (Double.isNaN(finalparam[j])  )
+				finalparam[j] = start_param[j];
+		}
+		
+	
+		
+		return finalparam;
+
+	}
+	
+	
+	public double[] Getfinalpointsparam(final Localizable point, final double[] typical_sigma)
+			throws Exception {
+
+
+
+		PointSampleList<FloatType> datalist = gatherPointsData(point, typical_sigma);
+
+		final Cursor<FloatType> listcursor = datalist.localizingCursor();
+
+		double[][] X = new double[(int) datalist.size()][ndims];
+		double[] I = new double[(int) datalist.size()];
+		int index = 0;
+		while (listcursor.hasNext()) {
+			listcursor.fwd();
+
+			for (int d = 0; d < ndims; d++) {
+				X[index][d] = listcursor.getDoublePosition(d);
+			}
+
+			I[index] = listcursor.get().getRealDouble();
+
+			index++;
+		}
+
+		final double[] start_param = makeBestpointsGuess(point, X, I);
+		
+		final double[] finalparam = start_param.clone();
+		int maxiter = 100;
 		double lambda = 1e-2;
 		double termepsilon = 1e-1;
 
@@ -140,13 +221,33 @@ public class LengthDetection {
 				datalist.add(newpoint, ranac.get().copy());
 			
 				
-			
-			
-			
-		
 		return datalist;
 	}
 	
+	private PointSampleList<FloatType> gatherPointsData(final Localizable point, final double[] typical_sigma){
+		final PointSampleList<FloatType> datalist = new PointSampleList<FloatType>(ndims);
+		
+		Cursor<IntType> intcursor = Views.iterable(intimg).localizingCursor();
+		RandomAccess<FloatType> ranac = inputimg.randomAccess();
+		RandomAccess<IntType> intranac = intimg.randomAccess();
+		
+		intranac.setPosition(point);
+		final int label = intranac.get().get();
+		
+		while(intcursor.hasNext()){
+		         intcursor.fwd();
+			
+			int i = intcursor.get().get();
+			if (i == label){
+				
+				ranac.setPosition(intcursor);
+				Point newpoint = new Point(ranac);
+				datalist.add(newpoint, ranac.get().copy());
+		}
+		}
+				
+		return datalist;
+	}
 	
 	
 }

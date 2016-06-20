@@ -51,7 +51,7 @@ public class Extractpsfinfo {
 		 Cursor<FloatType> listcursor = centroidlist.localizingCursor();
 		 while(listcursor.hasNext()){
 			 listcursor.fwd();
-			 final_param = MTlength.Getfinalparam(listcursor, point_spread_sigma);
+			 final_param = MTlength.Getfinalpointsparam(listcursor, point_spread_sigma);
 			 
 			 if (final_param[3] > 0  && final_param[4] > 0 && 1/final_param[3]!=0 && 1/final_param[4]!=0 ){
 			 totalgausslist.add(final_param);
