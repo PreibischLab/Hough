@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import com.sun.tools.javac.util.Pair;
 
+import Spindles.Boundingbox.Objectproperties;
 import drawandOverlay.OverlayLines;
 import drawandOverlay.PushCurves;
 import ij.ImageJ;
@@ -12,6 +13,8 @@ import labeledObjects.Lineobjects;
 import net.imglib2.Cursor;
 import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealCursor;
+import net.imglib2.RealPointSampleList;
 import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
@@ -29,12 +32,12 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/Fresh_data/psf_488_01.tif"));
+				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
 		// small_mt.tif image to be used for testing
 		// 2015-01-14_Seeds-1.tiff for actual
 		// mt_experiment.tif for big testing
 		new ImageJ();
-      
+
 		new Normalize();
 		FloatType minval = new FloatType(0);
 		FloatType maxval = new FloatType(1);
@@ -44,21 +47,18 @@ public class HoughpostWater {
 		double[] sigma = new double[biginputimg.numDimensions()];
 
 		for (int d = 0; d < sigma.length; ++d)
-			sigma[d] = 1;
+			sigma[d] = 2;
 
 		// Initialize empty images to be used later
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
-		RandomAccessibleInterval<FloatType> localmaximgout = new ArrayImgFactory<FloatType>().create(biginputimg,
-				new FloatType());
 		RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
-		
+
 		// Preprocess image
-		//inputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter);
-		 inputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter);
+		inputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter);
 
 		ImageJFunctions.show(inputimg).setTitle("Preprocessed image");
 
@@ -71,51 +71,60 @@ public class HoughpostWater {
 		linepair = PerformWatershedding.DowatersheddingandHough(biginputimg, inputimg);
 
 		// Overlay detected lines on the image
-		
-		PointSampleList<FloatType> centroidlist = new PointSampleList<FloatType>(n);
-		// Model lines
-		localmaximgout = OverlayLines.GetAlllines(imgout,linepair.fst, linepair.snd);
 
-		ImageJFunctions.show(imgout);
-		ImageJFunctions.show(linepair.fst);
-		ImageJFunctions.show(localmaximgout);
+		PointSampleList<FloatType> centroidlist = new PointSampleList<FloatType>(n);
+
 		
-		PushCurves.MakeHTguess(localmaximgout, centroidlist);
-		
-		// Do Gaussian Fit
+
 		final int ndims = biginputimg.numDimensions();
-		 double[] final_param= new double[2*ndims+1];
-		 final double [] point_spread_sigma = new double[ndims];
-		 // Input the psf-sigma here to be used as a replacment for very large sigma in the solver
-		 for (int d = 0; d < ndims; ++d)
-			 point_spread_sigma[d] = 1;
-		 ArrayList<double[]> totalgausslist = new ArrayList<double[]>();
-		 
-			
-			
-	
-		 LengthDetection MTlength = new LengthDetection(inputimg,linepair.fst);
+		double[] final_param = new double[2 * ndims + 1];
+		final double[] point_spread_sigma = new double[ndims];
+		// Input the psf-sigma here to be used for convolving Gaussians on a
+		// line
+
+		point_spread_sigma[0] = 2;
+		point_spread_sigma[1] = 1.2;
+
+		ArrayList<double[]> totalgausslist = new ArrayList<double[]>();
+
+		// Get a rough reconstruction of the line and the list of centroids where psf of the image has to be convolved
 		
-		 Cursor<FloatType> listcursor = centroidlist.localizingCursor();
-		 while(listcursor.hasNext()){
-			 listcursor.fwd();
-			 final_param = MTlength.Getfinalparam(listcursor, listcursor.get().get(), point_spread_sigma);
-			 
-			 if (final_param[3] > 0  && final_param[4]>0 ){
-			 totalgausslist.add(final_param);
-			 
-			 System.out.println( " Amplitude: " + final_param[0] + " " + "Mean X: "
-						+ final_param[1] + " " + "Mean Y: " + final_param[2] + " " + "1/SigmaX^2: "
-						+ final_param[3] + " " + "1/SigmaY^2: "
+		OverlayLines.GetAlllines(imgout, biginputimg, linepair.fst, centroidlist, linepair.snd, point_spread_sigma);
+
+		ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
+
+
+		// Input the image on which you want to do the fitting, along with the labelled image
+		
+		LengthDetection MTlength = new LengthDetection(biginputimg, linepair.fst);
+
+		final double[] listpoint = new double[n];
+
+		// Choose the noise level of the image, 0 for pre-processed image and >0 for original image
+		
+		final double noiselevel = 0.1;
+		
+		Cursor<FloatType> listcursor = centroidlist.localizingCursor();
+		while (listcursor.hasNext()) {
+			listcursor.fwd();
+			listcursor.localize(listpoint);
+			final_param = MTlength.Getfinalparam(listcursor, point_spread_sigma);
+
+			// Choosing values above the nosie level of the image 
+			
+			if (final_param[0]> noiselevel){
+		
+				totalgausslist.add(final_param);
+
+				System.out.println(" Amplitude: " + final_param[0] + " " + "Mean X: " + final_param[1] + " "
+						+ "Mean Y: " + final_param[2] + " " + "1/SigmaX^2: " + final_param[3] + " " + "1/SigmaY^2: "
 						+ final_param[4]);
-			 }
-		 }
-		 
-		
-			 
-		 PushCurves.DrawDetectedGaussians(gaussimg, totalgausslist);	
-			ImageJFunctions.show(gaussimg).setTitle("Iterated Result");
-			
-		
+		}
+		}
+
+		// Draw the Gaussian convolved line fitted with the original data
+		PushCurves.DrawDetectedGaussians(gaussimg, totalgausslist);
+		ImageJFunctions.show(gaussimg).setTitle("Iterated Result");
+
 	}
 }

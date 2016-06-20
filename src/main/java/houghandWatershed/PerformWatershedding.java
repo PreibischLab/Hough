@@ -154,6 +154,22 @@ public class PerformWatershedding {
 		return linepair;
 	}
 
+	public static RandomAccessibleInterval<IntType> Labelobjects(
+			final RandomAccessibleInterval<FloatType> biginputimg) 
+	{
+
+		// Prepare seed image for watershedding
+		NativeImgLabeling<Integer, IntType> oldseedLabeling = new NativeImgLabeling<Integer, IntType>(
+				new ArrayImgFactory<IntType>().create(biginputimg, new IntType()));
+
+		oldseedLabeling = PrepareSeedImage(biginputimg);
+
+		
+		
+		return oldseedLabeling.getStorageImg();
+	}
+	
+	
 	public static RandomAccessibleInterval<IntType> Dowatersheddingonly(
 			final RandomAccessibleInterval<FloatType> biginputimg) 
 	{

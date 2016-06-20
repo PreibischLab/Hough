@@ -1,11 +1,17 @@
 package peakFitter;
 
+import drawandOverlay.AddGaussian;
 import net.imglib2.Cursor;
 import net.imglib2.Localizable;
 import net.imglib2.Point;
 import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccess;
+import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealLocalizable;
+import net.imglib2.algorithm.neighborhood.RectangleShape;
+import net.imglib2.algorithm.region.hypersphere.HyperSphere;
+import net.imglib2.algorithm.region.hypersphere.HyperSphereCursor;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
@@ -25,6 +31,9 @@ public class LengthDetection {
 
 	}
 
+	
+	
+	
 	/**
 	 * Input a guess list containing the list of centroids determined by the HT,
 	 * and read from the PointSamplelist of local maximas the psf of the
@@ -39,7 +48,7 @@ public class LengthDetection {
 	 * 
 	 */
 
-	public double[] makeBestGuess(final Localizable point, final Float Value, final double[][] X, final double[] I) {
+	public double[] makeBestGuess(final Localizable point, final double[][] X, final double[] I, final double[] typical_sigma) {
 		double[] start_param = new double[2 * ndims + 1];
 
 		for (int d = 0; d < ndims; ++d) {
@@ -59,32 +68,27 @@ public class LengthDetection {
 		start_param[0] = max_I;
 
 		for (int j = 0; j < ndims; j++) {
-			double C = 0;
-			double dx;
-			for (int i = 0; i < X.length; i++) {
-				dx = X[i][j] - start_param[j + 1];
-				C += I[i] * dx * dx;
-			}
-			C /= I_sum;
-			start_param[ndims + j + 1] = 1 / C;
+			
+			start_param[ndims + j + 1] = 1 / typical_sigma[j];
 		}
 
 		return start_param;
 	}
 
+	
+	
+	
+	
+	
 	// Get final parameters for the Gaussian fit along the line, input the
 	// centroid position and value where the Gaussian has to be fitted
 	// in the image
-	public double[] Getfinalparam(final Localizable point, final Float Value, final double[] typical_sigma)
+	public double[] Getfinalparam(final Localizable point, final double[] typical_sigma)
 			throws Exception {
 
-		RandomAccess<IntType> ranac = intimg.randomAccess();
 
-		ranac.setPosition(point);
 
-		int label = ranac.get().get();
-
-		PointSampleList<FloatType> datalist = gatherData(label);
+		PointSampleList<FloatType> datalist = gatherData(point, typical_sigma);
 
 		final Cursor<FloatType> listcursor = datalist.localizingCursor();
 
@@ -103,48 +107,46 @@ public class LengthDetection {
 			index++;
 		}
 
-		final double[] start_param = makeBestGuess(point, Value, X, I);
-		// Correct for too large sigmas: we drop estimate and replace it by user
-		// input
-		for (int j = 0; j < ndims; j++) {
-			if (start_param[j + ndims + 1] < 1 / (typical_sigma[j] * typical_sigma[j])) {
-				start_param[j + ndims + 1] = 1 / (typical_sigma[j] * typical_sigma[j]);
-			}
-		}
+		final double[] start_param = makeBestGuess(point, X, I, typical_sigma);
+		
 		final double[] finalparam = start_param.clone();
-		int maxiter = 400;
-		double lambda = 0.0001;
-		double termepsilon = 0.01;
+		int maxiter = 100;
+		double lambda = 1e-2;
+		double termepsilon = 1e-1;
 
 		LevenbergMarquardtSolverLocal.solve(X, finalparam, I, new GaussianMultiDLM(), lambda, termepsilon, maxiter);
-		// NaN protection: we prefer returning the crude estimate that NaN
+		
+		// NaN protection: we prefer returning the crude estimate than NaN
 		for (int j = 0; j < finalparam.length; j++) {
-			if (Double.isNaN(finalparam[j]))
+			if (Double.isNaN(finalparam[j])  )
 				finalparam[j] = start_param[j];
 		}
-
+		
+	
+		
 		return finalparam;
 
 	}
 
-	private PointSampleList<FloatType> gatherData(final int label) {
-
+	private PointSampleList<FloatType> gatherData(final Localizable point, final double[] typical_sigma){
 		final PointSampleList<FloatType> datalist = new PointSampleList<FloatType>(ndims);
-
-		Cursor<IntType> intcursor = Views.iterable(intimg).localizingCursor();
+		
 		RandomAccess<FloatType> ranac = inputimg.randomAccess();
-
-		while (intcursor.hasNext()) {
-			intcursor.fwd();
-			int i = intcursor.get().get();
-			if (i == label) {
-				final Point newpoint = new Point(intcursor);
-				ranac.setPosition(newpoint);
+		
+		ranac.setPosition(point);
+		
+				
+				Point newpoint = new Point(ranac);
 				datalist.add(newpoint, ranac.get().copy());
-			}
-		}
-
+			
+				
+			
+			
+			
+		
 		return datalist;
 	}
-
+	
+	
+	
 }

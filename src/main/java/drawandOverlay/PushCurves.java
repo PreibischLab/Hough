@@ -1,6 +1,7 @@
 package drawandOverlay;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import houghandWatershed.Finalfunction;
 import houghandWatershed.TransformCordinates;
@@ -9,14 +10,19 @@ import net.imglib2.Point;
 import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealPoint;
+import net.imglib2.RealPointSampleList;
 import net.imglib2.img.Img;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
+import peakFitter.LengthDetection;
 import preProcessing.GetLocalmaxmin;
 import preProcessing.GetLocalmaxmin.IntensityType;
 
 public class PushCurves {
+
 	public static void drawCircle(Img<FloatType> imgout, double[] min, double[] max, double[] center, double radius) {
 		int n = imgout.numDimensions();
 		double[] realpos = new double[n];
@@ -201,8 +207,8 @@ public class PushCurves {
 				outbound.setPosition(setpos);
 			// Increment from starting position (min) towards max
 
-			newpos[0] = position[0] + stepsize;
-			newpos[1] = slope * newpos[0] + intercept;
+			newpos[0] = position[0] + stepsize / (1 + slope * slope);
+			newpos[1] = position[1] + stepsize * slope / (1 + slope * slope);
 			// General Stopping criteria of moving along a curve, when we hit a
 			// boundary
 
@@ -267,7 +273,7 @@ public class PushCurves {
 
 		int n = imgout.numDimensions();
 		final double[] realpos = new double[n];
-		double sigmasq, sigma = 0.5;
+		double sigmasq, sigma = 1;
 		sigmasq = sigma * sigma;
 		sigma = Math.sqrt(sigmasq);
 		final Cursor<FloatType> inputcursor = Views.iterable(imgout).localizingCursor();
@@ -287,11 +293,9 @@ public class PushCurves {
 
 			outbound.setPosition(inputcursor);
 			if (distance < sigma)
-			intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
+				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
 			else
-			intensity = 0;	
-
-			
+				intensity = 0;
 
 			switch (setintensity) {
 			case Original:
@@ -313,64 +317,204 @@ public class PushCurves {
 		}
 	}
 
-	
-	
 	// Compute the local maxima of your model image of the detected lines
 	// all the points in that image with value > 0 are the guess centroids
-	public static void MakeHTguess(
-			RandomAccessibleInterval<FloatType> Modelimg, 
-			PointSampleList<FloatType> centroidlist ){
-		
+	public static void MakeHTguess(RandomAccessibleInterval<FloatType> Modelimg,
+			PointSampleList<FloatType> centroidlist) {
+
 		Cursor<FloatType> modelcursor = Views.iterable(Modelimg).localizingCursor();
-		
-		while(modelcursor.hasNext()){
+
+		while (modelcursor.hasNext()) {
 			modelcursor.fwd();
 			final FloatType val = new FloatType(0);
-			if (modelcursor.get().compareTo(val) > 0){
-				
+			if (modelcursor.get().compareTo(val) > 0) {
+
 				Point centroid = new Point(modelcursor);
-				
+
 				centroidlist.add(centroid, modelcursor.get().copy());
-				
+
 			}
-			
+
 		}
-		
+
 	}
 
-	
 	// Compute the local maxima of your model image of the detected lines
-		// all the points in that image with value > 0 are the guess centroids
-		public static void Getcentroids(
-				RandomAccessibleInterval<FloatType> Modelimg, 
-				PointSampleList<FloatType> centroidlist ){
-			
-			Cursor<FloatType> modelcursor = Views.iterable(Modelimg).localizingCursor();
-			
-			while(modelcursor.hasNext()){
-				modelcursor.fwd();
-				final FloatType val = new FloatType(0);
-				if (modelcursor.get().compareTo(val) > 0){
-					
-					Point centroid = new Point(modelcursor);
-					
-					centroidlist.add(centroid, modelcursor.get().copy());
-					
-				}
-				
+	// all the points in that image with value > 0 are the guess centroids
+	public static void Getcentroids(RandomAccessibleInterval<FloatType> Modelimg,
+			PointSampleList<FloatType> centroidlist) {
+
+		Cursor<FloatType> modelcursor = Views.iterable(Modelimg).localizingCursor();
+
+		while (modelcursor.hasNext()) {
+			modelcursor.fwd();
+			final FloatType val = new FloatType(0);
+			if (modelcursor.get().compareTo(val) > 0) {
+
+				Point centroid = new Point(modelcursor);
+
+				centroidlist.add(centroid, modelcursor.get().copy());
+
 			}
-			
+
 		}
-	public static void Drawexactline(
+
+	}
+
+	public static double MaxIntensitylabel(RandomAccessibleInterval<FloatType> inputimg,
+			RandomAccessibleInterval<IntType> intimg, final int label) {
+		double maxIntensity = Double.NEGATIVE_INFINITY;
+		Cursor<IntType> intcursor = Views.iterable(intimg).localizingCursor();
+		RandomAccess<FloatType> ranac = inputimg.randomAccess();
+
+		while (intcursor.hasNext()) {
+			intcursor.fwd();
+
+			int i = intcursor.get().get();
+			if (i == label) {
+
+				ranac.setPosition(intcursor);
+
+				if (ranac.get().get() > maxIntensity) {
+
+					maxIntensity = ranac.get().get();
+				}
+
+			}
+
+		}
+
+		return maxIntensity;
+	}
+
+	public static void DrawTruncatedline(
 			RandomAccessibleInterval<FloatType> imgout,
+			RandomAccessibleInterval<FloatType> inputimg, 
 			Img<IntType> intimg, 
+			PointSampleList<FloatType> centroidlist,
+			final double[] typical_sigma, 
 			double slope, 
 			double intercept, 
 			int label) {
 
 		int n = imgout.numDimensions();
 		final double[] realpos = new double[n];
-		double sigmasq, sigma = 0.5;
+		double sigmasq, sigma = 1.0;
+		sigmasq = sigma * sigma;
+		final Cursor<FloatType> inputcursor = Views.iterable(imgout).localizingCursor();
+		ArrayList<Point> pointlist = new ArrayList<Point>(n);
+		ArrayList<FloatType> intensitylist = new ArrayList<FloatType>(n);
+		long[] newposition = new long[n];
+		RandomAccess<IntType> ranac = intimg.randomAccess();
+		final RandomAccess<FloatType> ranacinput = inputimg.randomAccess();
+		double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
+		double[] maxVal = { Double.MIN_VALUE, Double.MIN_VALUE };
+		
+		while (inputcursor.hasNext()) {
+
+			inputcursor.fwd();
+			inputcursor.localize(realpos);
+			ranacinput.setPosition(inputcursor);
+			// To set the pixel intensity as the shortest distance to the curve
+			double distance = 0;
+			double intensity = 0;
+
+			Finalfunction linefunction = new Finalfunction(realpos, slope, intercept);
+			distance = linefunction.Linefunctiondist();
+
+			if (distance < 5 * sigma)
+				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
+			else
+				intensity = 0;
+			intensity *= ranacinput.get().get();
+
+			ranac.setPosition(inputcursor);
+			int i = ranac.get().get();
+
+			if (i == label) {
+				inputcursor.get().setReal(intensity);
+				inputcursor.localize(newposition);
+
+				long pointonline = (long) (newposition[1] - slope * newposition[0] - intercept);
+
+				// To get the min and max co-rodinates along the line so we have starting points to
+				// move on the line smoothly
+				if (pointonline == 0) {
+					
+					for (int d = 0; d < n; ++d) {
+						if (inputcursor.getDoublePosition(d) <= minVal[d]) 
+							minVal[d] = inputcursor.getDoublePosition(d);
+						
+						if (inputcursor.getDoublePosition(d) >= maxVal[d]) 
+							maxVal[d] = inputcursor.getDoublePosition(d);
+						
+					}
+
+				}
+
+			}
+		}
+		
+		// Moving along the line with a fixed step-size. This gives set of points along the line which are then convoluted with a Gaussian.
+		final double stepsize = 1;
+		final double[] steppos = new double[n];
+		int count = 0;
+		if (slope >= 0){
+		while (true) {
+			
+			steppos[0] = minVal[0] + count * stepsize / Math.sqrt(1 + slope * slope);
+			steppos[1] = minVal[1] + count * stepsize * slope / Math.sqrt(1 + slope * slope);
+			
+			
+			Point newpoint = new Point(n);
+			newpoint.setPosition((long) steppos[0], 0);
+			newpoint.setPosition((long) steppos[1], 1);
+
+			ranacinput.setPosition(newpoint);
+			intensitylist.add(ranacinput.get());
+			pointlist.add(newpoint);
+
+			count++;
+			if (steppos[0] >= maxVal[0] || steppos[1] >= maxVal[1])
+				break;
+		}
+		}
+		
+		int negcount = 0;
+		if (slope < 0){
+			while (true) {
+				
+				steppos[0] = minVal[0] + negcount * stepsize / Math.sqrt(1 + slope * slope);
+				steppos[1] = maxVal[1] + negcount * stepsize * slope / Math.sqrt(1 + slope * slope);
+				
+				
+				Point newpoint = new Point(n);
+				newpoint.setPosition((long) steppos[0], 0);
+				newpoint.setPosition((long) steppos[1], 1);
+				ranacinput.setPosition(newpoint);
+				intensitylist.add(ranacinput.get());
+				pointlist.add(newpoint);
+
+				negcount++;
+				if (steppos[0] >= maxVal[0] || steppos[1] <= minVal[1])
+					break;
+			}	
+			
+		}
+		assert intensitylist.size() == pointlist.size();
+		for (int index = 0; index < pointlist.size(); ++index) {
+			centroidlist.add(pointlist.get(index), intensitylist.get(index));
+
+		}
+
+	}
+
+	public static void Drawexactline(RandomAccessibleInterval<FloatType> imgout, Img<IntType> intimg, double slope,
+			double intercept, int label) {
+
+		int n = imgout.numDimensions();
+		final double[] realpos = new double[n];
+		double sigmasq, sigma = 1.0;
 		sigmasq = sigma * sigma;
 		final Cursor<FloatType> inputcursor = Views.iterable(imgout).localizingCursor();
 
@@ -388,11 +532,11 @@ public class PushCurves {
 			final RandomAccess<FloatType> outbound = imgout.randomAccess();
 			outbound.setPosition(inputcursor);
 
-			if (distance < sigma)
-			intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
+			if (distance < 5 * sigma)
+				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
 			else
-			intensity = 0;	
-			
+				intensity = 0;
+
 			RandomAccess<IntType> ranac = intimg.randomAccess();
 			ranac.setPosition(inputcursor);
 			int i = ranac.get().get();
@@ -404,47 +548,7 @@ public class PushCurves {
 				final double[] position = new double[n];
 				outbound.localize(position);
 
-
 			}
-
-		}
-		
-		
-
-	}
-
-	public static void DrawDetectedGaussian(RandomAccessibleInterval<FloatType> imgout, final double[] parameters,
-			double slope) {
-
-		final int n = imgout.numDimensions();
-		final double Amplitude = parameters[0];
-		final double Mean[] = new double[n];
-		final double Sigma[] = new double[n];
-		final double position[] = new double[n];
-		for (int d = 0; d < n; ++d) {
-			Mean[d] = parameters[d + 1];
-		}
-		for (int d = 0; d < n; ++d) {
-			Sigma[d] = parameters[n + d + 1];
-		}
-
-		Cursor<FloatType> cursor = Views.iterable(imgout).localizingCursor();
-
-		while (cursor.hasNext()) {
-			cursor.fwd();
-			cursor.localize(position);
-			double numerator = 0;
-			final double sintheta = slope / Math.sqrt(1 + slope * slope);
-			final double costheta = 1.0 / Math.sqrt(1 + slope * slope);
-			double xprime = (position[0] - Mean[0]) * costheta + (position[1] - Mean[1]) * sintheta;
-			double yprime = (position[0] - Mean[0]) * sintheta - (position[1] - Mean[1]) * costheta;
-			numerator = xprime * xprime * Sigma[0] + yprime * yprime * Sigma[1];
-			// for (int d = 0; d < n; ++d) {
-			// numerator += (position[d] - Mean[d]) * (position[d] - Mean[d]) *
-			// Sigma[d];
-			// }
-
-			cursor.get().setReal(Amplitude * Math.exp(-numerator));
 
 		}
 
@@ -468,6 +572,7 @@ public class PushCurves {
 			}
 			for (int d = 0; d < n; ++d) {
 				Sigma[d] = parameters.get(index)[n + d + 1];
+
 			}
 
 			Amplitudelist.add(Amplitude);
@@ -477,26 +582,13 @@ public class PushCurves {
 			Sigmalist.add(Sigma);
 
 		}
-		final double position[] = new double[n];
-		Cursor<FloatType> cursor = Views.iterable(imgout).localizingCursor();
 
-		while (cursor.hasNext()) {
-			cursor.fwd();
-			cursor.localize(position);
+		for (int index = 0; index < parameters.size(); ++index) {
 
-			double Intensity = 0;
-			for (int index = 0; index < Amplitudelist.size(); ++index) {
-				double numerator = 0;
-				for (int d = 0; d < n; ++d) {
-					numerator += (position[d] - Meanlist.get(index)[d]) * (position[d] - Meanlist.get(index)[d])
-							* Sigmalist.get(index)[d];
-				}
-
-				Intensity += Amplitudelist.get(index) * Math.exp(-numerator);
-			}
-			cursor.get().setReal(Intensity);
+			AddGaussian.addGaussian(imgout, Amplitudelist.get(index), Meanlist.get(index), Sigmalist.get(index));
 
 		}
+
 	}
 
 }

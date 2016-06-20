@@ -12,8 +12,10 @@ import ij.gui.Overlay;
 import labeledObjects.Lineobjects;
 import net.imglib2.Cursor;
 import net.imglib2.Point;
+import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealPointSampleList;
 import net.imglib2.algorithm.localextrema.RefinedPeak;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
@@ -214,13 +216,14 @@ public class OverlayLines {
 		return points;
 	}
 
-	public static RandomAccessibleInterval<FloatType> GetAlllines(
+	public static void GetAlllines(
 			RandomAccessibleInterval<FloatType> imgout,
+			RandomAccessibleInterval<FloatType> inputimg,
 			Img<IntType> intimg, 
-			ArrayList<Lineobjects> linelist) {
+			PointSampleList<FloatType> centroidlist,
+			ArrayList<Lineobjects> linelist,
+			final double[] typical_sigma) {
 
-		RandomAccessibleInterval<FloatType> maximgout = new ArrayImgFactory<FloatType>().create(imgout,
-				new FloatType());
 		for (int index = 0; index < linelist.size(); ++index) {
 
 			final int label = linelist.get(index).Label;
@@ -228,17 +231,20 @@ public class OverlayLines {
 			final double theta = linelist.get(index).Theta;
 			
 			
-			double slope = -1.0 / Math.tan(Math.toRadians(theta));
+			double slope = -1.0 / (Math.tan(Math.toRadians(theta)));
 			double intercept = rho / Math.sin(Math.toRadians(theta));
 
-			PushCurves.Drawexactline(imgout,intimg, slope, intercept, label);
-			maximgout = GetLocalmaxmin.FindandDisplayLocalMaxima(imgout,
-					IntensityType.Original, new double[]{1,1});
+		//	System.out.println(slope +"  "+ theta);
+			//PushCurves.Drawexactline(testimgout,intimg, slope, intercept, label);
+			
+			if (Math.abs(slope)!=Double.POSITIVE_INFINITY )
+			PushCurves.DrawTruncatedline(imgout, inputimg, intimg, centroidlist, typical_sigma, slope, intercept, label);
+			
+			
 			
 			
 		}
 		
-		return maximgout;
 	}
 	public static void GetCurrentlines(
 			RandomAccessibleInterval<FloatType> imgout,

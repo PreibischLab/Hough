@@ -26,14 +26,18 @@ public class Boundingbox {
 
 	public static final class Objectproperties {
 
-		final int Label;
-		final double maxextent;
-		final int Area;
+		public final int Label;
+		public final double maxextent;
+		public final int Area;
+		public final double[] startpoint;
+		public final double[] endpoint;
 
-		protected Objectproperties(final int Label, final double maxextent, final int Area) {
+		protected Objectproperties(final int Label, final double maxextent, final int Area, final double[] startpoint, final double[] endpoint) {
 			this.Label = Label;
 			this.maxextent = maxextent;
 			this.Area = Area;
+			this.startpoint = startpoint;
+			this.endpoint = endpoint;
 
 		}
 	}
@@ -71,7 +75,7 @@ public class Boundingbox {
 		long[] position = new long[intimg.numDimensions()];
 
 		// The background is labelled 0
-		int currentLabel = 0;
+		int currentLabel = 1;
 
 		boolean anythingFound = true;
 		while (anythingFound) {
@@ -80,8 +84,8 @@ public class Boundingbox {
 			// Go through the whole image and add every pixel, that belongs to
 			// the currently processed label
 
-			long[] minVal = { Long.MAX_VALUE, Long.MAX_VALUE };
-			long[] maxVal = { Long.MIN_VALUE, Long.MIN_VALUE };
+			double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
+			double[] maxVal = { Double.MIN_VALUE, Double.MIN_VALUE };
 			int count = 0;
 
 			while (intCursor.hasNext()) {
@@ -117,7 +121,8 @@ public class Boundingbox {
 
 			// Store all object properties in the java object and arraylist of
 			// that object
-			final Objectproperties props = new Objectproperties(currentLabel, Math.sqrt(maxextent), count);
+			final Objectproperties props = new Objectproperties(currentLabel, Math.sqrt(maxextent), count, minVal, maxVal);
+			if (count > 5)
 			listprops.add(props);
 
 			// Go to the next label

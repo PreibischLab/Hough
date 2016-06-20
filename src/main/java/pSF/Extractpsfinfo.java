@@ -41,17 +41,17 @@ public class Extractpsfinfo {
 		PushCurves.Getcentroids(localmaximgout, centroidlist);
 		
 		 LengthDetection MTlength = new LengthDetection(inputimg,intimg);
+		 
 		 double[] final_param= new double[2*ndims+1];
 		 final double [] point_spread_sigma = new double[ndims];
 		 // Input the psf-sigma here to be used as a replacment for very large sigma in the solver
 		 for (int d = 0; d < ndims; ++d)
 			 point_spread_sigma[d] = 2;
 		 
-		 
 		 Cursor<FloatType> listcursor = centroidlist.localizingCursor();
 		 while(listcursor.hasNext()){
 			 listcursor.fwd();
-			 final_param = MTlength.Getfinalparam(listcursor, listcursor.get().get(), point_spread_sigma);
+			 final_param = MTlength.Getfinalparam(listcursor, point_spread_sigma);
 			 
 			 if (final_param[3] > 0  && final_param[4] > 0 && 1/final_param[3]!=0 && 1/final_param[4]!=0 ){
 			 totalgausslist.add(final_param);
