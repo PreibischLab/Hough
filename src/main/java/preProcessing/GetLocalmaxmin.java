@@ -208,6 +208,9 @@ public class GetLocalmaxmin {
 		return output;
 	}
 
+	
+	
+	
 	// Finds and displays Local Minima by constructing a 3*3*3.. local
 	// neighbourhood
 	public static RandomAccessibleInterval<FloatType> FindandDisplayLocalMinima(RandomAccessibleInterval<FloatType> img,
@@ -458,10 +461,10 @@ public class GetLocalmaxmin {
 	// Find maxima only if the pixel intensity is higher than a certain
 	// threshold value
 	public static RandomAccessibleInterval<FloatType> FindConditionalLocalMaxima(
-			RandomAccessibleInterval<FloatType> img, ImgFactory<FloatType> imageFactory,
+			RandomAccessibleInterval<FloatType> img, 
 			final IntensityType setintensity, double[] sigma, Float val) {
 
-		RandomAccessibleInterval<FloatType> output = imageFactory.create(img, new FloatType());
+		RandomAccessibleInterval<FloatType> output = new ArrayImgFactory<FloatType>().create(img, new FloatType());
 		// Construct a 5*5*5... local neighbourhood
 		int span = 2;
 

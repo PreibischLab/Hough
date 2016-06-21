@@ -38,7 +38,7 @@ public class Kernels {
 
 	
 	public static enum ProcessingType {
-		Horizontaledge, Verticaledge, Gradientmag, NaiveEdge, Meanfilter, SupressThresh, CannyEdge
+		Horizontaledge, Verticaledge, Gradientmag, NaiveEdge, Meanfilter, SupressThresh, CannyEdge, Noiseinput
 	}
 	      // Any preprocessing
 
@@ -74,6 +74,8 @@ public class Kernels {
 				case CannyEdge:
 					imgout = CannyEdge(inputimg,new double[]{1,1} );
 					break;
+				case Noiseinput:
+					imgout = NoiseInput(inputimg, new Float(0.01));
 				default:
 					imgout = Supressthresh(inputimg);
 					break;
@@ -224,12 +226,31 @@ public class Kernels {
 			if (precursor.get().get()<=Lowthreshold)
 				outputran.get().setZero();
 			else
-				outputran.get().set(precursor.get());;
+				outputran.get().set(precursor.get());
 		}
 		return maximgout;
 
 	}
 
+	public static RandomAccessibleInterval<FloatType> NoiseInput(RandomAccessibleInterval<FloatType> inputimg, Float noisethresh){
+		int n = inputimg.numDimensions();
+		RandomAccessibleInterval<FloatType> noisethreshimage = new ArrayImgFactory<FloatType>().create(inputimg,
+				new FloatType());
+		Cursor<FloatType> inputcursor = Views.iterable(inputimg).localizingCursor();
+		RandomAccess<FloatType> outputran = noisethreshimage.randomAccess();
+		
+		while(inputcursor.hasNext()){
+			inputcursor.fwd();
+			outputran.setPosition(inputcursor);
+			if (inputcursor.get().get()<=noisethresh)
+				outputran.get().setZero();
+			else
+				outputran.get().set(inputcursor.get());
+		}
+		
+		return noisethreshimage;
+	}
+	
 	public static RandomAccessibleInterval<FloatType> CannyEdge(RandomAccessibleInterval<FloatType> inputimg,
 			 double[] sigma) {
 		int n = inputimg.numDimensions();

@@ -6,14 +6,18 @@ import drawandOverlay.PushCurves;
 import houghandWatershed.PerformWatershedding;
 import net.imglib2.Cursor;
 import net.imglib2.PointSampleList;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.view.Views;
 import peakFitter.LengthDetection;
 import preProcessing.GetLocalmaxmin;
+import preProcessing.Kernels;
 import preProcessing.GetLocalmaxmin.IntensityType;
+import preProcessing.Kernels.ProcessingType;
 
 public class Extractpsfinfo {
 
@@ -27,15 +31,26 @@ public class Extractpsfinfo {
 		
 	}
 	
-	public void Extractparams(ArrayList<double[]> totalgausslist) throws Exception{
+	public void Extractparams(ArrayList<double[]> totalgausslist, double noiseLevel) throws Exception{
 		
 		RandomAccessibleInterval<IntType> intimg = PerformWatershedding.Dowatersheddingonly(inputimg);
 		
 		RandomAccessibleInterval<FloatType> localmaximgout = new ArrayImgFactory<FloatType>().create(inputimg,
 				new FloatType());
 		
-		localmaximgout = GetLocalmaxmin.FindandDisplayLocalMaxima(inputimg, IntensityType.Original, new double[]{1,1});
+	
 		
+		localmaximgout = GetLocalmaxmin.FindandDisplayLocalMaxima(inputimg, IntensityType.Original, new double []{1,1});
+		
+		Cursor<FloatType> localmaxcursor = Views.iterable(localmaximgout).localizingCursor();
+		while(localmaxcursor.hasNext()){
+			localmaxcursor.fwd();
+			if (localmaxcursor.get().get()< noiseLevel)
+				localmaxcursor.get().set(0);
+		}
+		
+		
+		ImageJFunctions.show(localmaximgout);
 		PointSampleList<FloatType> centroidlist = new PointSampleList<FloatType>(ndims);
 		
 		PushCurves.Getcentroids(localmaximgout, centroidlist);

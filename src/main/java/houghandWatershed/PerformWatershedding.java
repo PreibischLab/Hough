@@ -58,7 +58,7 @@ public class PerformWatershedding {
 
 		// Get maximum labels on the watershedded image
 
-		final int Maxlabel = GetMaxlabelsseeded(oldseedLabeling);
+		final int Maxlabel = GetMaxlabelsseeded(oldseedLabeling.getStorageImg());
 
 		ArrayList<RefinedPeak<Point>> ReducedMinlist = new ArrayList<RefinedPeak<Point>>(biginputimg.numDimensions());
 		ArrayList<RefinedPeak<Point>> MainMinlist = new ArrayList<RefinedPeak<Point>>(biginputimg.numDimensions());
@@ -493,39 +493,13 @@ public class PerformWatershedding {
 	}
 
 	
-	public static int GetMaxlabels(
-			RandomAccessibleInterval<FloatType> inputimg) 
-	{
-		NativeImgLabeling<Integer, IntType> oldseedLabeling = new NativeImgLabeling<Integer, IntType>(
-				new ArrayImgFactory<IntType>().create(inputimg, new IntType()));
-		// To get maximum Labels on the image
-		Cursor<IntType> intCursor = oldseedLabeling.getStorageImg().cursor();
-		int currentLabel = 1;
-		boolean anythingFound = true;
-		while (anythingFound) {
-			anythingFound = false;
-			intCursor.reset();
-			while (intCursor.hasNext()) {
-				intCursor.fwd();
-				int i = intCursor.get().get();
-				if (i == currentLabel) {
 
-					anythingFound = true;
-
-				}
-			}
-			currentLabel++;
-		}
-
-		return currentLabel;
-
-	}
 	public static int GetMaxlabelsseeded(
-			NativeImgLabeling<Integer, IntType> oldseedLabeling) 
+			RandomAccessibleInterval<IntType> intimg) 
 	{
 		
 		// To get maximum Labels on the image
-		Cursor<IntType> intCursor = oldseedLabeling.getStorageImg().cursor();
+		Cursor<IntType> intCursor = Views.iterable(intimg).cursor();
 		int currentLabel = 1;
 		boolean anythingFound = true;
 		while (anythingFound) {

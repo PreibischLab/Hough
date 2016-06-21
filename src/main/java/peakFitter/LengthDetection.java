@@ -2,6 +2,7 @@ package peakFitter;
 
 import drawandOverlay.AddGaussian;
 import net.imglib2.Cursor;
+import net.imglib2.IterableInterval;
 import net.imglib2.Localizable;
 import net.imglib2.Point;
 import net.imglib2.PointSampleList;
@@ -12,6 +13,7 @@ import net.imglib2.RealLocalizable;
 import net.imglib2.algorithm.neighborhood.RectangleShape;
 import net.imglib2.algorithm.region.hypersphere.HyperSphere;
 import net.imglib2.algorithm.region.hypersphere.HyperSphereCursor;
+import net.imglib2.roi.RectangleRegionOfInterest;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
@@ -192,7 +194,7 @@ public class LengthDetection {
 		
 		final double[] finalparam = start_param.clone();
 		int maxiter = 100;
-		double lambda = 1e-2;
+		double lambda = 1e-3;
 		double termepsilon = 1e-1;
 
 		LevenbergMarquardtSolverLocal.solve(X, finalparam, I, new GaussianMultiDLM(), lambda, termepsilon, maxiter);
@@ -209,43 +211,71 @@ public class LengthDetection {
 
 	}
 
+	@SuppressWarnings("deprecation")
 	private PointSampleList<FloatType> gatherData(final Localizable point, final double[] typical_sigma){
 		final PointSampleList<FloatType> datalist = new PointSampleList<FloatType>(ndims);
 		
 		RandomAccess<FloatType> ranac = inputimg.randomAccess();
 		
 		ranac.setPosition(point);
+		final double[] position = new double[ndims];
+		point.localize(position);
 		
-				
-				Point newpoint = new Point(ranac);
-				datalist.add(newpoint, ranac.get().copy());
+		final double[] size = new double[ndims];
+		for (int d = 0; d < ndims; ++d){
+		
+			size[d] = 1;
+		}
+		// Gather data around the point
+		RectangleRegionOfInterest dataregion = new RectangleRegionOfInterest(position, size);
+		IterableInterval<FloatType> roiInterval = dataregion.getIterableIntervalOverROI(inputimg);
+		Cursor<FloatType> localcursor = 	roiInterval.localizingCursor();
+		  
+		  while(localcursor.hasNext()){
+			  localcursor.fwd();
+			  Point newpoint = new Point(localcursor);
+				datalist.add(newpoint, localcursor.get().copy());
+			  
+		  }
+		
 			
 				
 		return datalist;
 	}
 	
+	@SuppressWarnings("deprecation")
 	private PointSampleList<FloatType> gatherPointsData(final Localizable point, final double[] typical_sigma){
 		final PointSampleList<FloatType> datalist = new PointSampleList<FloatType>(ndims);
 		
-		Cursor<IntType> intcursor = Views.iterable(intimg).localizingCursor();
-		RandomAccess<FloatType> ranac = inputimg.randomAccess();
-		RandomAccess<IntType> intranac = intimg.randomAccess();
 		
-		intranac.setPosition(point);
-		final int label = intranac.get().get();
 		
-		while(intcursor.hasNext()){
-		         intcursor.fwd();
+		final double[] minsize = new double[ndims];
+		final double[] maxsize = new double[ndims];
+		final double[] size = new double[ndims];
+		for (int d = 0; d < ndims; ++d){
 			
-			int i = intcursor.get().get();
-			if (i == label){
-				
-				ranac.setPosition(intcursor);
-				Point newpoint = new Point(ranac);
-				datalist.add(newpoint, ranac.get().copy());
+			minsize[d] = point.getDoublePosition(d) - typical_sigma[d];
+			maxsize[d] = point.getDoublePosition(d) + typical_sigma[d];
+			size[d] = maxsize[d] - minsize[d];
 		}
-		}
-				
+		
+		final double[] position = new double[ndims];
+		point.localize(position);
+		
+		// Gather data around the point
+		RectangleRegionOfInterest dataregion = new RectangleRegionOfInterest(position, size);
+		IterableInterval<FloatType> roiInterval = dataregion.getIterableIntervalOverROI(inputimg);
+		
+	  Cursor<FloatType> localcursor = 	roiInterval.localizingCursor();
+	  
+	  while(localcursor.hasNext()){
+		  localcursor.fwd();
+		  Point newpoint = new Point(localcursor);
+			datalist.add(newpoint, localcursor.get().copy());
+		  
+	  }
+		
+		
 		return datalist;
 	}
 	

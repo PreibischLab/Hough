@@ -80,10 +80,10 @@ public class HoughpostWater {
 		double[] final_param = new double[2 * ndims + 1];
 		final double[] point_spread_sigma = new double[ndims];
 		// Input the psf-sigma here to be used for convolving Gaussians on a
-		// line
+		// line, will not change during iteration.
 
 		point_spread_sigma[0] = 2;
-		point_spread_sigma[1] = 1.2;
+		point_spread_sigma[1] = 2;
 
 		ArrayList<double[]> totalgausslist = new ArrayList<double[]>();
 
@@ -112,7 +112,7 @@ public class HoughpostWater {
 
 			// Choosing values above the nosie level of the image 
 			
-			if (final_param[0]> noiselevel){
+			if (final_param[0] > noiselevel && final_param[3] > 0 && final_param[4] > 0){
 		
 				totalgausslist.add(final_param);
 
