@@ -51,7 +51,7 @@ public class LengthDetection {
 	 */
 
 	public double[] makeBestGuess(final Localizable point, final double[][] X, final double[] I, final double[] typical_sigma) {
-		double[] start_param = new double[2 * ndims + 1];
+		double[] start_param = new double[2 * ndims + 2];
 
 		for (int d = 0; d < ndims; ++d) {
 
@@ -73,14 +73,14 @@ public class LengthDetection {
 			
 			start_param[ndims + j + 1] = 1 / typical_sigma[j];
 		}
-
+		start_param[2*ndims+1] = 0;
 		return start_param;
 	}
 
 	
 	private final double[] makeBestpointsGuess(final Localizable point, final double[][] X, final double[] I) {
 
-		double[] start_param = new double[2*ndims+1];
+		double[] start_param = new double[2*ndims+2];
 
 		
 		double I_sum = 0;
@@ -111,6 +111,8 @@ public class LengthDetection {
 			C /= I_sum;
 			start_param[ndims + j + 1] = 1 / C;
 		}
+		
+		start_param[2*ndims+1] = 0; 
 		
 		return start_param;		
 	}
@@ -190,14 +192,16 @@ public class LengthDetection {
 			index++;
 		}
 
-		final double[] start_param = makeBestpointsGuess(point, X, I);
+		final double[] start_param = makeBestGuess(point, X, I, new double[] {5,5});
+		
+	//	final double[] start_param = makeBestpointsGuess(point, X, I);
 		
 		final double[] finalparam = start_param.clone();
-		int maxiter = 100;
-		double lambda = 1e-3;
-		double termepsilon = 1e-1;
+		int maxiter = 5000;
+		double lambda = 1e-4;
+		double termepsilon = 1e-2;
 
-		LevenbergMarquardtSolverLocal.solve(X, finalparam, I, new GaussianMultiDLM(), lambda, termepsilon, maxiter);
+		LevenbergMarquardtSolverLocal.solve(X, finalparam, I, new GaussianandConstNoise(), lambda, termepsilon, maxiter);
 		
 		// NaN protection: we prefer returning the crude estimate than NaN
 		for (int j = 0; j < finalparam.length; j++) {
@@ -255,24 +259,47 @@ public class LengthDetection {
 		for (int d = 0; d < ndims; ++d){
 			
 			minsize[d] = point.getDoublePosition(d) - typical_sigma[d];
+			
+			
 			maxsize[d] = point.getDoublePosition(d) + typical_sigma[d];
-			size[d] = maxsize[d] - minsize[d];
+			size[d] = maxsize[d] - minsize[d] + 1;
 		}
-		
+		RandomAccess<IntType> intranac = intimg.randomAccess();
 		final double[] position = new double[ndims];
 		point.localize(position);
-		
+		intranac.setPosition(point);
+		int label = intranac.get().get();
 		// Gather data around the point
 		RectangleRegionOfInterest dataregion = new RectangleRegionOfInterest(position, size);
 		IterableInterval<FloatType> roiInterval = dataregion.getIterableIntervalOverROI(inputimg);
 		
+		
 	  Cursor<FloatType> localcursor = 	roiInterval.localizingCursor();
-	  
+	  boolean outofbounds = false;
 	  while(localcursor.hasNext()){
 		  localcursor.fwd();
+		  
+		  intranac.setPosition(localcursor);
+		  for (int d = 0; d < ndims; ++d){
+			  
+			  if (localcursor.getDoublePosition(d) < 0 || localcursor.getDoublePosition(d) >= inputimg.dimension(d) ){
+				  
+				  outofbounds = true;
+				  break;
+			  }
+			  
+			  
+		  }
+		  if (outofbounds) {
+				outofbounds = false;
+				continue;
+			}
+		  
+		  
+		//  if (intranac.get().get() == label){
 		  Point newpoint = new Point(localcursor);
 			datalist.add(newpoint, localcursor.get().copy());
-		  
+		 // }
 	  }
 		
 		

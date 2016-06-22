@@ -58,7 +58,7 @@ public class HoughpostWater {
 				new FloatType());
 
 		// Preprocess image
-		inputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter);
+		inputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter, new Float(0));
 
 		ImageJFunctions.show(inputimg).setTitle("Preprocessed image");
 

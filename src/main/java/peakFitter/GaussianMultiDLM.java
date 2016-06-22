@@ -25,7 +25,7 @@ package peakFitter;
 
 		@Override
 		public final double val(final double[] x, final double[] a) {
-			return a[0] * E(x, a);
+			return a[0] * E(x, a) ;
 		}
 
 		/**
@@ -46,16 +46,18 @@ package peakFitter;
 				int dim = k - 1;
 				return 2 * a[dim+ndims] * (x[dim] - a[dim+1]) * a[0] * E(x, a);
 
-			} else {
+			} else  {
 				// With respect to ai
 				int dim = k - ndims - 1;
 				double di = x[dim] - a[dim+1];
 				return - di * di * a[0] * E(x, a);
 			}
+			
+			
 		}
 
 		/**
-		 * Not used but hey.
+		 * Not used but hey. Noise term not implemented for this one
 		 * @return the hessian value for row r and column c
 		 */
 		public final double hessian(final double[] x, final double[] a, int r, int c) {

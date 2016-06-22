@@ -354,7 +354,6 @@ public class PushCurves {
 				Point centroid = new Point(modelcursor);
 
 				centroidlist.add(centroid, modelcursor.get().copy());
-				System.out.println(centroid.getDoublePosition(0)+" "+ centroid.getDoublePosition(1)+ " "+ modelcursor.get().get());
 			}
 
 		}

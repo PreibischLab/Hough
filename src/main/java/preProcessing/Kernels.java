@@ -43,7 +43,7 @@ public class Kernels {
 	      // Any preprocessing
 
 			public static RandomAccessibleInterval<FloatType> Preprocess(final RandomAccessibleInterval<FloatType> inputimg,
-					final ProcessingType edge){
+					final ProcessingType edge, final double Lowthreshold ){
 				
 				
 				RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(inputimg,
@@ -75,7 +75,7 @@ public class Kernels {
 					imgout = CannyEdge(inputimg,new double[]{1,1} );
 					break;
 				case Noiseinput:
-					imgout = NoiseInput(inputimg, new Float(0.01));
+					imgout = SupressNoise(inputimg, Lowthreshold);
 				default:
 					imgout = Supressthresh(inputimg);
 					break;
@@ -232,7 +232,7 @@ public class Kernels {
 
 	}
 
-	public static RandomAccessibleInterval<FloatType> NoiseInput(RandomAccessibleInterval<FloatType> inputimg, Float noisethresh){
+	public static RandomAccessibleInterval<FloatType> NoiseInput(RandomAccessibleInterval<FloatType> inputimg, final double noisethresh){
 		int n = inputimg.numDimensions();
 		RandomAccessibleInterval<FloatType> noisethreshimage = new ArrayImgFactory<FloatType>().create(inputimg,
 				new FloatType());
@@ -406,7 +406,8 @@ public class Kernels {
 					mean.div(new FloatType(n));
 					cursorOutput.get().set(mean);
 				}
-				final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(inputimg);
+			
+				/*final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(inputimg);
 				Cursor<FloatType> inputcursor = Views.iterable(inputimg).localizingCursor();
 				RandomAccess<FloatType> outputran = outimg.randomAccess();
 				while(inputcursor.hasNext()){
@@ -416,8 +417,32 @@ public class Kernels {
 						outputran.get().setZero();
 					else
 						outputran.get().set(inputcursor.get());
-				}
+				}*/
 			return outimg;
+		
+	}
+	
+	public static RandomAccessibleInterval<FloatType> SupressNoise(RandomAccessibleInterval<FloatType> inputimg, double Lowthreshold){
+		RandomAccessibleInterval<FloatType> Threshimg = new ArrayImgFactory<FloatType>().create(inputimg,
+				new FloatType());
+		//Supress values below the low threshold
+		int n = inputimg.numDimensions();
+		double[] position = new double[n];
+				Cursor<FloatType> inputcursor = Views.iterable(inputimg).localizingCursor();
+				RandomAccess<FloatType> outputran = Threshimg.randomAccess();
+				
+				while(inputcursor.hasNext()){
+					inputcursor.fwd();
+					inputcursor.localize(position);
+					outputran.setPosition(inputcursor);
+					if (inputcursor.get().get()<=Lowthreshold)
+						outputran.get().setZero();
+					else
+						outputran.get().set(inputcursor.get());
+				}
+			return Threshimg;	
+				
+		
 		
 	}
 	

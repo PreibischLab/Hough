@@ -2,9 +2,13 @@ package pSF;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
+
+import com.sun.tools.javac.util.Pair;
 
 import drawandOverlay.PushCurves;
 import ij.ImageJ;
+import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.gauss.Gauss;
 import net.imglib2.algorithm.stats.Normalize;
@@ -13,6 +17,7 @@ import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
+import preProcessing.GetLocalmaxmin;
 import preProcessing.Kernels;
 import preProcessing.Kernels.ProcessingType;
 import util.ImgLib2Util;
@@ -22,10 +27,9 @@ public class Psfmain {
 	
 	public static void main(String[] args) throws Exception {
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/Fresh_data/psf_488_11.tif"));
-		// small_mt.tif image to be used for testing
-		// 2015-01-14_Seeds-1.tiff for actual
-		// mt_experiment.tif for big testing
+				.openAs32Bit(new File("src/main/resources/Fresh_data/psf_488_12.tif"));
+		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
+				new FloatType());
 		new ImageJ();
       
 		new Normalize();
@@ -33,19 +37,28 @@ public class Psfmain {
 		FloatType maxval = new FloatType(1);
 		Normalize.normalize(Views.iterable(biginputimg), minval, maxval);
 		ImageJFunctions.show(biginputimg);
-		// Initialize empty images to be used later
-				RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
-						new FloatType());
-				RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(inputimg,
-						new FloatType());
-				 final int n = inputimg.numDimensions();
-				 
-				
-		Extractpsfinfo getpsf = new Extractpsfinfo(biginputimg);
+	//	inputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter, 0);
+		inputimg = biginputimg;
+		 
 		
-		final double noiseLevel = 0.05;
+		Pair<FloatType, FloatType> pair = GetLocalmaxmin.computeMinMaxIntensity(inputimg);
+		
+		double MaxIntensity = pair.snd.getRealDouble(); 
+		double MinIntensity = pair.fst.getRealDouble();
+		
+		// Initialize empty images to be used later
+				RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(biginputimg,
+						new FloatType());
+				 final int n = biginputimg.numDimensions();
+				
+				
+		Extractpsfinfo getpsf = new Extractpsfinfo(inputimg);
+		
 		ArrayList<double[]> totalgausslist = new ArrayList<double[]>();
-		getpsf.Extractparams(totalgausslist, noiseLevel);
+		getpsf.Extractparams(totalgausslist);
+		
+		
+		
 		
 		PushCurves.DrawDetectedGaussians(gaussimg, totalgausslist);	
 		//ImageJFunctions.show(gaussimg).setTitle("Iterated Result");
@@ -70,16 +83,31 @@ public class Psfmain {
 			
 		}
 		
-		
+		double percent = 0.3;
 		for (int index = 0; index < totalgausslist.size(); ++index){
 			
-			System.out.println("Amplitude: " + totalgausslist.get(index)[0] + " " + "Mean X: "
-					+ totalgausslist.get(index)[1] + " " + "Mean Y: " + totalgausslist.get(index)[2] + " " + "SigmaX: "
-					+ Math.sqrt(1.0/totalgausslist.get(index)[3]) + " " + "SigmaY: "
-					+ Math.sqrt(1.0/totalgausslist.get(index)[4]));
 			
-			//System.out.println(Math.sqrt(1.0/totalgausslist.get(index)[3]));
+		//	if (totalgausslist.get(index)[0] < percent){
+			System.out.println("Amp: " + totalgausslist.get(index)[0] + " " + "Mean X: "
+					+ totalgausslist.get(index)[1] + " " + "Mean Y: " + totalgausslist.get(index)[2] + " " + "SigX: "
+					+ Math.sqrt(1.0/totalgausslist.get(index)[3]) + " " + "SigY: "
+					+ Math.sqrt(1.0/totalgausslist.get(index)[4])+  " "+ "Noise"+ totalgausslist.get(index)[5]);
+		
+		//	System.out.println(Math.sqrt(1.0/totalgausslist.get(index)[3]));
+		//	}
+			
 		}
+		/*
+		System.out.println("Now Y terms:");
+		
+		
+		for (int index = 0; index < totalgausslist.size(); ++index){
+			if (totalgausslist.get(index)[0] < percent){
+			System.out.println(Math.sqrt(1.0/totalgausslist.get(index)[4]));
+			}
+		}
+		*/
+		
 		
 		 System.out.println("Printing the parameters for the PSF detected :");
 		 

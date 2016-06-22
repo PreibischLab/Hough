@@ -144,6 +144,7 @@ public class Boundingbox {
 		FloatType maxval = new FloatType(1);
 		Normalize.normalize(Views.iterable(testimg), minval, maxval);
 
+		ImageJFunctions.show(testimg);
 		// Prepare seed image
 		NativeImgLabeling<Integer, IntType> oldseedLabeling = new NativeImgLabeling<Integer, IntType>(
 				new ArrayImgFactory<IntType>().create(testimg, new IntType()));

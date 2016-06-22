@@ -17,7 +17,7 @@ package peakFitter;
 	 *
 	 * @author Jean-Yves Tinevez <jeanyves.tinevez@gmail.com> 2012
 	 */
-	public class GaussianandPoisson implements FitFunction {
+	public class GaussianandConstNoise implements FitFunction {
 
 		/*
 		 * METHODS
@@ -25,7 +25,7 @@ package peakFitter;
 
 		@Override
 		public final double val(final double[] x, final double[] a) {
-			return a[0] * E(x, a);
+			return a[0] * E(x, a) + a[2*x.length +1];
 		}
 
 		/**
@@ -46,11 +46,15 @@ package peakFitter;
 				int dim = k - 1;
 				return 2 * a[dim+ndims] * (x[dim] - a[dim+1]) * a[0] * E(x, a);
 
-			} else {
+			} else if (k > ndims && k < 2*ndims + 1) {
 				// With respect to ai
 				int dim = k - ndims - 1;
 				double di = x[dim] - a[dim+1];
 				return - di * di * a[0] * E(x, a);
+			}
+			else{
+				
+				return a[0] * E(x, a);
 			}
 		}
 
@@ -78,12 +82,13 @@ package peakFitter;
 					final int dim = c - 1;
 					return 2 * a[dim+ndims] * (x[dim] - a[dim+1])  * E(x, a);
 
-				} else {
+				} else  {
 					// d²G / (dA dsi)
 					final int dim = c - ndims - 1;
 					final double di = x[dim] - a[dim+1];
 					return - di * di * E(x, a);
 				}
+				
 
 			} else if (c == r) {
 				// diagonal
