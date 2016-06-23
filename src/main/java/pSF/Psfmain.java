@@ -28,8 +28,7 @@ public class Psfmain {
 	public static void main(String[] args) throws Exception {
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
 				.openAs32Bit(new File("src/main/resources/Fresh_data/psf_488_12.tif"));
-		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
-				new FloatType());
+		
 		new ImageJ();
       
 		new Normalize();
@@ -37,85 +36,61 @@ public class Psfmain {
 		FloatType maxval = new FloatType(1);
 		Normalize.normalize(Views.iterable(biginputimg), minval, maxval);
 		ImageJFunctions.show(biginputimg);
-	//	inputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter, 0);
+		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
+				new FloatType());
 		inputimg = biginputimg;
-		 
-		
-		Pair<FloatType, FloatType> pair = GetLocalmaxmin.computeMinMaxIntensity(inputimg);
-		
-		double MaxIntensity = pair.snd.getRealDouble(); 
-		double MinIntensity = pair.fst.getRealDouble();
-		
+	
 		// Initialize empty images to be used later
-				RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(biginputimg,
+				RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(inputimg,
 						new FloatType());
-				 final int n = biginputimg.numDimensions();
+				 final int ndims = inputimg.numDimensions();
 				
 				
 		Extractpsfinfo getpsf = new Extractpsfinfo(inputimg);
 		
 		ArrayList<double[]> totalgausslist = new ArrayList<double[]>();
-		getpsf.Extractparams(totalgausslist);
+		
+
+		final long radius = 18; //Raidus of the Hypersphere to choose data size around the point
+		getpsf.Extractparams(totalgausslist, radius, true);
 		
 		
 		
 		
 		PushCurves.DrawDetectedGaussians(gaussimg, totalgausslist);	
-		//ImageJFunctions.show(gaussimg).setTitle("Iterated Result");
+		ImageJFunctions.show(gaussimg).setTitle("Iterated Result");
 		
-		final double[] maxoneoversigma = { Double.MIN_VALUE, Double.MIN_VALUE };
-		final double[] oneoversigma = new double[n];
-		int maxindex = 0;
-		for (int listindex = 0; listindex < totalgausslist.size(); ++listindex){
-			
-			for (int d = 0; d < n; ++d){
-				
-				oneoversigma[d] = totalgausslist.get(listindex)[n+d+1];
-				
-				if (oneoversigma[d] > maxoneoversigma[d]){
-					
-					maxoneoversigma[d] = oneoversigma[d];
-					maxindex = listindex;
-					
-				}
-				
-			}
-			
-		}
 		
-		double percent = 0.3;
+		
 		for (int index = 0; index < totalgausslist.size(); ++index){
 			
 			
-		//	if (totalgausslist.get(index)[0] < percent){
 			System.out.println("Amp: " + totalgausslist.get(index)[0] + " " + "Mean X: "
 					+ totalgausslist.get(index)[1] + " " + "Mean Y: " + totalgausslist.get(index)[2] + " " + "SigX: "
 					+ Math.sqrt(1.0/totalgausslist.get(index)[3]) + " " + "SigY: "
-					+ Math.sqrt(1.0/totalgausslist.get(index)[4])+  " "+ "Noise"+ totalgausslist.get(index)[5]);
+					+ Math.sqrt(1.0/totalgausslist.get(index)[4])+  " "+ "Noise: "+ totalgausslist.get(index)[5]);
 		
-		//	System.out.println(Math.sqrt(1.0/totalgausslist.get(index)[3]));
-		//	}
+			
+			
 			
 		}
 		/*
-		System.out.println("Now Y terms:");
-		
-		
+		System.out.println("Amplitude:  ");
 		for (int index = 0; index < totalgausslist.size(); ++index){
-			if (totalgausslist.get(index)[0] < percent){
-			System.out.println(Math.sqrt(1.0/totalgausslist.get(index)[4]));
-			}
+		System.out.println(totalgausslist.get(index)[0]);
 		}
-		*/
+		System.out.println("SigmaX:  ");
+		for (int index = 0; index < totalgausslist.size(); ++index){
+			
+		
+		System.out.println(Math.sqrt(1.0/totalgausslist.get(index)[3]));
 		
 		
-		 System.out.println("Printing the parameters for the PSF detected :");
-		 
-		 
-		 System.out.println("Amplitude: " + totalgausslist.get(maxindex)[0] + " " + "Mean X: "
-							+ totalgausslist.get(maxindex)[1] + " " + "Mean Y: " + totalgausslist.get(maxindex)[2] + " " + "SigmaX: "
-							+ Math.sqrt(1.0/totalgausslist.get(maxindex)[3]) + " " + "SigmaY: "
-							+ Math.sqrt(1.0/totalgausslist.get(maxindex)[4]));
-		
+		}
+		System.out.println("SigmaY:  ");
+		for (int index = 0; index < totalgausslist.size(); ++index){
+			System.out.println(Math.sqrt(1.0/totalgausslist.get(index)[4]));	
+		}
+		*/	
 	}
 }

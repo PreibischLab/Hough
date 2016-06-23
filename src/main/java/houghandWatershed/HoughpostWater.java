@@ -58,7 +58,7 @@ public class HoughpostWater {
 				new FloatType());
 
 		// Preprocess image
-		inputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter, new Float(0));
+		inputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter);
 
 		ImageJFunctions.show(inputimg).setTitle("Preprocessed image");
 
@@ -78,18 +78,19 @@ public class HoughpostWater {
 
 		final int ndims = biginputimg.numDimensions();
 		double[] final_param = new double[2 * ndims + 1];
-		final double[] point_spread_sigma = new double[ndims];
+
+		final long radius = 2;
 		// Input the psf-sigma here to be used for convolving Gaussians on a
 		// line, will not change during iteration.
 
-		point_spread_sigma[0] = 2;
-		point_spread_sigma[1] = 2;
+		
+		
 
 		ArrayList<double[]> totalgausslist = new ArrayList<double[]>();
 
 		// Get a rough reconstruction of the line and the list of centroids where psf of the image has to be convolved
 		
-		OverlayLines.GetAlllines(imgout, biginputimg, linepair.fst, centroidlist, linepair.snd, point_spread_sigma);
+		OverlayLines.GetAlllines(imgout, biginputimg, linepair.fst, centroidlist, linepair.snd, radius);
 
 		ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
 
@@ -108,7 +109,7 @@ public class HoughpostWater {
 		while (listcursor.hasNext()) {
 			listcursor.fwd();
 			listcursor.localize(listpoint);
-			final_param = MTlength.Getfinalparam(listcursor, point_spread_sigma);
+			final_param = MTlength.Getfinalparam(listcursor, radius);
 
 			// Choosing values above the nosie level of the image 
 			

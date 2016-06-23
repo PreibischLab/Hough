@@ -10,6 +10,7 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealLocalizable;
+import net.imglib2.algorithm.neighborhood.HyperSphereNeighborhood;
 import net.imglib2.algorithm.neighborhood.RectangleShape;
 import net.imglib2.algorithm.region.hypersphere.HyperSphere;
 import net.imglib2.algorithm.region.hypersphere.HyperSphereCursor;
@@ -50,7 +51,7 @@ public class LengthDetection {
 	 * 
 	 */
 
-	public double[] makeBestGuess(final Localizable point, final double[][] X, final double[] I, final double[] typical_sigma) {
+	public double[] makeBestGuess(final Localizable point, final double[][] X, final double[] I, final long radius) {
 		double[] start_param = new double[2 * ndims + 2];
 
 		for (int d = 0; d < ndims; ++d) {
@@ -71,7 +72,7 @@ public class LengthDetection {
 
 		for (int j = 0; j < ndims; j++) {
 			
-			start_param[ndims + j + 1] = 1 / typical_sigma[j];
+			start_param[ndims + j + 1] = 1 / radius;
 		}
 		start_param[2*ndims+1] = 0;
 		return start_param;
@@ -122,12 +123,12 @@ public class LengthDetection {
 	// Get final parameters for the Gaussian fit along the line, input the
 	// centroid position and value where the Gaussian has to be fitted
 	// in the image
-	public double[] Getfinalparam(final Localizable point, final double[] typical_sigma)
+	public double[] Getfinalparam(final Localizable point, final long radius)
 			throws Exception {
 
 
 
-		PointSampleList<FloatType> datalist = gatherData(point, typical_sigma);
+		PointSampleList<FloatType> datalist = gatherData(point, radius);
 
 		final Cursor<FloatType> listcursor = datalist.localizingCursor();
 
@@ -146,7 +147,7 @@ public class LengthDetection {
 			index++;
 		}
 
-		final double[] start_param = makeBestGuess(point, X, I, typical_sigma);
+		final double[] start_param = makeBestGuess(point, X, I, radius);
 		
 		final double[] finalparam = start_param.clone();
 		int maxiter = 100;
@@ -168,12 +169,12 @@ public class LengthDetection {
 	}
 	
 	
-	public double[] Getfinalpointsparam(final Localizable point, final double[] typical_sigma)
+	public double[] Getfinalpointsparam(final Localizable point, final long radius)
 			throws Exception {
 
 
 
-		PointSampleList<FloatType> datalist = gatherPointsData(point, typical_sigma);
+		PointSampleList<FloatType> datalist = gatherPointsData(point, radius);
 
 		final Cursor<FloatType> listcursor = datalist.localizingCursor();
 
@@ -192,17 +193,15 @@ public class LengthDetection {
 			index++;
 		}
 
-		final double[] start_param = makeBestGuess(point, X, I, new double[] {5,5});
-		
-	//	final double[] start_param = makeBestpointsGuess(point, X, I);
+		final double[] start_param = makeBestpointsGuess(point, X, I);
 		
 		final double[] finalparam = start_param.clone();
-		int maxiter = 5000;
-		double lambda = 1e-4;
-		double termepsilon = 1e-2;
+		int maxiter = 1000;
+		double lambda = 1e-3;
+		double termepsilon = 1e-1;
 
 		LevenbergMarquardtSolverLocal.solve(X, finalparam, I, new GaussianandConstNoise(), lambda, termepsilon, maxiter);
-		
+	
 		// NaN protection: we prefer returning the crude estimate than NaN
 		for (int j = 0; j < finalparam.length; j++) {
 			if (Double.isNaN(finalparam[j])  )
@@ -216,7 +215,7 @@ public class LengthDetection {
 	}
 
 	@SuppressWarnings("deprecation")
-	private PointSampleList<FloatType> gatherData(final Localizable point, final double[] typical_sigma){
+	private PointSampleList<FloatType> gatherData(final Localizable point, final long radius){
 		final PointSampleList<FloatType> datalist = new PointSampleList<FloatType>(ndims);
 		
 		RandomAccess<FloatType> ranac = inputimg.randomAccess();
@@ -231,14 +230,20 @@ public class LengthDetection {
 			size[d] = 1;
 		}
 		// Gather data around the point
-		RectangleRegionOfInterest dataregion = new RectangleRegionOfInterest(position, size);
-		IterableInterval<FloatType> roiInterval = dataregion.getIterableIntervalOverROI(inputimg);
-		Cursor<FloatType> localcursor = 	roiInterval.localizingCursor();
-		  
+        HyperSphere<FloatType> region = new HyperSphere<FloatType>(inputimg, point, radius);
+		
+		HyperSphereCursor<FloatType> localcursor = region.localizingCursor();
+		  RandomAccess<IntType> intranac = intimg.randomAccess();
+		  intranac.setPosition(point);
+		 final int label = intranac.get().get();
 		  while(localcursor.hasNext()){
 			  localcursor.fwd();
+			  intranac.setPosition(localcursor);
+			  int i = intranac.get().get();
+			  if (i == label){
 			  Point newpoint = new Point(localcursor);
 				datalist.add(newpoint, localcursor.get().copy());
+			  }
 			  
 		  }
 		
@@ -247,61 +252,48 @@ public class LengthDetection {
 		return datalist;
 	}
 	
-	@SuppressWarnings("deprecation")
-	private PointSampleList<FloatType> gatherPointsData(final Localizable point, final double[] typical_sigma){
+	private PointSampleList<FloatType> gatherPointsData(final Localizable point, final long radius){
 		final PointSampleList<FloatType> datalist = new PointSampleList<FloatType>(ndims);
 		
 		
 		
-		final double[] minsize = new double[ndims];
-		final double[] maxsize = new double[ndims];
-		final double[] size = new double[ndims];
-		for (int d = 0; d < ndims; ++d){
-			
-			minsize[d] = point.getDoublePosition(d) - typical_sigma[d];
-			
-			
-			maxsize[d] = point.getDoublePosition(d) + typical_sigma[d];
-			size[d] = maxsize[d] - minsize[d] + 1;
-		}
+		
 		RandomAccess<IntType> intranac = intimg.randomAccess();
 		final double[] position = new double[ndims];
 		point.localize(position);
 		intranac.setPosition(point);
-		int label = intranac.get().get();
+		final int label = intranac.get().get();
 		// Gather data around the point
-		RectangleRegionOfInterest dataregion = new RectangleRegionOfInterest(position, size);
-		IterableInterval<FloatType> roiInterval = dataregion.getIterableIntervalOverROI(inputimg);
+		HyperSphere<FloatType> region = new HyperSphere<FloatType>(inputimg, point, radius);
 		
-		
-	  Cursor<FloatType> localcursor = 	roiInterval.localizingCursor();
+		HyperSphereCursor<FloatType> localcursor = region.localizingCursor();
+//	  Cursor<FloatType> localcursor = 	roiInterval.localizingCursor();
 	  boolean outofbounds = false;
 	  while(localcursor.hasNext()){
 		  localcursor.fwd();
 		  
-		  intranac.setPosition(localcursor);
-		  for (int d = 0; d < ndims; ++d){
-			  
-			  if (localcursor.getDoublePosition(d) < 0 || localcursor.getDoublePosition(d) >= inputimg.dimension(d) ){
-				  
-				  outofbounds = true;
-				  break;
-			  }
-			  
-			  
-		  }
-		  if (outofbounds) {
+		  
+		  for (int d = 0; d < ndims; d++) {
+				
+				if (localcursor.getDoublePosition(d) < 0 || localcursor.getDoublePosition(d) >= inputimg.dimension(d)) {
+					outofbounds = true;
+					break;
+				}
+			}
+			if (outofbounds) {
 				outofbounds = false;
 				continue;
 			}
+			intranac.setPosition(localcursor);
+			  int i = intranac.get().get();
+		  if (i == label){
 		  
-		  
-		//  if (intranac.get().get() == label){
-		  Point newpoint = new Point(localcursor);
+		    Point newpoint = new Point(localcursor);
 			datalist.add(newpoint, localcursor.get().copy());
-		 // }
+			
+			
+		  }
 	  }
-		
 		
 		return datalist;
 	}

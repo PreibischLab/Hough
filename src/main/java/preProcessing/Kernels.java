@@ -38,12 +38,12 @@ public class Kernels {
 
 	
 	public static enum ProcessingType {
-		Horizontaledge, Verticaledge, Gradientmag, NaiveEdge, Meanfilter, SupressThresh, CannyEdge, Noiseinput
+		Horizontaledge, Verticaledge, Gradientmag, NaiveEdge, Meanfilter, SupressThresh, CannyEdge
 	}
 	      // Any preprocessing
 
 			public static RandomAccessibleInterval<FloatType> Preprocess(final RandomAccessibleInterval<FloatType> inputimg,
-					final ProcessingType edge, final double Lowthreshold ){
+					final ProcessingType edge ){
 				
 				
 				RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(inputimg,
@@ -74,8 +74,7 @@ public class Kernels {
 				case CannyEdge:
 					imgout = CannyEdge(inputimg,new double[]{1,1} );
 					break;
-				case Noiseinput:
-					imgout = SupressNoise(inputimg, Lowthreshold);
+				
 				default:
 					imgout = Supressthresh(inputimg);
 					break;
@@ -427,15 +426,34 @@ public class Kernels {
 				new FloatType());
 		//Supress values below the low threshold
 		int n = inputimg.numDimensions();
-		double[] position = new double[n];
 				Cursor<FloatType> inputcursor = Views.iterable(inputimg).localizingCursor();
 				RandomAccess<FloatType> outputran = Threshimg.randomAccess();
 				
 				while(inputcursor.hasNext()){
 					inputcursor.fwd();
-					inputcursor.localize(position);
 					outputran.setPosition(inputcursor);
 					if (inputcursor.get().get()<=Lowthreshold)
+						outputran.get().setZero();
+					else
+						outputran.get().set(inputcursor.get());
+				}
+			return Threshimg;	
+				
+		
+		
+	}
+	public static RandomAccessibleInterval<FloatType> SupressBrightPeaks(RandomAccessibleInterval<FloatType> inputimg, double Lowthreshold){
+		RandomAccessibleInterval<FloatType> Threshimg = new ArrayImgFactory<FloatType>().create(inputimg,
+				new FloatType());
+		//Supress values below the low threshold
+		int n = inputimg.numDimensions();
+				Cursor<FloatType> inputcursor = Views.iterable(inputimg).localizingCursor();
+				RandomAccess<FloatType> outputran = Threshimg.randomAccess();
+				
+				while(inputcursor.hasNext()){
+					inputcursor.fwd();
+					outputran.setPosition(inputcursor);
+					if (inputcursor.get().get()>=Lowthreshold)
 						outputran.get().setZero();
 					else
 						outputran.get().set(inputcursor.get());

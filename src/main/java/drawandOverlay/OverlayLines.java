@@ -222,7 +222,7 @@ public class OverlayLines {
 			Img<IntType> intimg, 
 			PointSampleList<FloatType> centroidlist,
 			ArrayList<Lineobjects> linelist,
-			final double[] typical_sigma) {
+			final long radius) {
 
 		for (int index = 0; index < linelist.size(); ++index) {
 
@@ -238,7 +238,7 @@ public class OverlayLines {
 			//PushCurves.Drawexactline(testimgout,intimg, slope, intercept, label);
 			
 			if (Math.abs(slope)!=Double.POSITIVE_INFINITY )
-			PushCurves.DrawTruncatedline(imgout, inputimg, intimg, centroidlist, typical_sigma, slope, intercept, label);
+			PushCurves.DrawTruncatedline(imgout, inputimg, intimg, centroidlist, slope, intercept, label);
 			
 			
 			

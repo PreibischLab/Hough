@@ -1,26 +1,12 @@
 package peakFitter;
 
 /**
-	 * A n-dimensional Gaussian peak function, representing an elliptical Gaussian,
-	 * with axis constrained to be aligned with the main axis. 
-	 * <p>
-	 * This fitting target function is defined over dimension <code>n</code>, by the following 
-	 * <code>2n+1</code> parameters:
-	 * <pre>k = 0       - A
-	 *k = 1..n    - x₀ᵢ (with i = k-1)
-	 *k = n+1..2n - bᵢ (with i = k-n-1)</pre>
-	 * with
-	 * <pre>f(x) = A × exp( - S )</pre>
-	 * and
-	 * <pre>S = ∑ bᵢ × (xᵢ - x₀ᵢ)² </pre>
-	 * 
-	 *
-	 * @author Jean-Yves Tinevez <jeanyves.tinevez@gmail.com> 2012
+	 Gaussian peak with constant noise
 	 */
 	public class GaussianandConstNoise implements FitFunction {
 
 		/*
-		 * METHODS
+		 * Gaussian parameters with the const noise term to be determined by the solver
 		 */
 
 		@Override
@@ -54,7 +40,7 @@ package peakFitter;
 			}
 			else{
 				
-				return a[0] * E(x, a);
+				return 1.0;
 			}
 		}
 

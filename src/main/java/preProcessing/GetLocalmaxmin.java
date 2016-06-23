@@ -457,6 +457,56 @@ public class GetLocalmaxmin {
 		return pair;
 	}
 
+	public static long[] computeMaxinLabel(
+			final RandomAccessibleInterval<FloatType> inputimg,
+			final RandomAccessibleInterval<IntType> intimg,
+			final int label,
+			boolean ignorebright) {
+
+		final Cursor<IntType> intcursor = Views.iterable(intimg).localizingCursor();
+		final RandomAccess<FloatType> ranac = inputimg.randomAccess();
+		
+       Pair<FloatType, FloatType> pair = GetLocalmaxmin.computeMinMaxIntensity(inputimg);
+		
+		// Neglect bright beads
+		
+		final Float threshold = (pair.snd.get() - pair.fst.get())/2;
+		
+		// initialize min and max with the first image value
+		double max = Double.MIN_VALUE;
+		long[] pos = new long[inputimg.numDimensions()];
+		while(intcursor.hasNext()){
+			intcursor.fwd();
+			
+			final int i = intcursor.get().get();
+			
+			if (i == label){
+				ranac.setPosition(intcursor);
+				if (ranac.get().get() > max){
+					max = ranac.get().getRealDouble();
+						
+						ranac.localize(pos);
+					
+				}
+				
+			}
+			
+			
+		}
+		
+      if (ignorebright == true){
+			
+			if (max<= threshold)
+		
+				return pos;
+		}
+      if (ignorebright == false)
+    	  return pos;
+		
+      else
+		return null;
+	}
+
 	
 	// Find maxima only if the pixel intensity is higher than a certain
 	// threshold value

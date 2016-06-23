@@ -391,7 +391,7 @@ public class PushCurves {
 			RandomAccessibleInterval<FloatType> inputimg, 
 			Img<IntType> intimg, 
 			PointSampleList<FloatType> centroidlist,
-			final double[] typical_sigma, 
+			
 			double slope, 
 			double intercept, 
 			int label) {
