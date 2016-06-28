@@ -4,12 +4,18 @@ public class GaussianandPoisson implements FitFunction {
 	/*
 	 * Gaussian parameters with the const noise term to be determined by the solver
 	 */
-
+	private static final int degree = 1;
+	 
+		
+		
+	
+	
 	@Override
 	public final double val(final double[] x, final double[] a) {
-		return a[0] * E(x, a) + P(x,a);
+		return a[0] * E(x, a) + P(x,a[2*x.length+1], degree);
 	}
-
+	
+	
 	/**
 	 * Partial derivatives indices are ordered as follow:
 	 * <pre>k = 0       - A
@@ -34,27 +40,17 @@ public class GaussianandPoisson implements FitFunction {
 			double di = x[dim] - a[dim+1];
 			return - di * di * a[0] * E(x, a);
 		}
-		else if (k >= 2*ndims + 1 && k < 2*ndims +2){
-			
-			return a[0] * E(x, a);
-		}
 		
-		else if (k >= 2*ndims + 2 && k < 2*ndims+4){
+		
+		else {
 			
-			double[] y = new double[ndims];
-			for (int d = 0; d < ndims; ++d){
-				y[d] = x[d] - 1;
-				
-			}
 			
-		return P(y,a) - P(x,a);
+			
+		   return P(x,a[2*ndims+1], degree-1);
 			
 		}
 		
-		else{
-			
-			return 0;
-		}
+		
 	}
 
 	/**
@@ -150,12 +146,14 @@ public class GaussianandPoisson implements FitFunction {
 		return Math.exp(-sum);
 	}
 	
-	private static final double P(final double[] x, final double[] a) {
-		final int ndims = x.length;
-		double prod = 1;
-		for (int i = 0; i < x.length; i++) {
-			prod*= Math.pow(a[2*ndims+i],x[i])*Math.exp(-a[2*ndims+i]);
-		}
+	private static final double P(final double[] x, final double a, final int degree) {
+		
+		 int kfactorial = 1;
+			for (int i = degree; i > 0; --i)
+		      kfactorial *=i;
+			
+		final double prod = Math.pow(a,degree)*Math.exp(-a)/(kfactorial);
+		
 		return prod;
 	}
 	

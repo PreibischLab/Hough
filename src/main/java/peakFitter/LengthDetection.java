@@ -147,7 +147,7 @@ public class LengthDetection {
 		double lambda = 1e-3;
 		double termepsilon = 1e-1;
 
-		LevenbergMarquardtSolverLocal.solve(X, finalparam, I, new GaussianMultiDLM(), lambda, termepsilon, maxiter);
+		LevenbergMarquardtSolverLocal.solve(X, finalparam, I, new GaussianandPoisson(), lambda, termepsilon, maxiter);
 		
 		// NaN protection: we prefer returning the crude estimate than NaN
 		for (int j = 0; j < finalparam.length; j++) {

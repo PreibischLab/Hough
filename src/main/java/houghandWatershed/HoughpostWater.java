@@ -88,7 +88,7 @@ public class HoughpostWater {
 		final int ndims = biginputimg.numDimensions();
 		double[] final_param = new double[2 * ndims + 2];
 		double[] psf = new double[ndims];
-		final long radius = 1;
+		final long radius = 2;
 		psf[0] = 1.7;
 		psf[1] = 1.54;
 		// Input the psf-sigma here to be used for convolving Gaussians on a
@@ -129,7 +129,7 @@ public class HoughpostWater {
 
 				System.out.println(" Amplitude: " + final_param[0] + " " + "Mean X: " + final_param[1] + " "
 						+ "Mean Y: " + final_param[2] + " " + "SigmaX: " + Math.sqrt(1.0/final_param[3]) + " " + "SigmaY: "
-						+ Math.sqrt(1.0/final_param[4]));
+						+ Math.sqrt(1.0/final_param[4]) + " " + "Poisson: "+ final_param[5]);
 		}
 		}
 
