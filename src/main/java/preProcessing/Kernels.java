@@ -38,7 +38,7 @@ public class Kernels {
 
 	
 	public static enum ProcessingType {
-		Horizontaledge, Verticaledge, Gradientmag, NaiveEdge, Meanfilter, SupressThresh, CannyEdge
+		Horizontaledge, Verticaledge, Gradientmag, NaiveEdge, Meanfilter, SupressThresh, CannyEdge, Meanfilterandsupress
 	}
 	      // Any preprocessing
 
@@ -56,6 +56,9 @@ public class Kernels {
 					HorizontalEdge(imgout);
 					break;
 				case Meanfilter:
+					imgout = Meanfilteronly(inputimg, 1.0);
+					break;
+				case Meanfilterandsupress:
 					imgout = Meanfilterandsupress(inputimg, 1.0);
 					break;
 				case NaiveEdge:
@@ -380,7 +383,7 @@ public class Kernels {
 		return Threshcannyimg;
 	}
 	
-	public static RandomAccessibleInterval<FloatType> Meanfilterandsupress(RandomAccessibleInterval<FloatType> inputimg, double sigma){
+	public static RandomAccessibleInterval<FloatType> Meanfilteronly(RandomAccessibleInterval<FloatType> inputimg, double sigma){
 		// Mean filtering for a given sigma
 		
 		RandomAccessibleInterval<FloatType> outimg = new ArrayImgFactory<FloatType>().create(inputimg,
@@ -417,6 +420,46 @@ public class Kernels {
 					else
 						outputran.get().set(inputcursor.get());
 				}*/
+			return outimg;
+		
+	}
+	public static RandomAccessibleInterval<FloatType> Meanfilterandsupress(RandomAccessibleInterval<FloatType> inputimg, double sigma){
+		// Mean filtering for a given sigma
+		
+		RandomAccessibleInterval<FloatType> outimg = new ArrayImgFactory<FloatType>().create(inputimg,
+				new FloatType());
+				Cursor<FloatType> cursorInput = Views.iterable(inputimg).cursor();
+				Cursor<FloatType> cursorOutput = Views.iterable(outimg).cursor();
+				FloatType mean = Views.iterable(inputimg).firstElement().createVariable();
+				while (cursorInput.hasNext()) {
+					cursorInput.fwd();
+					cursorOutput.fwd();
+					HyperSphere<FloatType> hyperSphere = new HyperSphere<FloatType>(Views.extendMirrorSingle(inputimg),
+							cursorInput, (long) sigma);
+					HyperSphereCursor<FloatType> cursorsphere = hyperSphere.cursor();
+					cursorsphere.fwd();
+					mean.set(cursorsphere.get());
+					int n = 1;
+					while (cursorsphere.hasNext()) {
+						cursorsphere.fwd();
+						n++;
+						mean.add(cursorsphere.get());
+					}
+					mean.div(new FloatType(n));
+					cursorOutput.get().set(mean);
+				}
+			
+				final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(inputimg);
+				Cursor<FloatType> inputcursor = Views.iterable(inputimg).localizingCursor();
+				RandomAccess<FloatType> outputran = outimg.randomAccess();
+				while(inputcursor.hasNext()){
+					inputcursor.fwd();
+					outputran.setPosition(inputcursor);
+					if (inputcursor.get().get()<=Lowthreshold)
+						outputran.get().setZero();
+					else
+						outputran.get().set(inputcursor.get());
+				}
 			return outimg;
 		
 	}

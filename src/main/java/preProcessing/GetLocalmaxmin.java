@@ -470,7 +470,7 @@ public class GetLocalmaxmin {
 		
 		// Neglect bright beads
 		
-		final Float threshold = (pair.snd.get() - pair.fst.get())/2;
+		final Float threshold = (pair.snd.get() - pair.fst.get())/4;
 		
 		// initialize min and max with the first image value
 		double max = Double.MIN_VALUE;

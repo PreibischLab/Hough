@@ -32,7 +32,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
+				.openAs32Bit(new File("src/main/resources/small_mt.tif"));
 		// small_mt.tif image to be used for testing
 		// 2015-01-14_Seeds-1.tiff for actual
 		// mt_experiment.tif for big testing
@@ -52,13 +52,18 @@ public class HoughpostWater {
 		// Initialize empty images to be used later
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
+		
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
 		RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
 
 		// Preprocess image
-		inputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter);
+		
+		
+		
+		
+		inputimg = Kernels.Preprocess(biginputimg, ProcessingType.CannyEdge);
 
 		ImageJFunctions.show(inputimg).setTitle("Preprocessed image");
 
@@ -68,7 +73,11 @@ public class HoughpostWater {
 				linelist);
 
 		// Do watershedding and Hough
-		linepair = PerformWatershedding.DowatersheddingandHough(biginputimg, inputimg);
+		
+		// Declare minimum length of the line(in pixels) to be detected
+				double minlength = 10;
+				
+		linepair = PerformWatershedding.DowatersheddingandHough(biginputimg, inputimg, minlength);
 
 		// Overlay detected lines on the image
 
@@ -77,9 +86,11 @@ public class HoughpostWater {
 		
 
 		final int ndims = biginputimg.numDimensions();
-		double[] final_param = new double[2 * ndims + 1];
-
-		final long radius = 2;
+		double[] final_param = new double[2 * ndims + 2];
+		double[] psf = new double[ndims];
+		final long radius = 1;
+		psf[0] = 1.7;
+		psf[1] = 1.54;
 		// Input the psf-sigma here to be used for convolving Gaussians on a
 		// line, will not change during iteration.
 
@@ -103,23 +114,22 @@ public class HoughpostWater {
 
 		// Choose the noise level of the image, 0 for pre-processed image and >0 for original image
 		
-		final double noiselevel = 0.1;
 		
 		Cursor<FloatType> listcursor = centroidlist.localizingCursor();
 		while (listcursor.hasNext()) {
 			listcursor.fwd();
 			listcursor.localize(listpoint);
-			final_param = MTlength.Getfinalparam(listcursor, radius);
+			final_param = MTlength.Getfinalparam(listcursor, radius, psf);
 
 			// Choosing values above the nosie level of the image 
 			
-			if (final_param[0] > noiselevel && final_param[3] > 0 && final_param[4] > 0){
+			if ( final_param[3] > 0 && final_param[4] > 0){
 		
 				totalgausslist.add(final_param);
 
 				System.out.println(" Amplitude: " + final_param[0] + " " + "Mean X: " + final_param[1] + " "
-						+ "Mean Y: " + final_param[2] + " " + "1/SigmaX^2: " + final_param[3] + " " + "1/SigmaY^2: "
-						+ final_param[4]);
+						+ "Mean Y: " + final_param[2] + " " + "SigmaX: " + Math.sqrt(1.0/final_param[3]) + " " + "SigmaY: "
+						+ Math.sqrt(1.0/final_param[4]));
 		}
 		}
 

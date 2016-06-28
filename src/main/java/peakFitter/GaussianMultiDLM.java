@@ -25,7 +25,7 @@ package peakFitter;
 
 		@Override
 		public final double val(final double[] x, final double[] a) {
-			return a[0] * E(x, a) ;
+			return a[0] * E(x, a) + a[2*x.length +1] ;
 		}
 
 		/**
@@ -46,11 +46,16 @@ package peakFitter;
 				int dim = k - 1;
 				return 2 * a[dim+ndims] * (x[dim] - a[dim+1]) * a[0] * E(x, a);
 
-			} else  {
+			} else if (k > ndims && k < 2*ndims + 1)  {
 				// With respect to ai
 				int dim = k - ndims - 1;
 				double di = x[dim] - a[dim+1];
 				return - di * di * a[0] * E(x, a);
+			}
+			
+			else{
+				
+				return 0;
 			}
 			
 			

@@ -64,6 +64,7 @@ public class Extractpsfinfo {
 		 
 		 
 		 Cursor<FloatType> listcursor = centroidlist.localizingCursor();
+		
 		 while(listcursor.hasNext()){
 			 listcursor.fwd();
 			 final_param = MTlength.Getfinalpointsparam(listcursor, radius);

@@ -47,7 +47,8 @@ public class PerformWatershedding {
 
 	public static Pair<Img<IntType>, ArrayList<Lineobjects>> DowatersheddingandHough(
 			final RandomAccessibleInterval<FloatType> biginputimg,
-			final RandomAccessibleInterval<FloatType> processedimg) 
+			final RandomAccessibleInterval<FloatType> processedimg,
+			final double minlength) 
 	{
 
 		// Prepare seed image for watershedding
@@ -82,8 +83,7 @@ public class PerformWatershedding {
 		
 		ArrayList<Lineobjects> linelist = new ArrayList<Lineobjects>(biginputimg.numDimensions());
 		
-		// Declare minimum length of the line(in pixels) to be detected
-		double minlength = 5;
+		
 		for (int label = 1; label < Maxlabel-1; label++) {
 
 			System.out.println("Label Number:" +label);

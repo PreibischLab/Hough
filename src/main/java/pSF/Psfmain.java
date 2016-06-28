@@ -27,7 +27,7 @@ public class Psfmain {
 	
 	public static void main(String[] args) throws Exception {
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/Fresh_data/psf_488_12.tif"));
+				.openAs32Bit(new File("src/main/resources/testbeads.tif"));
 		
 		new ImageJ();
       
@@ -35,7 +35,7 @@ public class Psfmain {
 		FloatType minval = new FloatType(0);
 		FloatType maxval = new FloatType(1);
 		Normalize.normalize(Views.iterable(biginputimg), minval, maxval);
-		ImageJFunctions.show(biginputimg);
+	//	ImageJFunctions.show(biginputimg);
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
 		inputimg = biginputimg;
@@ -51,8 +51,10 @@ public class Psfmain {
 		ArrayList<double[]> totalgausslist = new ArrayList<double[]>();
 		
 
-		final long radius = 18; //Raidus of the Hypersphere to choose data size around the point
-		getpsf.Extractparams(totalgausslist, radius, true);
+		final long radius = 8; //Raidus of the Hypersphere to choose data size around the point
+		
+		// Say true if you want to ignore the brightest beads, say false if you want to take all beads.
+		getpsf.Extractparams(totalgausslist, radius, false);
 		
 		
 		
@@ -74,7 +76,7 @@ public class Psfmain {
 			
 			
 		}
-		/*
+	/*	
 		System.out.println("Amplitude:  ");
 		for (int index = 0; index < totalgausslist.size(); ++index){
 		System.out.println(totalgausslist.get(index)[0]);
@@ -91,6 +93,6 @@ public class Psfmain {
 		for (int index = 0; index < totalgausslist.size(); ++index){
 			System.out.println(Math.sqrt(1.0/totalgausslist.get(index)[4]));	
 		}
-		*/	
+		*/
 	}
 }

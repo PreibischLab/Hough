@@ -425,7 +425,7 @@ public class PushCurves {
 				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
 			else
 				intensity = 0;
-			intensity *= ranacinput.get().get();
+		//	intensity *= ranacinput.get().get();
 
 			ranac.setPosition(inputcursor);
 			int i = ranac.get().get();
