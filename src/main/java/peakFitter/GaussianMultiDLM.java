@@ -19,10 +19,6 @@ package peakFitter;
 	 */
 	public class GaussianMultiDLM implements FitFunction {
 
-		/*
-		 * METHODS
-		 */
-
 		@Override
 		public final double val(final double[] x, final double[] a) {
 			return a[0] * E(x, a) + a[2*x.length +1] ;
@@ -57,12 +53,10 @@ package peakFitter;
 				
 				return 0;
 			}
-			
-			
 		}
 
 		/**
-		 * Not used but hey. Noise term not implemented for this one
+		 * Not used but hey.
 		 * @return the hessian value for row r and column c
 		 */
 		public final double hessian(final double[] x, final double[] a, int r, int c) {
@@ -155,9 +149,8 @@ package peakFitter;
 		
 
 	}
-
-
 	
+
 	
 	
 

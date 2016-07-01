@@ -22,6 +22,7 @@ import net.imglib2.view.Views;
 
 public class LengthDetection {
 
+
 	private final RandomAccessibleInterval<FloatType> inputimg;
 	private final RandomAccessibleInterval<IntType> intimg;
 	private final int ndims;
@@ -71,7 +72,14 @@ public class LengthDetection {
 		return start_param;		
 	}
 
-	
+	private final double[] makeNoiseGuess(){
+		double[] start_param = new double[ndims];
+		
+		for (int d = 0; d < ndims; ++d)
+			start_param[d] = 0.5;
+		
+		return start_param;
+	}
 	private final double[] makeBestpointsGuess(final Localizable point, final double[][] X, final double[] I) {
 
 		double[] start_param = new double[2*ndims+2];
@@ -147,7 +155,7 @@ public class LengthDetection {
 		double lambda = 1e-3;
 		double termepsilon = 1e-1;
 
-		LevenbergMarquardtSolverLocal.solve(X, finalparam, I, new GaussianandPoisson(), lambda, termepsilon, maxiter);
+		LevenbergMarquardtSolverLocal.solve(X, finalparam, I, new GaussianMultiDLM(), lambda, termepsilon, maxiter);
 		
 		// NaN protection: we prefer returning the crude estimate than NaN
 		for (int j = 0; j < finalparam.length; j++) {
@@ -207,6 +215,52 @@ public class LengthDetection {
 
 	}
 
+    public double[] Getnoiseparam(final Localizable point, long radius, double[] psf) 
+	throws Exception {
+
+
+
+		PointSampleList<FloatType> datalist = gatherData(point, radius);
+
+		final Cursor<FloatType> listcursor = datalist.localizingCursor();
+
+		double[][] X = new double[(int) datalist.size()][ndims];
+		double[] I = new double[(int) datalist.size()];
+		int index = 0;
+		while (listcursor.hasNext()) {
+			listcursor.fwd();
+
+			for (int d = 0; d < ndims; d++) {
+				X[index][d] = listcursor.getDoublePosition(d);
+			}
+
+			I[index] = listcursor.get().getRealDouble();
+
+			index++;
+		}
+
+		final double[] start_param = makeNoiseGuess();
+		
+		final double[] finalparam = start_param.clone();
+		int maxiter = 1000;
+		double lambda = 1e-3;
+		double termepsilon = 1e-1;
+
+		LevenbergMarquardtSolverLocal.solve(X, finalparam, I, new Nonoisepoiss(), lambda, termepsilon, maxiter);
+	
+		// NaN protection: we prefer returning the crude estimate than NaN
+		for (int j = 0; j < finalparam.length; j++) {
+			if (Double.isNaN(finalparam[j])  )
+				finalparam[j] = start_param[j];
+		}
+		
+	
+		
+		return finalparam;
+
+	}
+	
+	
 	private PointSampleList<FloatType> gatherData(final Localizable point, final long radius){
 		final PointSampleList<FloatType> datalist = new PointSampleList<FloatType>(ndims);
 		
@@ -303,6 +357,10 @@ public class LengthDetection {
 		
 		return datalist;
 	}
+
+
+	
+	
 	
 	
 }
