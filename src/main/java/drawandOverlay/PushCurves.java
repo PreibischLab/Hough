@@ -461,7 +461,7 @@ public class PushCurves {
 		
 		
 		// Moving along the line with a fixed step-size. This gives set of points along the line which are then convoluted with a Gaussian.
-		final double stepsize = 1;
+		final int stepsize = 1;
 		final double[] steppos = new double[n];
 		int count = 0;
 		if (slope >= 0){
@@ -506,7 +506,7 @@ public class PushCurves {
 			}	
 			
 		}
-		
+		assert intensitylist.size() == pointlist.size();
 		
 		for (int index = 0; index < pointlist.size(); ++index){
 			
@@ -516,7 +516,7 @@ public class PushCurves {
 			
 		}
 		
-		assert intensitylist.size() == pointlist.size();
+		
 		for (int index = 0; index < pointlist.size(); ++index) {
 			centroidlist.add(pointlist.get(index), intensitylist.get(index));
 

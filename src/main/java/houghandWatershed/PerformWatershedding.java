@@ -24,6 +24,7 @@ import net.imglib2.algorithm.labeling.Watershed;
 import net.imglib2.algorithm.localextrema.RefinedPeak;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.labeling.DefaultROIStrategyFactory;
 import net.imglib2.labeling.Labeling;
 import net.imglib2.labeling.LabelingROIStrategy;
@@ -75,6 +76,8 @@ public class PerformWatershedding {
 				new ArrayImgFactory<IntType>().create(biginputimg, new IntType()));
 
 		outputLabeling = GetlabeledImage(distimg, oldseedLabeling);
+		
+		ImageJFunctions.show(outputLabeling.getStorageImg());
 		
 		final double[] sizes = new double[biginputimg.numDimensions()];
 

@@ -508,6 +508,8 @@ public class GetLocalmaxmin {
 	}
 
 	
+	
+	
 	// Find maxima only if the pixel intensity is higher than a certain
 	// threshold value
 	public static RandomAccessibleInterval<FloatType> FindConditionalLocalMaxima(

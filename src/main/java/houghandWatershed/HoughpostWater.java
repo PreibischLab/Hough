@@ -9,6 +9,7 @@ import drawandOverlay.OverlayLines;
 import drawandOverlay.PushCurves;
 import ij.ImageJ;
 import labeledObjects.Finalobject;
+import labeledObjects.Indexedlength;
 import labeledObjects.Lineobjects;
 import net.imglib2.Cursor;
 import net.imglib2.PointSampleList;
@@ -33,7 +34,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
+				.openAs32Bit(new File("src/main/resources/mt_experiment.tif"));
 		// small_mt.tif image to be used for testing
 		// 2015-01-14_Seeds-1.tiff for actual
 		// mt_experiment.tif for big testing
@@ -104,6 +105,7 @@ public class HoughpostWater {
 		// Get a rough reconstruction of the line and the list of centroids where psf of the image has to be convolved
 
 		final ArrayList<Finalobject> finalparamlist = new ArrayList<Finalobject>();
+		
 		OverlayLines.GetAlllines(imgout, biginputimg, linepair.fst, centroidlist,finalparamlist, linepair.snd, radius);
 
 		ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
@@ -113,7 +115,7 @@ public class HoughpostWater {
 		
 		LengthDetection MTlength = new LengthDetection(biginputimg, linepair.fst);
 
-
+		final ArrayList<Finalobject> totalparamlist = new ArrayList<Finalobject>();
 		// Choose the noise level of the image, 0 for pre-processed image and >0 for original image
 		
 		for (int index = 0; index < finalparamlist.size(); ++index){
@@ -135,10 +137,27 @@ public class HoughpostWater {
 				
 				totalgausslist.add(final_param);
 				
+				Finalobject line = new Finalobject(finalparamlist.get(index).Label,
+						finalparamlist.get(index).centroid, finalparamlist.get(index).Intensity, finalparamlist.get(index).slope,
+						finalparamlist.get(index).intercept);
+
+				totalparamlist.add(line);
+				
 			}
 			
 		}
-	
+		
+		ArrayList<Indexedlength> finallength = new ArrayList<Indexedlength>();
+		
+		MTlength.Returnlengths(totalparamlist, finallength, psf);
+		for (int index = 0; index< finallength.size(); ++index){
+			
+		if (finallength.get(index).length > 0 )	
+		System.out.println("Label: " + finallength.get(index).Label + " " +
+		 "Length: "+ finallength.get(index).length + " " + "Slope: " + finallength.get(index).slope +  
+		 " Intercept :" + finallength.get(index).intercept + " StartposX: " + finallength.get(index).startpos[0] 
+				 +" EndposX: " + finallength.get(index).endpos[0] );
+		}
 		// Draw the Gaussian convolved line fitted with the original data
 		PushCurves.DrawDetectedGaussians(gaussimg, totalgausslist);
 		ImageJFunctions.show(gaussimg).setTitle("Iterated Result");
