@@ -114,13 +114,21 @@ public class PerformWatershedding {
 			double ratio = (max[0] - min[0]) / (max[1] - min[1]);
 			FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (long) (pixelsRho * ratio) });
 			final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
-			long[] minCorner =  new long[biginputimg.numDimensions()];
-			long[] maxCorner =  new long[biginputimg.numDimensions()];
+			double[] minCorner =  new double[biginputimg.numDimensions()];
+			double[] maxCorner =  new double[biginputimg.numDimensions()];
+			
+			long[] longminCorner =  new long[biginputimg.numDimensions()];
+			long[] longmaxCorner =  new long[biginputimg.numDimensions()];
 			minCorner = GetMincorners(outputLabeling.getStorageImg(), label);
 			maxCorner = GetMaxcorners(outputLabeling.getStorageImg(), label);
 			
+			for (int d = 0; d < biginputimg.numDimensions(); ++d){
+				
+				longminCorner[d] = (long) minCorner[d];
+				longmaxCorner[d] = (long) maxCorner[d];
+			}
 			
-			FinalInterval intervalsmall = new FinalInterval( minCorner, maxCorner );
+			FinalInterval intervalsmall = new FinalInterval( longminCorner, longmaxCorner );
 			
 			RandomAccessibleInterval<FloatType> outimgview = Views.interval(outimg, intervalsmall);
 			HoughPushCurves.Houghspace(outimgview, houghimage, min, max, val);
@@ -264,13 +272,18 @@ public class PerformWatershedding {
 			FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (long) (pixelsRho * ratio) });
 			final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 			
-			long[] minCorner =  new long[biginputimg.numDimensions()];
-			long[] maxCorner =  new long[biginputimg.numDimensions()];
+			double[] minCorner =  new double[biginputimg.numDimensions()];
+			double[] maxCorner =  new double[biginputimg.numDimensions()];
+			long[] longminCorner =  new long[biginputimg.numDimensions()];
+			long[] longmaxCorner =  new long[biginputimg.numDimensions()];
 			minCorner = GetMincorners(outputLabeling.getStorageImg(), label);
 			maxCorner = GetMaxcorners(outputLabeling.getStorageImg(), label);
 			
-			
-			FinalInterval intervalsmall = new FinalInterval( minCorner, maxCorner );
+			for (int d = 0; d < biginputimg.numDimensions(); ++d){
+				longminCorner[d] = (long) minCorner[d];
+				longmaxCorner[d] = (long) maxCorner[d];
+			}
+			FinalInterval intervalsmall = new FinalInterval( longminCorner, longmaxCorner );
 			
 			RandomAccessibleInterval<FloatType> outimgview = Views.interval(outimg, intervalsmall);
 			HoughPushCurves.Houghspace(outimgview, houghimage, min, max, val);
@@ -401,14 +414,14 @@ public class PerformWatershedding {
 		return oldseedLabeling;
 	}
 
-      public static long[] GetMaxcorners(
+      public static double[] GetMaxcorners(
     		  Img<IntType> inputimg, 
     		  int label){
 		
 
 		Cursor<IntType> intCursor = inputimg.localizingCursor();
 		int n = inputimg.numDimensions();
-		long[] maxVal = { Long.MIN_VALUE, Long.MIN_VALUE };
+		double[] maxVal = { Double.MIN_VALUE, Double.MIN_VALUE };
 
 		while (intCursor.hasNext()) {
 			intCursor.fwd();
@@ -430,14 +443,14 @@ public class PerformWatershedding {
 		return maxVal;
 		
 	}
-	public static long[] GetMincorners(
+	public static double[] GetMincorners(
 			Img<IntType> inputimg, 
 			int label){
 		
 
 		Cursor<IntType> intCursor = inputimg.localizingCursor();
 		int n = inputimg.numDimensions();
-		long[] minVal = { Long.MAX_VALUE, Long.MAX_VALUE };
+		double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
 
 		while (intCursor.hasNext()) {
 			intCursor.fwd();

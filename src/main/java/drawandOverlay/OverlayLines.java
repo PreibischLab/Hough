@@ -9,6 +9,7 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.Line;
 import ij.gui.Overlay;
+import labeledObjects.Finalobject;
 import labeledObjects.Lineobjects;
 import net.imglib2.Cursor;
 import net.imglib2.Point;
@@ -33,7 +34,7 @@ public class OverlayLines {
 
 		double rho;
 		double theta;
-		long minX, maxX, minY, maxY;
+		double minX, maxX, minY, maxY;
 
 		ImageStack stack = new ImageStack((int) inputimg.dimension(0), (int) inputimg.dimension(1));
 
@@ -221,6 +222,7 @@ public class OverlayLines {
 			RandomAccessibleInterval<FloatType> inputimg,
 			Img<IntType> intimg, 
 			PointSampleList<FloatType> centroidlist,
+			ArrayList<Finalobject> lineparam,
 			ArrayList<Lineobjects> linelist,
 			final long radius) {
 
@@ -238,7 +240,7 @@ public class OverlayLines {
 			//PushCurves.Drawexactline(testimgout,intimg, slope, intercept, label);
 			
 			if (Math.abs(slope)!=Double.POSITIVE_INFINITY )
-			PushCurves.DrawTruncatedline(imgout, inputimg, intimg, centroidlist, slope, intercept, label);
+			PushCurves.DrawTruncatedline(imgout, inputimg, intimg, centroidlist,lineparam, slope, intercept, label);
 			
 			
 			

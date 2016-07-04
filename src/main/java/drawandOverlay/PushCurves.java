@@ -3,8 +3,12 @@ package drawandOverlay;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import com.sun.tools.hat.internal.server.FinalizerObjectsQuery;
+
 import houghandWatershed.Finalfunction;
 import houghandWatershed.TransformCordinates;
+import labeledObjects.Finalobject;
+import labeledObjects.Lineobjects;
 import net.imglib2.Cursor;
 import net.imglib2.Point;
 import net.imglib2.PointSampleList;
@@ -391,11 +395,11 @@ public class PushCurves {
 			RandomAccessibleInterval<FloatType> inputimg, 
 			Img<IntType> intimg, 
 			PointSampleList<FloatType> centroidlist,
-			
+			ArrayList<Finalobject> lineparam,
 			double slope, 
 			double intercept, 
 			int label) {
-
+       
 		int n = imgout.numDimensions();
 		final double[] realpos = new double[n];
 		double sigmasq, sigma = 1.0;
@@ -408,7 +412,7 @@ public class PushCurves {
 		final RandomAccess<FloatType> ranacinput = inputimg.randomAccess();
 		double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
 		double[] maxVal = { Double.MIN_VALUE, Double.MIN_VALUE };
-		
+		 
 		while (inputcursor.hasNext()) {
 
 			inputcursor.fwd();
@@ -425,7 +429,7 @@ public class PushCurves {
 				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
 			else
 				intensity = 0;
-		//	intensity *= ranacinput.get().get();
+			intensity *= ranacinput.get().get();
 
 			ranac.setPosition(inputcursor);
 			int i = ranac.get().get();
@@ -453,6 +457,8 @@ public class PushCurves {
 
 			}
 		}
+		
+		
 		
 		// Moving along the line with a fixed step-size. This gives set of points along the line which are then convoluted with a Gaussian.
 		final double stepsize = 1;
@@ -500,6 +506,16 @@ public class PushCurves {
 			}	
 			
 		}
+		
+		
+		for (int index = 0; index < pointlist.size(); ++index){
+			
+			Finalobject line = new Finalobject(label, pointlist.get(index), intensitylist.get(index), slope, intercept);
+			
+			lineparam.add(line);
+			
+		}
+		
 		assert intensitylist.size() == pointlist.size();
 		for (int index = 0; index < pointlist.size(); ++index) {
 			centroidlist.add(pointlist.get(index), intensitylist.get(index));

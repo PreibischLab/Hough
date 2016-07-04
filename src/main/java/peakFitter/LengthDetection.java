@@ -215,7 +215,7 @@ public class LengthDetection {
 
 	}
 
-    public double[] Getnoiseparam(final Localizable point, long radius, double[] psf) 
+    public double[] Getnoiseparam(final Localizable point, long radius) 
 	throws Exception {
 
 

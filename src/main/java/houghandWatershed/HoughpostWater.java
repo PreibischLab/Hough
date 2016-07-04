@@ -8,6 +8,7 @@ import com.sun.tools.javac.util.Pair;
 import drawandOverlay.OverlayLines;
 import drawandOverlay.PushCurves;
 import ij.ImageJ;
+import labeledObjects.Finalobject;
 import labeledObjects.Lineobjects;
 import net.imglib2.Cursor;
 import net.imglib2.PointSampleList;
@@ -101,8 +102,9 @@ public class HoughpostWater {
 		ArrayList<double[]> totalgausslist = new ArrayList<double[]>();
 
 		// Get a rough reconstruction of the line and the list of centroids where psf of the image has to be convolved
-		
-		OverlayLines.GetAlllines(imgout, biginputimg, linepair.fst, centroidlist, linepair.snd, radius);
+
+		final ArrayList<Finalobject> finalparamlist = new ArrayList<Finalobject>();
+		OverlayLines.GetAlllines(imgout, biginputimg, linepair.fst, centroidlist,finalparamlist, linepair.snd, radius);
 
 		ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
 
@@ -111,29 +113,32 @@ public class HoughpostWater {
 		
 		LengthDetection MTlength = new LengthDetection(biginputimg, linepair.fst);
 
-		final double[] listpoint = new double[n];
 
 		// Choose the noise level of the image, 0 for pre-processed image and >0 for original image
 		
-		
-		Cursor<FloatType> listcursor = centroidlist.localizingCursor();
-		while (listcursor.hasNext()) {
-			listcursor.fwd();
-			listcursor.localize(listpoint);
-			final_param = MTlength.Getfinalparam(listcursor, radius, psf);
-			noise_param = MTlength.Getnoiseparam(listcursor, radius, psf);
-
+		for (int index = 0; index < finalparamlist.size(); ++index){
 			
-			if ( Math.exp(-noise_param[0] - noise_param[1]) >0.15){
-		
-				totalgausslist.add(final_param);
-
+			final_param = MTlength.Getfinalparam(finalparamlist.get(index).centroid, radius, psf);
+			noise_param = MTlength.Getnoiseparam(finalparamlist.get(index).centroid, radius);
+			
+			if (Math.exp(-noise_param[0] - noise_param[1]) < 0.15){
+				
+				finalparamlist.remove(index);
+				
+			}
+			
+			if ( Math.exp(-noise_param[0] - noise_param[1]) > 0.15){
+				
 				System.out.println(" Amp: " + final_param[0] + " " + "Mu X: " + final_param[1] + " "
 						+ "Mu Y: " + final_param[2] + " " + "Sig X: " + Math.sqrt(1.0/final_param[3]) + " " + "Sig Y: "
 						+ Math.sqrt(1.0/final_param[4]) + "  " + " Noise: "+ Math.exp(-noise_param[0] - noise_param[1])  );
+				
+				totalgausslist.add(final_param);
+				
+			}
+			
 		}
-		}
-
+	
 		// Draw the Gaussian convolved line fitted with the original data
 		PushCurves.DrawDetectedGaussians(gaussimg, totalgausslist);
 		ImageJFunctions.show(gaussimg).setTitle("Iterated Result");
