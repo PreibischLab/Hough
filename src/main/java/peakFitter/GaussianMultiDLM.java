@@ -21,9 +21,9 @@ package peakFitter;
 
 		@Override
 		public final double val(final double[] x, final double[] a) {
-			return a[0] * E(x, a) + a[2*x.length +1] ;
+			return a[0] * E(x, a) + a[2*x.length +1];
+		
 		}
-
 		/**
 		 * Partial derivatives indices are ordered as follow:
 		 * <pre>k = 0       - A

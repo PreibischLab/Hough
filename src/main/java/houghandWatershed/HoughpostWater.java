@@ -34,7 +34,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/mt_experiment.tif"));
+				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
 		// small_mt.tif image to be used for testing
 		// 2015-01-14_Seeds-1.tiff for actual
 		// mt_experiment.tif for big testing
@@ -91,7 +91,8 @@ public class HoughpostWater {
 		double[] final_param = new double[2 * ndims + 2];
 		double[] noise_param = new double[ndims];
 		double[] psf = new double[ndims];
-		final long radius = 1;
+		final long radius = 4;
+		final double SNR = 4000/240;
 		psf[0] = 1.7;
 		psf[1] = 1.54;
 		// Input the psf-sigma here to be used for convolving Gaussians on a
@@ -123,13 +124,13 @@ public class HoughpostWater {
 			final_param = MTlength.Getfinalparam(finalparamlist.get(index).centroid, radius, psf);
 			noise_param = MTlength.Getnoiseparam(finalparamlist.get(index).centroid, radius);
 			
-			if (Math.exp(-noise_param[0] - noise_param[1]) < 0.15){
+			if (Math.exp(-noise_param[0] - noise_param[1]) < 2.0/SNR){
 				
 				finalparamlist.remove(index);
 				
 			}
 			
-			if ( Math.exp(-noise_param[0] - noise_param[1]) > 0.15){
+			if ( Math.exp(-noise_param[0] - noise_param[1]) > 2.0/SNR){
 				
 				System.out.println(" Amp: " + final_param[0] + " " + "Mu X: " + final_param[1] + " "
 						+ "Mu Y: " + final_param[2] + " " + "Sig X: " + Math.sqrt(1.0/final_param[3]) + " " + "Sig Y: "

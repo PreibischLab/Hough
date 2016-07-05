@@ -9,6 +9,7 @@ import houghandWatershed.Finalfunction;
 import houghandWatershed.TransformCordinates;
 import labeledObjects.Finalobject;
 import labeledObjects.Lineobjects;
+import mISC.Tree.Distance;
 import net.imglib2.Cursor;
 import net.imglib2.Point;
 import net.imglib2.PointSampleList;
@@ -272,6 +273,62 @@ public class PushCurves {
 		}
 	}
 
+	
+	public static void Drawshortline(RandomAccessibleInterval<FloatType> imgout, double slope, double intercept, final double[] startpos,
+			final double[] endpos, final double[] sigma, double length) {
+
+		int ndims = imgout.numDimensions();
+		double [] startline = new double[ndims];
+		double [] endline = new double[ndims];
+		
+		final double[] tmppos = new double[ndims];
+		
+		for (int d = 0; d < ndims; ++d){
+			
+			
+			final double locationdiff = startpos[d] - endpos[d];
+			final boolean minsearch = locationdiff > 0;
+			tmppos[d] = startpos[d];
+			
+			startline[d] = minsearch ? endpos[d] : startpos[d];
+			endline[d] = minsearch ? tmppos[d] : endpos[d];
+			
+			
+			
+		}
+		
+		final double stepsize = 0.5;
+		final double[] steppos = new double[ndims];
+		int count = 0;
+		
+		while (true) {
+			
+			steppos[0] = startline[0] + count * stepsize / Math.sqrt(1 + slope * slope);
+			steppos[1] = startline[1] + count * stepsize * slope / Math.sqrt(1 + slope * slope);
+			
+			AddGaussian.addGaussian(imgout, 1.0,steppos, sigma);
+
+			double distance = Distance(startline, steppos);
+			
+			count++;
+			if (steppos[0] >= endline[0] || steppos[1] >= endline[1] || distance > length)
+				break;
+		}
+		
+		
+	}
+	public static double Distance(final double[] cordone, final double[] cordtwo) {
+
+		double distance = 0;
+
+		for (int d = 0; d < cordone.length; ++d) {
+
+			distance += Math.pow((cordone[d] - cordtwo[d]), 2);
+
+		}
+		return Math.sqrt(distance);
+	}
+	
 	public static void Drawexactline(RandomAccessibleInterval<FloatType> imgout, double slope, double intercept,
 			final IntensityType setintensity) {
 
@@ -296,10 +353,10 @@ public class PushCurves {
 			distance = linefunction.Linefunctiondist();
 
 			outbound.setPosition(inputcursor);
-			if (distance < sigma)
+			//if (distance < 3*sigma)
 				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
-			else
-				intensity = 0;
+			//else
+			//	intensity = 0;
 
 			switch (setintensity) {
 			case Original:

@@ -47,6 +47,13 @@ public class LengthDetection {
 		double[] start_param = new double[2 * ndims + 2];
 
 		double I_sum = 0;
+		double[] X_sum = new double[ndims];
+		for (int j = 0; j < ndims; j++) {
+			X_sum[j] = 0;
+			for (int i = 0; i < X.length; i++) {
+				X_sum[j] += X[i][j] * I[i];
+			}
+		}
 		double max_I = Double.NEGATIVE_INFINITY;
 		for (int i = 0; i < X.length; i++) {
 			I_sum += I[i];
@@ -58,16 +65,20 @@ public class LengthDetection {
 
 		start_param[0] = max_I;
 
-		for (int d = 0; d < ndims; ++d) {
-
-			start_param[d + 1] = point.getDoublePosition(d);
-		}
-
 		for (int j = 0; j < ndims; j++) {
-
-			start_param[ndims + j + 1] = 1.0 / Math.pow(psf[j], 2);
+			start_param[j+1] = X_sum[j] / I_sum;
 		}
-
+		
+		for (int j = 0; j < ndims; j++) {
+			double C = 0;
+			double dx;
+			for (int i = 0; i < X.length; i++) {
+				dx = X[i][j] - start_param[j + 1];
+				C += I[i] * dx * dx;
+			}
+			C /= I_sum;
+			start_param[ndims + j + 1] = 1.0/Math.pow(psf[j],2); //1 / C;
+		}
 		start_param[2 * ndims + 1] = 0;
 
 		return start_param;
@@ -87,6 +98,14 @@ public class LengthDetection {
 		double[] start_param = new double[2 * ndims + 2];
 
 		double I_sum = 0;
+		
+		double[] X_sum = new double[ndims];
+		for (int j = 0; j < ndims; j++) {
+			X_sum[j] = 0;
+			for (int i = 0; i < X.length; i++) {
+				X_sum[j] += X[i][j] * I[i];
+			}
+		}
 		double max_I = Double.NEGATIVE_INFINITY;
 		for (int i = 0; i < X.length; i++) {
 			I_sum += I[i];
@@ -98,11 +117,11 @@ public class LengthDetection {
 
 		start_param[0] = max_I;
 
-		for (int d = 0; d < ndims; ++d) {
-
-			start_param[d + 1] = point.getDoublePosition(d);
+		for (int j = 0; j < ndims; j++) {
+			start_param[j+1] = X_sum[j] / I_sum;
 		}
-
+		
+		
 		for (int j = 0; j < ndims; j++) {
 			double C = 0;
 			double dx;
@@ -358,6 +377,7 @@ public class LengthDetection {
 			double[] endpos = new double[ndims];
 			double slope = 0;
 			double intercept = 0;
+			double fwhmfactor = 2.3548 * 0.5;
 			for (int index = 0; index < finalparam.size(); ++index) {
 
 				if (finalparam.get(index).Label == label) {
@@ -380,8 +400,8 @@ public class LengthDetection {
 
 					for (int d = 0; d < ndims; ++d) {
 
-						startpos[d] = minVal[d] - 2.3548 * sigma[d];
-						endpos[d] = maxVal[d] + 2.3548 * sigma[d];
+						startpos[d] = minVal[d] - fwhmfactor * sigma[d];
+						endpos[d] = maxVal[d] + fwhmfactor * sigma[d];
 
 
 					}
@@ -397,14 +417,14 @@ public class LengthDetection {
 						negminposition[0] = maxVal[0];
 						negminposition[1] = minVal[1];
 
-						startpos[0] = negminposition[0] + 2.3548 * sigma[0];
-						startpos[1] = negminposition[1] - 2.3548 * sigma[1];
+						startpos[0] = negminposition[0] + fwhmfactor * sigma[0];
+						startpos[1] = negminposition[1] - fwhmfactor * sigma[1];
 
 						negmaxposition[0] = minVal[0];
 						negmaxposition[1] = maxVal[1];
 
-						endpos[0] = negmaxposition[0] - 2.3548 * sigma[0];
-						endpos[1] = negmaxposition[1] + 2.3548 * sigma[1];
+						endpos[0] = negmaxposition[0] - fwhmfactor * sigma[0];
+						endpos[1] = negmaxposition[1] + fwhmfactor * sigma[1];
 
 						length = Distance(startpos, endpos);
 
