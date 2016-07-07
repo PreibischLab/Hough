@@ -3,9 +3,11 @@ package peakFitter;
 import java.util.ArrayList;
 
 import drawandOverlay.AddGaussian;
+import drawandOverlay.PushCurves;
 import ij.plugin.HyperStackReducer;
 import labeledObjects.Finalobject;
 import labeledObjects.Indexedlength;
+import labeledObjects.PreFinalobject;
 import net.imglib2.Cursor;
 import net.imglib2.IterableInterval;
 import net.imglib2.Localizable;
@@ -15,16 +17,20 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealLocalizable;
+import net.imglib2.RealPoint;
 import net.imglib2.algorithm.neighborhood.HyperSphereNeighborhood;
 import net.imglib2.algorithm.neighborhood.RectangleShape;
 import net.imglib2.algorithm.neighborhood.SquareStrelTest;
 import net.imglib2.algorithm.region.hypersphere.HyperSphere;
 import net.imglib2.algorithm.region.hypersphere.HyperSphereCursor;
+import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.roi.RectangleRegionOfInterest;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import preProcessing.GetLocalmaxmin;
+import preProcessing.GetLocalmaxmin.IntensityType;
 
 public class LengthDetection {
 
@@ -77,7 +83,7 @@ public class LengthDetection {
 				C += I[i] * dx * dx;
 			}
 			C /= I_sum;
-			start_param[ndims + j + 1] = 1.0/Math.pow(psf[j],2); //1 / C;
+			start_param[ndims + j + 1] = 1 / C;
 		}
 		start_param[2 * ndims + 1] = 0;
 
@@ -360,7 +366,62 @@ public class LengthDetection {
 		return Math.sqrt(distance);
 	}
 
-	public void Returnlengths(ArrayList<Finalobject> finalparam, ArrayList<Indexedlength> finallength, double[] sigma) {
+	public void Updateslopeandintercept(ArrayList<Finalobject> updatefinalparam, ArrayList<Finalobject> finalparam){
+		
+		int Maxlabel = houghandWatershed.PerformWatershedding.GetMaxlabelsseeded(intimg);
+				
+		
+		for (int label = 1; label < Maxlabel - 1; ++label) {
+			
+			
+			ArrayList<RealPoint> centroidlist = new ArrayList<RealPoint>();
+			
+			for (int index = 0; index < finalparam.size(); ++index) {
+				
+				if (finalparam.get(index).Label == label) {
+					
+					centroidlist.add(finalparam.get(index).centroid);
+					
+				}
+				
+			}
+				
+			
+					
+				final double[] pointone = new double[ndims];
+				final double[] pointtwo = new double[ndims];
+				
+				if (centroidlist.size() > 0){
+				centroidlist.get(0).localize(pointone);
+				centroidlist.get(centroidlist.size()-1).localize(pointtwo);
+				
+			    double	newslope = (pointtwo[1] - pointone[1]) / (pointtwo[0] - pointone[0]);
+			    double	newintercept = pointtwo[1] - newslope * pointtwo[0];
+			    
+				for (int index = 0; index < finalparam.size(); ++index) {
+					
+					System.out.println(finalparam.get(index).slope - newslope + " " + ( finalparam.get(index).intercept - newintercept));
+					
+				Finalobject update = new Finalobject(label, finalparam.get(index).centroid,finalparam.get(index).sigmaX,
+						finalparam.get(index).sigmaY, finalparam.get(index).Intensity, newslope, newintercept);
+				
+				updatefinalparam.add(update);
+				
+				
+				}
+               
+				
+			}
+				
+				
+	
+		}
+		
+		
+		
+	}
+	
+	public void Returnlengths(ArrayList<PreFinalobject> finalparam, ArrayList<Indexedlength> finallength, double[] sigma) {
 
 		int Maxlabel = houghandWatershed.PerformWatershedding.GetMaxlabelsseeded(intimg);
 
@@ -377,7 +438,7 @@ public class LengthDetection {
 			double[] endpos = new double[ndims];
 			double slope = 0;
 			double intercept = 0;
-			double fwhmfactor = 2.3548 * 0.5;
+			double fwhmfactor = -2.3548 * 0.5 * 0  ;
 			for (int index = 0; index < finalparam.size(); ++index) {
 
 				if (finalparam.get(index).Label == label) {

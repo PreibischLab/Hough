@@ -19,13 +19,13 @@ public class Fakedata {
 		
 		new ImageJ();
 		
-		final FinalInterval range = new FinalInterval(512, 512);
+		final FinalInterval range = new FinalInterval(250, 250);
 		
 		
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(range, new FloatType());
 		final int ndims = imgout.numDimensions();
-		final Random rnd = new Random(500);
-		final Random rndsec = new Random(400);
+		final Random rnd = new Random(50);
+		final Random rndsec = new Random(2);
 		final double [] sigma = {1.7,1.8};
 		final double [] Ci = new double[ndims];
 		
@@ -33,7 +33,7 @@ public class Fakedata {
 			Ci[d] = 1.0 / Math.pow(sigma[d],2);
 		
 		final double maxlength = 30;
-		final int numlines = 45;
+		final int numlines = 10;
 		Gaussianlines.Drawsimulatedlines(imgout, range,rnd,rndsec,Ci, maxlength, numlines);
 		
 		

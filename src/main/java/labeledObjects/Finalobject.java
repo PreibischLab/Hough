@@ -1,22 +1,25 @@
 package labeledObjects;
 
-import net.imglib2.Point;
-import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.RealPoint;
 
-    public final class Finalobject {
-
+public class Finalobject {
 	public final int Label;
-	public final Point centroid;
-	public final FloatType Intensity;
+	public final RealPoint centroid;
+	public final double Intensity;
+	public final double sigmaX;
+	public final double sigmaY;
 	public final double slope;
 	public final double intercept;
 	
 
-	public Finalobject(final int Label, final Point centroid, final FloatType Intensity, final double slope,
+	public Finalobject(final int Label, final RealPoint centroid, final double Intensity, final double sigmaX,
+			final double sigmaY, final double slope,
 			final double intercept) {
 		this.Label = Label;
 		this.centroid = centroid;
 		this.Intensity = Intensity;
+		this.sigmaX = sigmaX;
+		this.sigmaY = sigmaY;
 		this.slope = slope;
 		this.intercept = intercept;
 

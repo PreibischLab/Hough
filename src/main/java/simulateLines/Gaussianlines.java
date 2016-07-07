@@ -1,5 +1,6 @@
 package simulateLines;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 import drawandOverlay.PushCurves;
@@ -16,7 +17,7 @@ public class Gaussianlines {
 		final int n = outimg.numDimensions();
 
 		// Declare the number of lines to be plotted
-		
+		ArrayList<Fakeline> linearray = new ArrayList<Fakeline>();
 
 		for (int lineindex = 0; lineindex < numlines; ++lineindex) {
 
@@ -48,7 +49,11 @@ public class Gaussianlines {
 
 			System.out.println(slope + "  " + intercept);
 
-			PushCurves.Drawshortline(outimg, slope, intercept, startpos, endpos, sigma, length);
+			
+			
+			PushCurves.Drawshortline(outimg, linearray, slope, intercept, startpos, endpos, sigma, length);
+			for(int index = 0; index < linearray.size(); ++index)
+			System.out.println("Printing length: " +linearray.get(index).length);
 
 		}
 

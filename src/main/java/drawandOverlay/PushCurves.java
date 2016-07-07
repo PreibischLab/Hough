@@ -7,8 +7,8 @@ import com.sun.tools.hat.internal.server.FinalizerObjectsQuery;
 
 import houghandWatershed.Finalfunction;
 import houghandWatershed.TransformCordinates;
-import labeledObjects.Finalobject;
 import labeledObjects.Lineobjects;
+import labeledObjects.PreFinalobject;
 import mISC.Tree.Distance;
 import net.imglib2.Cursor;
 import net.imglib2.Point;
@@ -25,6 +25,7 @@ import net.imglib2.view.Views;
 import peakFitter.LengthDetection;
 import preProcessing.GetLocalmaxmin;
 import preProcessing.GetLocalmaxmin.IntensityType;
+import simulateLines.Fakeline;
 
 public class PushCurves {
 
@@ -274,7 +275,8 @@ public class PushCurves {
 	}
 
 	
-	public static void Drawshortline(RandomAccessibleInterval<FloatType> imgout, double slope, double intercept, final double[] startpos,
+	public static void Drawshortline(RandomAccessibleInterval<FloatType> imgout, ArrayList<Fakeline> linearray,
+			double slope, double intercept, final double[] startpos,
 			final double[] endpos, final double[] sigma, double length) {
 
 		int ndims = imgout.numDimensions();
@@ -297,10 +299,10 @@ public class PushCurves {
 			
 		}
 		
-		final double stepsize = 0.5;
+		final double stepsize = 1;
 		final double[] steppos = new double[ndims];
 		int count = 0;
-		
+		double distance = 0;
 		while (true) {
 			
 			steppos[0] = startline[0] + count * stepsize / Math.sqrt(1 + slope * slope);
@@ -308,13 +310,16 @@ public class PushCurves {
 			
 			AddGaussian.addGaussian(imgout, 1.0,steppos, sigma);
 
-			double distance = Distance(startline, steppos);
+			distance = Distance(startline, steppos);
 			
 			count++;
-			if (steppos[0] >= endline[0] || steppos[1] >= endline[1] || distance > length)
+
+			
+			if (steppos[0] >= endline[0] || steppos[1] >= endline[1] || distance > length )
 				break;
 		}
-		
+		Fakeline singleline = new Fakeline(distance, slope, intercept, startline, endline);
+		linearray.add(singleline);
 		
 	}
 	public static double Distance(final double[] cordone, final double[] cordtwo) {
@@ -452,7 +457,7 @@ public class PushCurves {
 			RandomAccessibleInterval<FloatType> inputimg, 
 			Img<IntType> intimg, 
 			PointSampleList<FloatType> centroidlist,
-			ArrayList<Finalobject> lineparam,
+			ArrayList<PreFinalobject> lineparam,
 			double slope, 
 			double intercept, 
 			int label) {
@@ -567,7 +572,7 @@ public class PushCurves {
 		
 		for (int index = 0; index < pointlist.size(); ++index){
 			
-			Finalobject line = new Finalobject(label, pointlist.get(index), intensitylist.get(index), slope, intercept);
+			PreFinalobject line = new PreFinalobject(label, pointlist.get(index), intensitylist.get(index), slope, intercept);
 			
 			lineparam.add(line);
 			

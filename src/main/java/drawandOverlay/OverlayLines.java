@@ -9,8 +9,8 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.Line;
 import ij.gui.Overlay;
-import labeledObjects.Finalobject;
 import labeledObjects.Lineobjects;
+import labeledObjects.PreFinalobject;
 import net.imglib2.Cursor;
 import net.imglib2.Point;
 import net.imglib2.PointSampleList;
@@ -222,7 +222,7 @@ public class OverlayLines {
 			RandomAccessibleInterval<FloatType> inputimg,
 			Img<IntType> intimg, 
 			PointSampleList<FloatType> centroidlist,
-			ArrayList<Finalobject> lineparam,
+			ArrayList<PreFinalobject> lineparam,
 			ArrayList<Lineobjects> linelist,
 			final long radius) {
 
