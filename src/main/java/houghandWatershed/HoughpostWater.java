@@ -100,7 +100,7 @@ public class HoughpostWater {
 		final double SNR = 4000/240;
 		psf[0] = 1.7;
 		psf[1] = 1.8;
-		final long radius = (long) Math.ceil(2 * Math.sqrt( psf[0] * psf[0] +  psf[1] * psf[1]));
+		final long radius = (long) Math.ceil( Math.sqrt(2 * psf[0] * psf[0] + 2 * psf[1] * psf[1]));
 		// Input the psf-sigma here to be used for convolving Gaussians on a
 		// line, will not change during iteration.
 
@@ -109,7 +109,7 @@ public class HoughpostWater {
 
 		ArrayList<double[]> totalgausslist = new ArrayList<double[]>();
 
-		// Get a rough reconstruction of the line and the list of centroids where psf of the image has to be convolved
+		// Rough reconstruction of line after Hough detection
 
 		final ArrayList<PreFinalobject> prefinalparamlist = new ArrayList<PreFinalobject>();
 		
@@ -121,68 +121,58 @@ public class HoughpostWater {
 		// Input the image on which you want to do the fitting, along with the labelled image
 		
 		LengthDetection MTlength = new LengthDetection(biginputimg, linepair.fst);
+		
+		
 		final ArrayList<Finalobject> finalparamlist = new ArrayList<Finalobject>();
-		final ArrayList<PreFinalobject> totalparamlist = new ArrayList<PreFinalobject>();
-		// Choose the noise level of the image, 0 for pre-processed image and >0 for original image
 		
 		for (int index = 0; index < prefinalparamlist.size(); ++index){
 			
+			
+			// Do gradient descent to improve the Hough detected lines
 			final_param = MTlength.Getfinalparam(prefinalparamlist.get(index).centroid, radius, psf);
 			noise_param = MTlength.Getnoiseparam(prefinalparamlist.get(index).centroid, radius);
 			
-		//	if (Math.exp(-noise_param[0] - noise_param[1]) < 2.0/SNR){
-				
-		//		prefinalparamlist.remove(index);
-				
-		//	}
-			
+		
 			if ( final_param[0]  > 1.0E-5){
 				System.out.println(" Amp: " + final_param[0] + " " + "Mu X: " + final_param[1] + " "
 						+ "Mu Y: " + final_param[2] + " " + "Sig X: " + Math.sqrt(1.0/final_param[3]) + " " + "Sig Y: "
-						+ Math.sqrt(1.0/final_param[4]) + "  " + " Noise: "+ Math.exp(-noise_param[0] - noise_param[1])  );
+						+ Math.sqrt(1.0/final_param[4])  );
 				
 				totalgausslist.add(final_param);
 				
-				PreFinalobject line = new PreFinalobject(prefinalparamlist.get(index).Label,
-						prefinalparamlist.get(index).centroid, prefinalparamlist.get(index).Intensity, prefinalparamlist.get(index).slope,
-						prefinalparamlist.get(index).intercept);
-
+				
 				final double[] newmeans = {final_param[1], final_param[2]};
 				 
 				RealPoint newcentroid = new RealPoint(newmeans);
-				 
+				
+				// Update the Intensity, Mean and Variance of the lines
 				Finalobject finalline = new Finalobject(prefinalparamlist.get(index).Label, newcentroid, final_param[0],
 						final_param[3], final_param[4],
 						prefinalparamlist.get(index).slope, prefinalparamlist.get(index).intercept);
 				
 				finalparamlist.add(finalline);
 				
-				totalparamlist.add(line);
 				
 			}
 			
 		}
 		
 		ArrayList<Indexedlength> finallength = new ArrayList<Indexedlength>();
+		
+		
+		// Since the centroid positions changed, update the slope and intercept of Hough lines
 		final ArrayList<Finalobject> updateparamlist = new ArrayList<Finalobject>();
 		
+		
+		// Now we have a final model of the lines
 		MTlength.Updateslopeandintercept(updateparamlist, finalparamlist);
 		
-	/*
-		for (int index = 0; index < updateparamlist.size(); ++index){
-			if(updateparamlist.get(index).Intensity > 0.99)
-			System.out.println("Label: "+ updateparamlist.get(index).Label + " " + "Intensity: "+ updateparamlist.get(index).Intensity
-					+ " " + "centX: " + updateparamlist.get(index).centroid.getDoublePosition(0) + " centY: " 
-					+ updateparamlist.get(index).centroid.getDoublePosition(1) + " " + "Slope: " + updateparamlist.get(index).slope 
-					+ " Intercept: " + updateparamlist.get(index).intercept
-					
-					
-					);
-			
-			
-		}
+		// Draw the model
+		PushCurves.DrawDetectedGaussians(gaussimg, totalgausslist);
+		ImageJFunctions.show(gaussimg).setTitle("Iterated Result");
 		
-		*/
+		// Determine starting and end points by computing two gradient maximas of the line
+	
 	/*	
 		MTlength.Returnlengths(totalparamlist, finallength, psf);
 		for (int index = 0; index< finallength.size(); ++index){
@@ -195,8 +185,7 @@ public class HoughpostWater {
 		}
 		*/
 		// Draw the Gaussian convolved line fitted with the original data
-		PushCurves.DrawDetectedGaussians(gaussimg, totalgausslist);
-		ImageJFunctions.show(gaussimg).setTitle("Iterated Result");
+		
 
 	}
 }

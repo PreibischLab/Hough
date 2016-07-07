@@ -16,8 +16,11 @@ import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealCursor;
 import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
+import net.imglib2.RealPointSampleList;
+import net.imglib2.RealRandomAccess;
 import net.imglib2.algorithm.neighborhood.HyperSphereNeighborhood;
 import net.imglib2.algorithm.neighborhood.RectangleShape;
 import net.imglib2.algorithm.neighborhood.SquareStrelTest;
@@ -376,10 +379,13 @@ public class LengthDetection {
 			
 			ArrayList<RealPoint> centroidlist = new ArrayList<RealPoint>();
 			
+			int labelindex = 0 ;
+			
 			for (int index = 0; index < finalparam.size(); ++index) {
 				
 				if (finalparam.get(index).Label == label) {
 					
+					labelindex = index;
 					centroidlist.add(finalparam.get(index).centroid);
 					
 				}
@@ -387,6 +393,8 @@ public class LengthDetection {
 			}
 				
 			
+			    double newslope = 0;
+			    double newintercept = 0;
 					
 				final double[] pointone = new double[ndims];
 				final double[] pointtwo = new double[ndims];
@@ -395,12 +403,18 @@ public class LengthDetection {
 				centroidlist.get(0).localize(pointone);
 				centroidlist.get(centroidlist.size()-1).localize(pointtwo);
 				
-			    double	newslope = (pointtwo[1] - pointone[1]) / (pointtwo[0] - pointone[0]);
-			    double	newintercept = pointtwo[1] - newslope * pointtwo[0];
+			    	newslope = (pointtwo[1] - pointone[1]) / (pointtwo[0] - pointone[0]);
+			    	newintercept = pointtwo[1] - newslope * pointtwo[0];
 			    
+				}
+				
+				
+				System.out.println("old: " +finalparam.get(labelindex).slope + " " +  finalparam.get(labelindex).intercept );
+				
+				System.out.println("new: "+ newslope + " " + newintercept);
+				
 				for (int index = 0; index < finalparam.size(); ++index) {
 					
-					System.out.println(finalparam.get(index).slope - newslope + " " + ( finalparam.get(index).intercept - newintercept));
 					
 				Finalobject update = new Finalobject(label, finalparam.get(index).centroid,finalparam.get(index).sigmaX,
 						finalparam.get(index).sigmaY, finalparam.get(index).Intensity, newslope, newintercept);
@@ -410,18 +424,39 @@ public class LengthDetection {
 				
 				}
                
-				
-			}
-				
-				
-	
 		}
 		
 		
 		
 	}
 	
-	public void Returnlengths(ArrayList<PreFinalobject> finalparam, ArrayList<Indexedlength> finallength, double[] sigma) {
+	
+	public void Getstartingpoints(ArrayList<Finalobject> finalparam){
+		int Maxlabel = houghandWatershed.PerformWatershedding.GetMaxlabelsseeded(intimg);
+
+		for (int label = 1; label < Maxlabel - 1; ++label) {
+			
+			RealPointSampleList<Double> pointlabel = new RealPointSampleList<Double>(ndims);
+			
+			for (int index = 0; index < finalparam.size(); ++index) {
+
+				if (finalparam.get(index).Label == label) {
+
+					pointlabel.add(finalparam.get(index).centroid, finalparam.get(index).Intensity);
+					
+				}
+				
+			}
+			
+			RealCursor<Double> cursor = pointlabel.cursor();
+			
+			
+			
+		}
+		
+	}
+	
+	public void Returnlengths(ArrayList<Finalobject> finalparam, ArrayList<Indexedlength> finallength, double[] sigma) {
 
 		int Maxlabel = houghandWatershed.PerformWatershedding.GetMaxlabelsseeded(intimg);
 
