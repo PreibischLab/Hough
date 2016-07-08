@@ -468,7 +468,6 @@ public class PushCurves {
 		sigmasq = sigma * sigma;
 		final Cursor<FloatType> inputcursor = Views.iterable(imgout).localizingCursor();
 		ArrayList<Point> pointlist = new ArrayList<Point>(n);
-		ArrayList<FloatType> intensitylist = new ArrayList<FloatType>(n);
 		long[] newposition = new long[n];
 		RandomAccess<IntType> ranac = intimg.randomAccess();
 		final RandomAccess<FloatType> ranacinput = inputimg.randomAccess();
@@ -491,7 +490,7 @@ public class PushCurves {
 				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
 			else
 				intensity = 0;
-			intensity *= ranacinput.get().get();
+		//	intensity *= ranacinput.get().get();
 
 			ranac.setPosition(inputcursor);
 			int i = ranac.get().get();
@@ -523,7 +522,7 @@ public class PushCurves {
 		
 		
 		// Moving along the line with a fixed step-size. This gives set of points along the line which are then convoluted with a Gaussian.
-		final int stepsize = 1;
+		final double stepsize = 1;
 		final double[] steppos = new double[n];
 		int count = 0;
 		if (slope >= 0){
@@ -538,11 +537,13 @@ public class PushCurves {
 			newpoint.setPosition((long) steppos[1], 1);
 
 			ranacinput.setPosition(newpoint);
-			intensitylist.add(ranacinput.get());
 			pointlist.add(newpoint);
 
 			count++;
-			if (steppos[0] >= maxVal[0] || steppos[1] >= maxVal[1])
+			
+			
+			if (steppos[0] >= maxVal[0] || steppos[0] >= inputimg.dimension(0) - 1  || steppos[1] >= maxVal[1] 
+					|| steppos[1] >= inputimg.dimension(1) - 1  )
 				break;
 		}
 		}
@@ -559,20 +560,21 @@ public class PushCurves {
 				newpoint.setPosition((long) steppos[0], 0);
 				newpoint.setPosition((long) steppos[1], 1);
 				ranacinput.setPosition(newpoint);
-				intensitylist.add(ranacinput.get());
 				pointlist.add(newpoint);
 
 				negcount++;
-				if (steppos[0] >= maxVal[0] || steppos[1] <= minVal[1])
+				
+				
+				if (steppos[0] >= maxVal[0] || steppos[0] >= inputimg.dimension(0) - 1  || steppos[1] <= minVal[1] 
+						|| steppos[1] <= 1)
 					break;
 			}	
 			
 		}
-		assert intensitylist.size() == pointlist.size();
 		
 		for (int index = 0; index < pointlist.size(); ++index){
 			
-			PreFinalobject line = new PreFinalobject(label, pointlist.get(index), intensitylist.get(index), slope, intercept);
+			PreFinalobject line = new PreFinalobject(label, pointlist.get(index), new FloatType(1), slope, intercept);
 			
 			lineparam.add(line);
 			
@@ -580,7 +582,7 @@ public class PushCurves {
 		
 		
 		for (int index = 0; index < pointlist.size(); ++index) {
-			centroidlist.add(pointlist.get(index), intensitylist.get(index));
+			centroidlist.add(pointlist.get(index), new FloatType(1));
 
 		}
 

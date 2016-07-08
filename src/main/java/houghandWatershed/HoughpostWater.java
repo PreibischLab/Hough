@@ -37,7 +37,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/Fake_data01.tif"));
+				.openAs32Bit(new File("src/main/resources/Fake_data02.tif"));
 		// small_mt.tif image to be used for testing
 		// 2015-01-14_Seeds-1.tiff for actual
 		// mt_experiment.tif for big testing
@@ -100,7 +100,7 @@ public class HoughpostWater {
 		final double SNR = 4000/240;
 		psf[0] = 1.7;
 		psf[1] = 1.8;
-		final long radius = (long) Math.ceil( Math.sqrt(2 * psf[0] * psf[0] + 2 * psf[1] * psf[1]));
+		final long radius = (long) Math.ceil(2 * Math.sqrt( psf[0] * psf[0] +  psf[1] * psf[1]));
 		// Input the psf-sigma here to be used for convolving Gaussians on a
 		// line, will not change during iteration.
 
@@ -164,17 +164,17 @@ public class HoughpostWater {
 		final ArrayList<Finalobject> updateparamlist = new ArrayList<Finalobject>();
 		
 		
-		// Now we have a final model of the lines
+		
 		MTlength.Updateslopeandintercept(updateparamlist, finalparamlist);
 		
-		// Draw the model
+		// Draw the detected and iterated lines
 		PushCurves.DrawDetectedGaussians(gaussimg, totalgausslist);
 		ImageJFunctions.show(gaussimg).setTitle("Iterated Result");
 		
-		// Determine starting and end points by computing two gradient maximas of the line
-	
-	/*	
-		MTlength.Returnlengths(totalparamlist, finallength, psf);
+		// Determine starting and end points by giving the start and end positions along the line and then doing a half Gaussian mask fit
+		
+		MTlength.Returnlengths(updateparamlist , finallength, psf);
+
 		for (int index = 0; index< finallength.size(); ++index){
 			
 		if (finallength.get(index).length > 0 )	
@@ -183,8 +183,7 @@ public class HoughpostWater {
 		 " Intercept :" + finallength.get(index).intercept + " StartposX: " + finallength.get(index).startpos[0] 
 				 +" EndposX: " + finallength.get(index).endpos[0] );
 		}
-		*/
-		// Draw the Gaussian convolved line fitted with the original data
+		
 		
 
 	}

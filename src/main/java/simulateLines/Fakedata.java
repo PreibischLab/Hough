@@ -25,7 +25,7 @@ public class Fakedata {
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(range, new FloatType());
 		final int ndims = imgout.numDimensions();
 		final Random rnd = new Random(50);
-		final Random rndsec = new Random(2);
+		final Random rndsec = new Random(5);
 		final double [] sigma = {1.7,1.8};
 		final double [] Ci = new double[ndims];
 		
