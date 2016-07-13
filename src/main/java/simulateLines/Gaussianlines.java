@@ -1,5 +1,7 @@
 package simulateLines;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -12,7 +14,7 @@ import preProcessing.GetLocalmaxmin.IntensityType;
 public class Gaussianlines {
 
 	public static void Drawsimulatedlines(RandomAccessibleInterval<FloatType> outimg, final Interval range,
-			final Random rnd, final Random rndsec, final double[] sigma, final double length, final int numlines) {
+			final Random rnd,  final double[] sigma,  final int numlines) {
 
 		final int n = outimg.numDimensions();
 
@@ -27,36 +29,39 @@ public class Gaussianlines {
 			for (int d = 0; d < range.numDimensions(); ++d) {
 				startpos[d] = rnd.nextDouble() * (range.max(d) - range.min(d)) + range.min(d);
 
-				endpos[d] = rndsec.nextDouble()  * (range.max(d) - range.min(d)) + range.min(d);
-				
-				if (startpos[d] < length )
-					startpos[d] = startpos[d] + 2 * length;
-				if (endpos[d] < length )
-					endpos[d] = endpos[d] + 2 * length;
-				
-				if (startpos[d] > outimg.dimension(d) - length)
-					startpos[d] = startpos[d] - 2 * length;
-				if (endpos[d] > outimg.dimension(d) - length)
-					endpos[d] = endpos[d] - 2 * length;
+				endpos[d] = startpos[d] + 10;
 				
 				
-				System.out.println("Start: " + startpos[d]);
-				System.out.println("End: " + endpos[d]);
+				
+				
 			}
 
 			double slope = (endpos[1] - startpos[1]) / (endpos[0] - startpos[0]);
 			double intercept = startpos[1] - slope * startpos[0];
 
-			System.out.println(slope + "  " + intercept);
-
+			double computedlength = 0;
+			for (int d = 0; d < n ; ++d){
+				
+				computedlength += Math.pow((endpos[d] - startpos[d]),2);
+				
+			}
 			
+			PushCurves.Drawshortline(outimg, linearray, slope, intercept, startpos, endpos, sigma);
 			
-			PushCurves.Drawshortline(outimg, linearray, slope, intercept, startpos, endpos, sigma, length);
-			for(int index = 0; index < linearray.size(); ++index)
-			System.out.println("Printing length: " +linearray.get(index).length);
+			try {
+	            FileWriter writer = new FileWriter("initiallengths.txt", true);
+	            writer.write( "StartX: "  + startpos[0]+  " " +
+	           		 "StartY: "+ startpos[1] + " " + "EndposX: " + endpos[0] +  
+	        		 " EndposY :" + endpos[1] + " Slope: " + slope 
+	        				 +" Intercept: " + intercept + " Length " + Math.sqrt(computedlength) );
+	            writer.write("\r\n"); 
+	            writer.close();
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        }
 
 		}
-
-	}
+		}
+	
 
 }

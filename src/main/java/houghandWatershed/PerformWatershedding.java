@@ -107,15 +107,15 @@ public class PerformWatershedding {
 					.sqrt((outimg.dimension(0) * outimg.dimension(0) + outimg.dimension(1) * outimg.dimension(1)));
 			int minRho = (int) -Math.round(size);
 			int maxRho = -minRho;
-			double thetaPerPixel = 1;
-			double rhoPerPixel = 1;
+			double thetaPerPixel = 0.1;
+			double rhoPerPixel = 0.1;
 			double[] min = { mintheta, minRho };
 			double[] max = { maxtheta, maxRho };
 			int pixelsTheta = (int) Math.round((maxtheta - mintheta) / thetaPerPixel);
 			int pixelsRho = (int) Math.round((maxRho - minRho) / rhoPerPixel);
 
 			double ratio = (max[0] - min[0]) / (max[1] - min[1]);
-			FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (long) (pixelsRho * ratio) });
+			FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (long)(pixelsRho*ratio ) });
 			final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 			double[] minCorner =  new double[biginputimg.numDimensions()];
 			double[] maxCorner =  new double[biginputimg.numDimensions()];
@@ -210,6 +210,7 @@ public class PerformWatershedding {
 	public static Lineobjects Getlabelobject(
 			final RandomAccessibleInterval<FloatType> biginputimg,
 			final RandomAccessibleInterval<FloatType> processedimg,
+			double minlength,
 			final int currentLabel) 
 	{
 
@@ -243,7 +244,6 @@ public class PerformWatershedding {
 		ArrayList<Lineobjects> linelist = new ArrayList<Lineobjects>(biginputimg.numDimensions());
 		
 		// Declare minimum length of the line(in pixels) to be detected
-		double minlength = 0;
 		int label = currentLabel;
 
 			System.out.println("Label Number:" +label);

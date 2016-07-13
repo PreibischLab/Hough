@@ -6,7 +6,6 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
-import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
@@ -100,7 +99,7 @@ public class GaussianMastFit {
 				if (ranac.get().get() == label){
 				final double signal = cImg.get().getRealDouble();
 				final double mask = cMask.get().getRealDouble();
-				final double weight = 8;
+				final double weight = 10;
 				
 				final double signalmask = signal * mask * weight;
 				
@@ -109,7 +108,7 @@ public class GaussianMastFit {
 				
 				for ( int d = 0; d < n; ++d )
 				{
-					final double l = cImg.getLongPosition( d );
+					final double l = cImg.getDoublePosition( d );
 					sumLocSN[ d ] += l * signalmask;
 				}
 				
@@ -127,10 +126,8 @@ public class GaussianMastFit {
 		}
 		}
 		while ( i < iterations );
-		
 		restoreBackground( signalIterable, bg );
 		
-		System.out.println( i + ": " +  location[0] + " " + location[1] + " N: " + N );
 		
 		return location;
 	}
@@ -170,10 +167,13 @@ public class GaussianMastFit {
 			
 			for ( int d = 0; d < numDimensions; ++d )
 			{
-				final double x = location[ d ] - cursor.getIntPosition( d );
-				if (x < 0)
+				final double x = location[ d ] - cursor.getDoublePosition( d );
+				if (x <=  0)
+					
 				value *= Math.exp( -(x * x) / two_sq_sigma[ d ] );
+				
 				else value = 0;
+				
 			}
 			
 			cursor.get().setReal( value );
@@ -193,9 +193,12 @@ public class GaussianMastFit {
 			
 			for ( int d = 0; d < numDimensions; ++d )
 			{
-				final double x = location[ d ] - cursor.getIntPosition( d );
-				if (x > 0)
+				final double x = location[ d ] - cursor.getDoublePosition( d );
+				
+				if ( x >= 0)
+					
 				value *= Math.exp( -(x * x) / two_sq_sigma[ d ] );
+				
 				else value = 0;
 			}
 			

@@ -2,13 +2,17 @@ package peakFitter;
 
 import java.util.ArrayList;
 
+import com.sun.tools.javac.util.Pair;
+
 import drawandOverlay.AddGaussian;
 import drawandOverlay.PushCurves;
 import ij.plugin.HyperStackReducer;
 import labeledObjects.Finalobject;
 import labeledObjects.Indexedlength;
+import labeledObjects.LabelMax;
 import labeledObjects.PreFinalobject;
 import net.imglib2.Cursor;
+import net.imglib2.FinalInterval;
 import net.imglib2.IterableInterval;
 import net.imglib2.Localizable;
 import net.imglib2.Point;
@@ -21,6 +25,7 @@ import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPointSampleList;
 import net.imglib2.RealRandomAccess;
+import net.imglib2.RealRandomAccessibleRealInterval;
 import net.imglib2.algorithm.neighborhood.HyperSphereNeighborhood;
 import net.imglib2.algorithm.neighborhood.RectangleShape;
 import net.imglib2.algorithm.neighborhood.SquareStrelTest;
@@ -31,6 +36,7 @@ import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.roi.RectangleRegionOfInterest;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 import peakFitter.GaussianMastFit.Endfit;
 import preProcessing.GetLocalmaxmin;
@@ -76,9 +82,9 @@ public class LengthDetection {
 		start_param[0] = max_I;
 
 		for (int j = 0; j < ndims; j++) {
-			start_param[j+1] = X_sum[j] / I_sum;
+			start_param[j + 1] = X_sum[j] / I_sum;
 		}
-		
+
 		for (int j = 0; j < ndims; j++) {
 			double C = 0;
 			double dx;
@@ -108,7 +114,7 @@ public class LengthDetection {
 		double[] start_param = new double[2 * ndims + 2];
 
 		double I_sum = 0;
-		
+
 		double[] X_sum = new double[ndims];
 		for (int j = 0; j < ndims; j++) {
 			X_sum[j] = 0;
@@ -128,10 +134,9 @@ public class LengthDetection {
 		start_param[0] = max_I;
 
 		for (int j = 0; j < ndims; j++) {
-			start_param[j+1] = X_sum[j] / I_sum;
+			start_param[j + 1] = X_sum[j] / I_sum;
 		}
-		
-		
+
 		for (int j = 0; j < ndims; j++) {
 			double C = 0;
 			double dx;
@@ -275,31 +280,35 @@ public class LengthDetection {
 	private PointSampleList<FloatType> gatherData(final Localizable point, final long radius) {
 		final PointSampleList<FloatType> datalist = new PointSampleList<FloatType>(ndims);
 
+		for (int d = 0; d < ndims; ++d)
+			assert inputimg.dimension(d) == intimg.dimension(d);
+		
 		RandomAccess<FloatType> ranac = inputimg.randomAccess();
 
 		ranac.setPosition(point);
+		
+		RandomAccess<IntType> intranac = intimg.randomAccess();
+
+		intranac.setPosition(point);
+		
 		final double[] position = new double[ndims];
 		point.localize(position);
-        
+
 		// Gather data around the point
-        boolean outofbounds = false;
+		boolean outofbounds = false;
 		HyperSphere<FloatType> region = new HyperSphere<FloatType>(inputimg, point, radius);
 
 		HyperSphereCursor<FloatType> localcursor = region.localizingCursor();
-		RandomAccess<IntType> intranac = intimg.randomAccess();
 		
-		intranac.setPosition(point);
-		
-		
-		
+
 		final int label = intranac.get().get();
-		
+
 		while (localcursor.hasNext()) {
 			localcursor.fwd();
 
 			for (int d = 0; d < ndims; d++) {
 
-				if (localcursor.getDoublePosition(d)  < 0 || localcursor.getDoublePosition(d)  >= inputimg.dimension(d)) {
+				if (localcursor.getDoublePosition(d) < 0 || localcursor.getDoublePosition(d) >= inputimg.dimension(d)) {
 					outofbounds = true;
 					break;
 				}
@@ -374,278 +383,113 @@ public class LengthDetection {
 		return Math.sqrt(distance);
 	}
 
-	public void Updateslopeandintercept(ArrayList<Finalobject> updatefinalparam, ArrayList<Finalobject> finalparam){
-		
+	public ArrayList<Finalobject>  Updateslopeandintercept( ArrayList<Finalobject> finalparam) {
+
 		int Maxlabel = houghandWatershed.PerformWatershedding.GetMaxlabelsseeded(intimg);
-				
-		
+		final ArrayList<Finalobject> updateparamlist = new ArrayList<Finalobject>();
 		for (int label = 1; label < Maxlabel - 1; ++label) {
-			
-			
+
 			ArrayList<RealPoint> centroidlist = new ArrayList<RealPoint>();
-			
-			int labelindex = 0 ;
-			
+
+			int labelindex = 0;
+
 			for (int index = 0; index < finalparam.size(); ++index) {
-				
+
 				if (finalparam.get(index).Label == label) {
-					
+
 					labelindex = index;
 					centroidlist.add(finalparam.get(index).centroid);
-					
+
 				}
-				
+
 			}
-				
-			
-			    double newslope = 0;
-			    double newintercept = 0;
-					
-				final double[] pointone = new double[ndims];
-				final double[] pointtwo = new double[ndims];
-				
-				if (centroidlist.size() > 0){
+
+			double newslope = 0;
+			double newintercept = 0;
+
+			final double[] pointone = new double[ndims];
+			final double[] pointtwo = new double[ndims];
+
+			if (centroidlist.size() > 0) {
 				centroidlist.get(0).localize(pointone);
-				centroidlist.get(centroidlist.size()-1).localize(pointtwo);
-				
-			    	newslope = (pointtwo[1] - pointone[1]) / (pointtwo[0] - pointone[0]);
-			    	newintercept = pointtwo[1] - newslope * pointtwo[0];
-			    
-				}
-				
-				
-				System.out.println("old: " +finalparam.get(labelindex).slope + " " +  finalparam.get(labelindex).intercept );
-				
-				System.out.println("new: "+ newslope + " " + newintercept);
-				
-				for (int index = 0; index < finalparam.size(); ++index) {
-					
-					if (finalparam.get(index).Label == label){
-				Finalobject update = new Finalobject(label, finalparam.get(index).centroid,finalparam.get(index).sigmaX,
-						finalparam.get(index).sigmaY, finalparam.get(index).Intensity, newslope, newintercept);
-				
-				updatefinalparam.add(update);
-				
-					}
-				}
-               
-		}
-		
-		
-		
-	}
-	
-	
-	public void Getstartingpoints(ArrayList<Finalobject> finalparam){
-		int Maxlabel = houghandWatershed.PerformWatershedding.GetMaxlabelsseeded(intimg);
+				centroidlist.get(centroidlist.size() - 1).localize(pointtwo);
 
-		for (int label = 1; label < Maxlabel - 1; ++label) {
-			
-			ArrayList<RealPoint> pointlist = new ArrayList<RealPoint>();
-			ArrayList<Double> intensitylist = new ArrayList<Double>();
-			
-			double [] startpos = new double[ndims];
-			double [] endpos = new double[ndims];
-			
+				newslope = (pointtwo[1] - pointone[1]) / (pointtwo[0] - pointone[0]);
+				newintercept = pointtwo[1] - newslope * pointtwo[0];
+
+			}
+
+			System.out.println("old: " + finalparam.get(labelindex).slope + " " + finalparam.get(labelindex).intercept);
+
+			System.out.println("new: " + newslope + " " + newintercept);
+
 			for (int index = 0; index < finalparam.size(); ++index) {
 
 				if (finalparam.get(index).Label == label) {
-					
-					pointlist.add(finalparam.get(index).centroid);
-					intensitylist.add(finalparam.get(index).Intensity);
-					
+					Finalobject update = new Finalobject(label, finalparam.get(index).centroid, finalparam.get(index).Intensity,
+							finalparam.get(index).sigmaX, finalparam.get(index).sigmaY,
+							newslope, newintercept);
+
+					updateparamlist.add(update);
+
 				}
-				
 			}
-			
-			assert pointlist.size() == intensitylist.size();
-			
-			int increment = 1;
-			
-			int listindex = increment;
-			
-			double maxgradientstart = Double.MIN_VALUE;
-			double mingradient = Double.MAX_VALUE;
-			int maxindexstart = 0;
-			int minindexend = 0;
-			
-			while(true){
-				
-				int previousindex = listindex - increment ;
-				
-				double previousintensity = intensitylist.get(previousindex); 
-				
-				int nextlistindex = listindex + increment;
-				
-				double nextintensity = intensitylist.get(nextlistindex);
-				
-				double gradient =  (nextintensity -  previousintensity) / (2 * increment);
-				
-				if (gradient > maxgradientstart){
-					
-					maxgradientstart = gradient;
-					
-					maxindexstart =  listindex;
-				}
-				
-				if (gradient < mingradient){
-					
-					mingradient = gradient;
-					
-					minindexend = listindex;
-				}
-				
-				
-				listindex++;
-				
-				if (listindex >= intensitylist.size() - increment )
-					break;
-				
-			}
-		
-                for (int d = 0; d < ndims ; ++d){
-                	
-                	startpos[d] = pointlist.get(maxindexstart).getDoublePosition(d);
-                	
-                	endpos[d] = pointlist.get(minindexend).getDoublePosition(d);
-                	
-                }
-                double length = Distance(startpos, endpos);
-                System.out.println("Label :" + label + " " + " StartX: "+ startpos[0] + 
-                		" " + " StartY: "+ startpos[1] + "EndX :" + endpos[0]+ "EndY :" + endpos[1] + "Length: " +length  );
-                
-               
-                
-                
-                
-			
+
 		}
-		
-		
-		
-		
+
+		return updateparamlist;
 	}
-	
-	public void GetstartingpointsSecderiv(ArrayList<Finalobject> finalparam){
+
+	public ArrayList<Finalobject> Removepoints(ArrayList<Finalobject> finalparam) {
+
 		int Maxlabel = houghandWatershed.PerformWatershedding.GetMaxlabelsseeded(intimg);
 
-		for (int label = 1; label < Maxlabel - 1; ++label) {
-			
-			ArrayList<RealPoint> pointlist = new ArrayList<RealPoint>();
-			ArrayList<Double> intensitylist = new ArrayList<Double>();
-			
-			double [] startpos = new double[ndims];
-			double [] endpos = new double[ndims];
-			
-			for (int index = 0; index < finalparam.size(); ++index) {
-
-				if (finalparam.get(index).Label == label) {
-					
-					pointlist.add(finalparam.get(index).centroid);
-					intensitylist.add(finalparam.get(index).Intensity);
-					
-				}
-				
-			}
-			
-			assert pointlist.size() == intensitylist.size();
-			
-			int increment = 1;
-			
-			int listindex = increment ;
-			
-			double minsecgradientstart = Double.MAX_VALUE;
-			double minsecgradientend = Double.MAX_VALUE;
-			int maxindexstart = 0;
-			int minindexend = 0;
-			
-			while(true){
-				
-				int previousindex = listindex - increment  ;
-				
-				double previousintensity = intensitylist.get(previousindex); 
-				
-				double currentintensity = intensitylist.get(listindex);
-				
-				int nextlistindex = listindex + increment;
-				
-				double nextintensity = intensitylist.get(nextlistindex);
-				
-				double secgradient =  (nextintensity - 2 * currentintensity +  previousintensity) / (4 * increment * increment );
-				
-				if (secgradient < minsecgradientstart){
-					
-					minsecgradientstart = secgradient;
-					
-					maxindexstart =  listindex;
-				}
-				
-				
-				
-				
-				listindex++;
-				
-				if (listindex >= intensitylist.size() / 2 - increment - 1 )
-					break;
-				
-			}
-			
-			int listindexhalf = intensitylist.size() / 2;
-			
-               while(true){
-				
-				int previousindexhalf = listindexhalf - increment  ;
-				
-				double previousintensityhalf = intensitylist.get(previousindexhalf); 
-				
-				double currentintensityhalf = intensitylist.get(listindexhalf);
-				
-				int nextlistindexhalf = listindexhalf + increment;
-				
-				double nextintensityhalf = intensitylist.get(nextlistindexhalf);
-				
-				double secgradienthalf =  (nextintensityhalf - 2 * currentintensityhalf +  previousintensityhalf) / (4 * increment * increment );
-				
-				if (secgradienthalf < minsecgradientend){
-					
-					minsecgradientend = secgradienthalf;
-					
-					minindexend =  listindexhalf;
-				}
-				
-				
-				
-				
-				listindexhalf++;
-				
-				if (listindexhalf >= intensitylist.size() - increment - 1 )
-					break;
-				
-			}
+		ArrayList<LabelMax> labelmaxlist = new ArrayList<LabelMax>();
+		final ArrayList<Finalobject> correctparamlist = new ArrayList<Finalobject>();
 		
-                for (int d = 0; d < ndims ; ++d){
-                	
-                	startpos[d] = pointlist.get(maxindexstart).getDoublePosition(d);
-                	
-                	endpos[d] = pointlist.get(minindexend).getDoublePosition(d);
-                	
-                }
-                double length = Distance(startpos, endpos);
-                System.out.println("Label :" + label + " " + " StartX: "+ startpos[0] + 
-                		" " + " StartY: "+ startpos[1] + "EndX :" + endpos[0]+ "EndY :" + endpos[1] + "Length: " +length  );
-                
-               
-                
-               
+		
+		
+		for (int label = 1; label < Maxlabel - 1; ++label){
+			
+			double maxintensity = Double.MIN_VALUE;
+			
+			for (int index = 0; index < finalparam.size() ; ++index){
+				
+				if (finalparam.get(index).Label == label){
+					
+				if (finalparam.get(index).Intensity > maxintensity){
+					
+					maxintensity = finalparam.get(index).Intensity;
+					
+				}
+				
+				
+				}
+				
+			}
+				
+		final LabelMax labelmax = new LabelMax(label, maxintensity);
+		labelmaxlist.add(labelmax);
+		System.out.println("Label :" + label + " " + maxintensity);
+		
+		for (int listindex = 0; listindex < finalparam.size() ; ++listindex){
+			
+			if (finalparam.get(listindex).Label == label){
+			
+			if ( finalparam.get(listindex).Intensity/maxintensity > 0.1)
+			
+				
+				correctparamlist.add(finalparam.get(listindex));
+			}
+			
+		
+		}
 		}
 		
-		
-		
+   return correctparamlist;
 		
 	}
-	
-	
-	
+
 	public void Returnlengths(ArrayList<Finalobject> finalparam, ArrayList<Indexedlength> finallength, double[] sigma) {
 
 		int Maxlabel = houghandWatershed.PerformWatershedding.GetMaxlabelsseeded(intimg);
@@ -654,22 +498,21 @@ public class LengthDetection {
 			final double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
 			final double[] maxVal = { Double.MIN_VALUE, Double.MIN_VALUE };
 			double length = 0;
+			double lengthpre = 0;
 
 			double[] minposition = new double[ndims];
 			double[] maxposition = new double[ndims];
-			
+
 			double[] startpos = new double[ndims];
 			double[] endpos = new double[ndims];
 			double slope = 0;
 			double intercept = 0;
-			double fwhmfactor = -2.3548 * 0.5 * 0  ;
+			int labelindex = 0;
 			for (int index = 0; index < finalparam.size(); ++index) {
 
-				if (finalparam.get(index).Label == label && finalparam.get(index).Intensity > 1.0E-5) {
+				if (finalparam.get(index).Label == label) {
+					labelindex = index;
 
-					slope = finalparam.get(index).slope;
-					intercept = finalparam.get(index).intercept;
-					
 					for (int d = 0; d < ndims; ++d) {
 						minposition[d] = finalparam.get(index).centroid.getDoublePosition(d);
 						maxposition[d] = finalparam.get(index).centroid.getDoublePosition(d);
@@ -683,52 +526,60 @@ public class LengthDetection {
 
 					}
 
-					
+					if (finalparam.get(index).slope > 0) {
 
-					
-					if (finalparam.get(index).slope > 0){
-						
 						for (int d = 0; d < ndims; ++d) {
 
 							startpos[d] = minVal[d];
 							endpos[d] = maxVal[d];
 
-
 						}
 					}
-					
 
 					if (finalparam.get(index).slope < 0) {
 
-						
+						startpos[0] = minVal[0];
+						startpos[1] = maxVal[1];
 
-						startpos[0] = maxVal[0];
-						startpos[1] = minVal[1];
-
-
-						endpos[0] = minVal[0];
-						endpos[1] = maxVal[1];
-
-						
+						endpos[0] = maxVal[0];
+						endpos[1] = minVal[1];
 
 					}
-					
-					
 
 				}
 
 			}
 
-			length = Distance(startpos, endpos);
-			System.out.println(endpos[0]);
-			final int iterations = 100;
-			final double[] searchsigma = {5,5};
-		final double []	startfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, startpos, searchsigma, iterations, Endfit.Start);
-	    final double [] endfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, endpos, searchsigma, iterations, Endfit.End);
-			
-			final Indexedlength currentlength = new Indexedlength(label, length, startfit, endfit, slope, intercept);
+			slope = finalparam.get(labelindex).slope;
+			intercept = finalparam.get(labelindex).intercept;
+
+			lengthpre = Distance(startpos, endpos);
+
+			System.out.println("Label :" + label + " " + " StartX: " + startpos[0] + " " + " StartY: " + startpos[1]
+					+ "EndX :" + endpos[0] + " " + "EndY :" + endpos[1] + " " + "Length: " + lengthpre);
+
+			final int iterations = 1000;
+			final double[] searchsigma = sigma;
+
+			// FinalInterval range = Intervals.createMinMax((long) startpos[0],
+			// (long) startpos[1], (long) endpos[0], (long) endpos[1]);
+			// RandomAccessibleInterval< FloatType > region = Views.interval(
+			// inputimg, range );
+
+			final double[] startfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, startpos,
+					searchsigma, iterations, Endfit.Start);
+			final double[] endfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, endpos, searchsigma,
+					iterations, Endfit.End);
+
+			length = Distance(startfit, endfit);
+			final Indexedlength currentlength = new Indexedlength(label, length, startfit, endfit,
+					finalparam.get(labelindex).slope, finalparam.get(labelindex).intercept);
 
 			finallength.add(currentlength);
+
+			System.out.println(
+					"New:" + "Label :" + label + " " + " StartX: " + startfit[0] + " " + " StartY: " + startfit[1] + " "
+							+ "EndX :" + endfit[0] + " " + "EndY :" + endfit[1] + "  " + "Length: " + length);
 
 		}
 

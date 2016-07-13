@@ -1,6 +1,8 @@
 package houghandWatershed;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import com.sun.tools.javac.util.Pair;
@@ -37,7 +39,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/Fake_data02.tif"));
+				.openAs32Bit(new File("src/main/resources/Fake_datasmall.tif"));
 		// small_mt.tif image to be used for testing
 		// 2015-01-14_Seeds-1.tiff for actual
 		// mt_experiment.tif for big testing
@@ -94,6 +96,7 @@ public class HoughpostWater {
 
 		final int ndims = biginputimg.numDimensions();
 		double[] final_param = new double[2 * ndims + 2];
+		
 		double[] noise_param = new double[ndims];
 		double[] psf = new double[ndims];
 		
@@ -132,13 +135,8 @@ public class HoughpostWater {
 			final_param = MTlength.Getfinalparam(prefinalparamlist.get(index).centroid, radius, psf);
 			noise_param = MTlength.Getnoiseparam(prefinalparamlist.get(index).centroid, radius);
 			
-		
-			if ( final_param[0]  > 1.0E-5){
-				System.out.println(" Amp: " + final_param[0] + " " + "Mu X: " + final_param[1] + " "
-						+ "Mu Y: " + final_param[2] + " " + "Sig X: " + Math.sqrt(1.0/final_param[3]) + " " + "Sig Y: "
-						+ Math.sqrt(1.0/final_param[4])  );
-				
-				totalgausslist.add(final_param);
+		if (final_param[0] > 1.0E-10){
+			
 				
 				
 				final double[] newmeans = {final_param[1], final_param[2]};
@@ -147,25 +145,60 @@ public class HoughpostWater {
 				
 				// Update the Intensity, Mean and Variance of the lines
 				Finalobject finalline = new Finalobject(prefinalparamlist.get(index).Label, newcentroid, final_param[0],
-						final_param[3], final_param[4],
+						1.0/Math.sqrt(final_param[3]), 1.0/Math.sqrt(final_param[4]),
 						prefinalparamlist.get(index).slope, prefinalparamlist.get(index).intercept);
 				
 				finalparamlist.add(finalline);
+			/*	
+				System.out.println(" Amp: " + finalparamlist.get(index).Intensity + " " + "Mu X: " 
+				+ finalparamlist.get(index).centroid.getDoublePosition(0) + " "
+						+ "Mu Y: " + finalparamlist.get(index).centroid.getDoublePosition(1) +
+						" " + "Sig X: " + finalparamlist.get(index).sigmaX + " " + "Sig Y: "
+						+ finalparamlist.get(index).sigmaY );
 				
-				
-			}
 			
+			*/
 		}
 		
+		}
 		ArrayList<Indexedlength> finallength = new ArrayList<Indexedlength>();
 		
 		
 		// Since the centroid positions changed, update the slope and intercept of Hough lines
-		final ArrayList<Finalobject> updateparamlist = new ArrayList<Finalobject>();
+		 ArrayList<Finalobject> updateparamlist = new ArrayList<Finalobject>();
+		 ArrayList<Finalobject> correctparamlist = new ArrayList<Finalobject>();
 		
 		
+		updateparamlist = MTlength.Updateslopeandintercept(finalparamlist);
 		
-		MTlength.Updateslopeandintercept(updateparamlist, finalparamlist);
+		correctparamlist = MTlength.Removepoints(updateparamlist);
+	
+		for (int index = 0; index < correctparamlist.size(); ++index){
+			
+			double[] reduced_param = new double[2 * ndims + 2];
+			System.out.println(" Label : " + correctparamlist.get(index).Label  
+					+ " Amp: " + correctparamlist.get(index).Intensity + " " + "Mu X: " + 
+			correctparamlist.get(index).centroid.getDoublePosition(0) + " "
+					+ "Mu Y: " + correctparamlist.get(index).centroid.getDoublePosition(1) 
+					+ " " + "Sig X: " + correctparamlist.get(index).sigmaX+ " " + "Sig Y: "
+					+  correctparamlist.get(index).sigmaY  );
+			
+			reduced_param[0] = correctparamlist.get(index).Intensity;
+		    
+			for (int d = 0; d < n; ++d){
+				reduced_param[d + 1] = correctparamlist.get(index).centroid.getDoublePosition(d); 
+			}
+           
+			reduced_param[3] =   1.0 / Math.pow(correctparamlist.get(index).sigmaX, 2);
+			
+			reduced_param[4] =   1.0 / Math.pow(correctparamlist.get(index).sigmaY, 2);
+			
+			
+			
+			totalgausslist.add(reduced_param);
+			
+		}
+	
 		
 		// Draw the detected and iterated lines
 		PushCurves.DrawDetectedGaussians(gaussimg, totalgausslist);
@@ -173,15 +206,28 @@ public class HoughpostWater {
 		
 		// Determine starting and end points by giving the start and end positions along the line and then doing a half Gaussian mask fit
 		
-		MTlength.Returnlengths(updateparamlist , finallength, psf);
+		MTlength.Returnlengths(correctparamlist , finallength, psf);
 
+		
+		
+		
 		for (int index = 0; index< finallength.size(); ++index){
 			
 		if (finallength.get(index).length > 0 )	
-		System.out.println("Label: " + finallength.get(index).Label + " " +
-		 "Length: "+ finallength.get(index).length + " " + "Slope: " + finallength.get(index).slope +  
-		 " Intercept :" + finallength.get(index).intercept + " StartposX: " + finallength.get(index).startpos[0] 
-				 +" EndposX: " + finallength.get(index).endpos[0] );
+			try {
+	            FileWriter writer = new FileWriter("finallengths.txt", true);
+	            writer.write("Label: " + finallength.get(index).Label + " " +
+	           		 "Length: "+ finallength.get(index).length + " " + "Slope: " + finallength.get(index).slope +  
+	        		 " Intercept :" + finallength.get(index).intercept + " StartposX: " + finallength.get(index).startpos[0] 
+	        				 +" StartPosY: " + finallength.get(index).startpos[1]+ " EndposX: " + finallength.get(index).endpos[0] 
+	    	        				 +" EndPosY: " + finallength.get(index).endpos[1] );
+	            writer.write("\r\n"); 
+	            writer.close();
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        }
+			
+		
 		}
 		
 		

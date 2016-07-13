@@ -277,7 +277,7 @@ public class PushCurves {
 	
 	public static void Drawshortline(RandomAccessibleInterval<FloatType> imgout, ArrayList<Fakeline> linearray,
 			double slope, double intercept, final double[] startpos,
-			final double[] endpos, final double[] sigma, double length) {
+			final double[] endpos, final double[] sigma) {
 
 		int ndims = imgout.numDimensions();
 		double [] startline = new double[ndims];
@@ -315,7 +315,7 @@ public class PushCurves {
 			count++;
 
 			
-			if (steppos[0] >= endline[0] || steppos[1] >= endline[1] || distance > length )
+			if (steppos[0] >= endline[0] || steppos[1] >= endline[1]  )
 				break;
 		}
 		Fakeline singleline = new Fakeline(distance, slope, intercept, startline, endline);
@@ -486,11 +486,11 @@ public class PushCurves {
 			Finalfunction linefunction = new Finalfunction(realpos, slope, intercept);
 			distance = linefunction.Linefunctiondist();
 
-			if (distance < 5 * sigma)
+			if (distance < 3 * sigma)
 				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
 			else
 				intensity = 0;
-		//	intensity *= ranacinput.get().get();
+			intensity *= ranacinput.get().get();
 
 			ranac.setPosition(inputcursor);
 			int i = ranac.get().get();
@@ -524,7 +524,7 @@ public class PushCurves {
 		// Moving along the line with a fixed step-size. This gives set of points along the line which are then convoluted with a Gaussian.
 		final double stepsize = 1;
 		final double[] steppos = new double[n];
-		int count = 0;
+		int count = 1;
 		if (slope >= 0){
 		while (true) {
 			
@@ -542,13 +542,12 @@ public class PushCurves {
 			count++;
 			
 			
-			if (steppos[0] >= maxVal[0] || steppos[0] >= inputimg.dimension(0) - 1  || steppos[1] >= maxVal[1] 
-					|| steppos[1] >= inputimg.dimension(1) - 1  )
+			if (steppos[0] >= maxVal[0] || steppos[1] >= maxVal[1]   )
 				break;
 		}
 		}
 		
-		int negcount = 0;
+		int negcount = 1;
 		if (slope < 0){
 			while (true) {
 				
@@ -565,8 +564,7 @@ public class PushCurves {
 				negcount++;
 				
 				
-				if (steppos[0] >= maxVal[0] || steppos[0] >= inputimg.dimension(0) - 1  || steppos[1] <= minVal[1] 
-						|| steppos[1] <= 1)
+				if (steppos[0] >= maxVal[0]   || steppos[1] <= minVal[1] )
 					break;
 			}	
 			
