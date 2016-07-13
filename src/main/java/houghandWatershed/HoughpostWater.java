@@ -39,7 +39,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/Fake_datasmall.tif"));
+				.openAs32Bit(new File("src/main/resources/Fake_databig.tif"));
 		// small_mt.tif image to be used for testing
 		// 2015-01-14_Seeds-1.tiff for actual
 		// mt_experiment.tif for big testing
@@ -51,10 +51,7 @@ public class HoughpostWater {
 		Normalize.normalize(Views.iterable(biginputimg), minval, maxval);
 		ImageJFunctions.show(biginputimg);
 		final int n = biginputimg.numDimensions();
-		double[] sigma = new double[biginputimg.numDimensions()];
-
-		for (int d = 0; d < sigma.length; ++d)
-			sigma[d] = 2;
+		
 
 		// Initialize empty images to be used later
 	
@@ -84,7 +81,7 @@ public class HoughpostWater {
 		// Do watershedding and Hough
 		
 		// Declare minimum length of the line(in pixels) to be detected
-				double minlength = 5;
+				double minlength = 0;
 				
 		linepair = PerformWatershedding.DowatersheddingandHough(biginputimg, inputimg, minlength);
 
@@ -103,7 +100,7 @@ public class HoughpostWater {
 		final double SNR = 4000/240;
 		psf[0] = 1.7;
 		psf[1] = 1.8;
-		final long radius = (long) Math.ceil(2 * Math.sqrt( psf[0] * psf[0] +  psf[1] * psf[1]));
+		final long radius = (long) Math.ceil( Math.sqrt( psf[0] * psf[0] +  psf[1] * psf[1]));
 		// Input the psf-sigma here to be used for convolving Gaussians on a
 		// line, will not change during iteration.
 

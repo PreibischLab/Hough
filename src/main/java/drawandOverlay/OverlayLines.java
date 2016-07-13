@@ -187,7 +187,7 @@ public class OverlayLines {
 					if (inran.get().get() > 0)
 						count++;
 
-					if (count > maxcount) {
+					if (count >= maxcount) {
 						maxcount = count;
 						maxindex = index;
 
@@ -199,9 +199,8 @@ public class OverlayLines {
 		}
 		// System.out.println("Main file: "+ maxcount + " " + maxindex);
 		ArrayList<RefinedPeak<Point>> MainMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
-		if (maxcount > minlength) {
-			MainMinlist.add(SubpixelMinlist.get(maxindex));
-		}
+		if (maxcount > 0)	
+		MainMinlist.add(SubpixelMinlist.get(maxindex));
 		return MainMinlist;
 	}
 

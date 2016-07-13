@@ -168,6 +168,7 @@ public class GaussianMastFit {
 			for ( int d = 0; d < numDimensions; ++d )
 			{
 				final double x = location[ d ] - cursor.getDoublePosition( d );
+				
 				if (x <=  0)
 					
 				value *= Math.exp( -(x * x) / two_sq_sigma[ d ] );

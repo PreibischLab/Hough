@@ -29,13 +29,11 @@ public class Gaussianlines {
 			for (int d = 0; d < range.numDimensions(); ++d) {
 				startpos[d] = rnd.nextDouble() * (range.max(d) - range.min(d)) + range.min(d);
 
-				endpos[d] = startpos[d] + 10;
-				
-				
-				
-				
 			}
 
+			endpos[0] = startpos[0] + 20;
+			endpos[1] = startpos[1] + rnd.nextDouble()*(endpos[0] - startpos[0]);
+			
 			double slope = (endpos[1] - startpos[1]) / (endpos[0] - startpos[0]);
 			double intercept = startpos[1] - slope * startpos[0];
 

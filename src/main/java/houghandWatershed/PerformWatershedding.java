@@ -100,22 +100,21 @@ public class PerformWatershedding {
 
 			// Set size of pixels in Hough space
 			int mintheta = 0;
-			// Usually is 180 but to allow for detection of vertical
-			// lines,allowing a few more degrees
-			int maxtheta = 200;
-			double size = Math
+			// Usually is 180 
+			int maxtheta = 180;
+			double size =   Math
 					.sqrt((outimg.dimension(0) * outimg.dimension(0) + outimg.dimension(1) * outimg.dimension(1)));
 			int minRho = (int) -Math.round(size);
 			int maxRho = -minRho;
-			double thetaPerPixel = 0.1;
-			double rhoPerPixel = 0.1;
+			double thetaPerPixel = 0.05;
+			double rhoPerPixel = 0.8;
 			double[] min = { mintheta, minRho };
 			double[] max = { maxtheta, maxRho };
 			int pixelsTheta = (int) Math.round((maxtheta - mintheta) / thetaPerPixel);
 			int pixelsRho = (int) Math.round((maxRho - minRho) / rhoPerPixel);
 
 			double ratio = (max[0] - min[0]) / (max[1] - min[1]);
-			FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (long)(pixelsRho*ratio ) });
+			FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (pixelsRho )  });
 			final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 			double[] minCorner =  new double[biginputimg.numDimensions()];
 			double[] maxCorner =  new double[biginputimg.numDimensions()];
@@ -142,9 +141,9 @@ public class PerformWatershedding {
 			ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(
 					biginputimg.numDimensions());
 			SubpixelMinlist = GetLocalmaxmin.HoughspaceMaxima(houghimage, interval, sizes, thetaPerPixel, rhoPerPixel);
-
+			System.out.println(SubpixelMinlist.size());
 			ReducedMinlist = OverlayLines.ReducedList(outimg, SubpixelMinlist, sizes, min, max, minlength);
-			
+			System.out.println(ReducedMinlist.size());
 			double[] points = new double[biginputimg.numDimensions()];
 			
 			
@@ -297,9 +296,8 @@ public class PerformWatershedding {
 			ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(
 					biginputimg.numDimensions());
 			SubpixelMinlist = GetLocalmaxmin.HoughspaceMaxima(houghimage, interval, sizes, thetaPerPixel, rhoPerPixel);
-
-			ReducedMinlist = OverlayLines.ReducedList(outimg, SubpixelMinlist, sizes, min, max, minlength);
 			
+			ReducedMinlist = OverlayLines.ReducedList(outimg, SubpixelMinlist, sizes, min, max, minlength);
 			double[] points = new double[biginputimg.numDimensions()];
 			
 			
