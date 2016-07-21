@@ -141,9 +141,7 @@ public class PerformWatershedding {
 			ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(
 					biginputimg.numDimensions());
 			SubpixelMinlist = GetLocalmaxmin.HoughspaceMaxima(houghimage, interval, sizes, thetaPerPixel, rhoPerPixel);
-			System.out.println(SubpixelMinlist.size());
 			ReducedMinlist = OverlayLines.ReducedList(outimg, SubpixelMinlist, sizes, min, max, minlength);
-			System.out.println(ReducedMinlist.size());
 			double[] points = new double[biginputimg.numDimensions()];
 			
 			

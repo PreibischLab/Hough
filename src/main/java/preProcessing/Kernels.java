@@ -1,5 +1,7 @@
 package preProcessing;
 
+import java.util.Random;
+
 import com.sun.tools.javac.util.Pair;
 
 import net.imglib2.Cursor;
@@ -82,9 +84,6 @@ public class Kernels {
 					imgout = Supressthresh(inputimg);
 					break;
 					
-				
-				
-				
 				}
 				
 				
@@ -92,6 +91,32 @@ public class Kernels {
 			}
 	
 	
+	public static void GaussianBlur(final RandomAccessibleInterval<FloatType> inputimage){
+		
+		
+		// Gaussian kernel with sigma = 0.84089642
+		float [] gaussianKernel = {
+				0.00000067f,	0.00002292f,	0.00019117f,	0.00038771f,	0.00019117f,	0.00002292f,	0.00000067f,
+				0.00002292f,	0.00078634f,	0.00655965f,	0.01330373f,	0.00655965f,	0.00078633f,	0.00002292f,
+				0.00019117f,	0.00655965f,	0.05472157f,	0.11098164f,	0.05472157f,	0.00655965f,	0.00019117f,
+				0.00038771f,	0.01330373f,	0.11098164f,	0.22508352f,	0.11098164f,	0.01330373f,	0.00038771f,
+				0.00019117f,	0.00655965f,	0.05472157f,	0.11098164f,	0.05472157f,	0.00655965f,	0.00019117f,
+				0.00002292f,	0.00078633f,	0.00655965f,	0.01330373f,	0.00655965f,	0.00078633f,	0.00002292f,
+				0.00000067f,	0.00002292f,	0.00019117f,	0.00038771f,	0.00019117f,	0.00002292f,	0.00000067f,
+				
+		};
+		
+		
+		
+		
+		final Img<FloatType> Blur = ArrayImgs.floats(gaussianKernel, new long[] { 7, 7 });
+
+		// apply convolution to convolve input data with kernels
+
+		new FFTConvolution<FloatType>(inputimage, Blur, new ArrayImgFactory<ComplexFloatType>()).convolve();
+		
+	}
+			
 	
 	public static void ButterflyKernel(final RandomAccessibleInterval<FloatType> inputimage) {
 
@@ -507,6 +532,30 @@ public class Kernels {
 		
 	}
 	
+	
+	public static void SaltandPepperNoise(RandomAccessibleInterval<FloatType> inputimg){
+		
+		final  int saltandpepperlevel = 1;
+		final Random rnd = new Random(saltandpepperlevel);
+		
+		Cursor<FloatType> cursor = Views.iterable(inputimg).localizingCursor();
+		RandomAccess<FloatType> ranac = inputimg.randomAccess();
+		long [] x = new long[inputimg.numDimensions()];
+		
+		while (cursor.hasNext()){
+			
+			cursor.fwd();
+			
+			for (int d = 0; d < inputimg.numDimensions(); ++d)
+			x[d] = (long) (Math.random() * cursor.getDoublePosition(d));
+			
+			ranac.setPosition(x);
+			ranac.get().setReal(rnd.nextDouble());
+			
+			
+		}
+		
+	}
 	
 	public static RandomAccessibleInterval<FloatType> Supressthresh(RandomAccessibleInterval<FloatType> inputimg){
 		RandomAccessibleInterval<FloatType> Threshimg = new ArrayImgFactory<FloatType>().create(inputimg,

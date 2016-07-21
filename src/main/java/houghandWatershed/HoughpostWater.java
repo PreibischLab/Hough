@@ -12,6 +12,7 @@ import drawandOverlay.PushCurves;
 import ij.ImageJ;
 import labeledObjects.Finalobject;
 import labeledObjects.Indexedlength;
+import labeledObjects.LabelMax;
 import labeledObjects.Lineobjects;
 import labeledObjects.PreFinalobject;
 import net.imglib2.Cursor;
@@ -39,7 +40,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/Fake_databig.tif"));
+				.openAs32Bit(new File("src/main/resources/Fake_datasmall.tif"));
 		// small_mt.tif image to be used for testing
 		// 2015-01-14_Seeds-1.tiff for actual
 		// mt_experiment.tif for big testing
@@ -57,7 +58,8 @@ public class HoughpostWater {
 	
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
-		
+		RandomAccessibleInterval<FloatType> preinputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
+				new FloatType());
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
 		RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(biginputimg,
@@ -68,8 +70,8 @@ public class HoughpostWater {
 		
 		
 		
-		
-		inputimg = Kernels.Preprocess(biginputimg, ProcessingType.CannyEdge);
+		preinputimg = Kernels.Meanfilterandsupress(biginputimg, 1.0);
+		inputimg = Kernels.Preprocess(preinputimg, ProcessingType.CannyEdge);
 
 		ImageJFunctions.show(inputimg).setTitle("Preprocessed image");
 
@@ -100,7 +102,7 @@ public class HoughpostWater {
 		final double SNR = 4000/240;
 		psf[0] = 1.7;
 		psf[1] = 1.8;
-		final long radius = (long) Math.ceil( Math.sqrt( psf[0] * psf[0] +  psf[1] * psf[1]));
+		final long radius = (long) Math.ceil(  Math.sqrt( psf[0] * psf[0] +  psf[1] * psf[1]));
 		// Input the psf-sigma here to be used for convolving Gaussians on a
 		// line, will not change during iteration.
 
@@ -167,8 +169,8 @@ public class HoughpostWater {
 		
 		
 		updateparamlist = MTlength.Updateslopeandintercept(finalparamlist);
-		
-		correctparamlist = MTlength.Removepoints(updateparamlist);
+		ArrayList<LabelMax> labelmaxlist = new ArrayList<LabelMax>();
+		correctparamlist = MTlength.Removepoints(updateparamlist, labelmaxlist);
 	
 		for (int index = 0; index < correctparamlist.size(); ++index){
 			
@@ -203,7 +205,7 @@ public class HoughpostWater {
 		
 		// Determine starting and end points by giving the start and end positions along the line and then doing a half Gaussian mask fit
 		
-		MTlength.Returnlengths(correctparamlist , finallength, psf);
+		MTlength.Returnlengths(correctparamlist , finallength, labelmaxlist, psf);
 
 		
 		

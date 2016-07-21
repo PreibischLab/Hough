@@ -196,6 +196,88 @@ public class LengthDetection {
 
 	}
 
+	public double[] Gethalfstartgaussparam(final Localizable point, final long radius, final double[] psf) throws Exception {
+
+		PointSampleList<FloatType> datalist = gatherData(point, radius);
+
+		final Cursor<FloatType> listcursor = datalist.localizingCursor();
+
+		double[][] X = new double[(int) datalist.size()][ndims];
+		double[] I = new double[(int) datalist.size()];
+		int index = 0;
+		while (listcursor.hasNext()) {
+			listcursor.fwd();
+
+			for (int d = 0; d < ndims; d++) {
+				X[index][d] = listcursor.getDoublePosition(d);
+			}
+
+			I[index] = listcursor.get().getRealDouble();
+
+			index++;
+		}
+
+		final double[] start_param = makeBestGuess(point, X, I, psf);
+
+		final double[] finalparam = start_param.clone();
+		int maxiter = 1000;
+		double lambda = 1e-3;
+		double termepsilon = 1e-1;
+
+		LevenbergMarquardtSolverLocal.solve(X, finalparam, I, new HalfstartGaussianfit(), lambda, termepsilon, maxiter);
+
+		// NaN protection: we prefer returning the crude estimate than NaN
+		for (int j = 0; j < finalparam.length; j++) {
+			if (Double.isNaN(finalparam[j]))
+				finalparam[j] = start_param[j];
+		}
+
+		return finalparam;
+
+	}
+	
+	public double[] Gethalfendgaussparam(final Localizable point, final long radius, final double[] psf) throws Exception {
+
+		PointSampleList<FloatType> datalist = gatherData(point, radius);
+
+		final Cursor<FloatType> listcursor = datalist.localizingCursor();
+
+		double[][] X = new double[(int) datalist.size()][ndims];
+		double[] I = new double[(int) datalist.size()];
+		int index = 0;
+		while (listcursor.hasNext()) {
+			listcursor.fwd();
+
+			for (int d = 0; d < ndims; d++) {
+				X[index][d] = listcursor.getDoublePosition(d);
+			}
+
+			I[index] = listcursor.get().getRealDouble();
+
+			index++;
+		}
+
+		final double[] start_param = makeBestGuess(point, X, I, psf);
+
+		final double[] finalparam = start_param.clone();
+		int maxiter = 1000;
+		double lambda = 1e-3;
+		double termepsilon = 1e-1;
+
+		LevenbergMarquardtSolverLocal.solve(X, finalparam, I, new HalfendGaussianfit(), lambda, termepsilon, maxiter);
+
+		// NaN protection: we prefer returning the crude estimate than NaN
+		for (int j = 0; j < finalparam.length; j++) {
+			if (Double.isNaN(finalparam[j]))
+				finalparam[j] = start_param[j];
+		}
+
+		return finalparam;
+
+	}
+	
+	
+	
 	public double[] Getfinalpointsparam(final Localizable point, final long radius) throws Exception {
 
 		PointSampleList<FloatType> datalist = gatherPointsData(point, radius);
@@ -440,11 +522,10 @@ public class LengthDetection {
 		return updateparamlist;
 	}
 
-	public ArrayList<Finalobject> Removepoints(ArrayList<Finalobject> finalparam) {
+	public ArrayList<Finalobject> Removepoints(ArrayList<Finalobject> finalparam, ArrayList<LabelMax> labelmaxlist ) {
 
 		int Maxlabel = houghandWatershed.PerformWatershedding.GetMaxlabelsseeded(intimg);
 
-		ArrayList<LabelMax> labelmaxlist = new ArrayList<LabelMax>();
 		final ArrayList<Finalobject> correctparamlist = new ArrayList<Finalobject>();
 		
 		
@@ -476,7 +557,7 @@ public class LengthDetection {
 			
 			if (finalparam.get(listindex).Label == label){
 			
-			if ( finalparam.get(listindex).Intensity/maxintensity > 0.1)
+			if ( finalparam.get(listindex).Intensity/maxintensity > 0.8)
 			
 				
 				correctparamlist.add(finalparam.get(listindex));
@@ -490,7 +571,8 @@ public class LengthDetection {
 		
 	}
 
-	public void Returnlengths(ArrayList<Finalobject> finalparam, ArrayList<Indexedlength> finallength, double[] sigma) {
+	public void Returnlengths(ArrayList<Finalobject> finalparam, ArrayList<Indexedlength> finallength, ArrayList<LabelMax> labelmaxlist,
+			double[] sigma) throws Exception {
 
 		int Maxlabel = houghandWatershed.PerformWatershedding.GetMaxlabelsseeded(intimg);
 
@@ -552,28 +634,63 @@ public class LengthDetection {
 
 			slope = finalparam.get(labelindex).slope;
 			intercept = finalparam.get(labelindex).intercept;
-
 			lengthpre = Distance(startpos, endpos);
 
 			System.out.println("Label :" + label + " " + " StartX: " + startpos[0] + " " + " StartY: " + startpos[1]
 					+ "EndX :" + endpos[0] + " " + "EndY :" + endpos[1] + " " + "Length: " + lengthpre);
 
-			final int iterations = 1000;
-			final double[] searchsigma = sigma;
+			final int iterations = 5000;
+			double maxintensity = 0;
 
 			// FinalInterval range = Intervals.createMinMax((long) startpos[0],
 			// (long) startpos[1], (long) endpos[0], (long) endpos[1]);
 			// RandomAccessibleInterval< FloatType > region = Views.interval(
 			// inputimg, range );
-
-			final double[] startfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, startpos,
-					searchsigma, iterations, Endfit.Start);
-			final double[] endfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, endpos, searchsigma,
-					iterations, Endfit.End);
+			for (int listlabelindex = 0; listlabelindex < labelmaxlist.size(); ++listlabelindex){
+				
+            if (labelmaxlist.get(listlabelindex).Label == label)
+            
+            	maxintensity = labelmaxlist.get(listlabelindex).maxIntensity;
+            	
+			}
+			
+			 double [] fitparamstart = new double[2*ndims +2];
+			 double [] fitparamend = new double[2*ndims +2];
+			final long radius = (long)  Math.ceil(2 *  Math.sqrt( sigma[0] * sigma[0] +  sigma[1] * sigma[1]));
+			
+			final long [] longstartpos = new long[ndims];
+			final long [] longendpos = new long[ndims];
+			for (int d = 0; d < ndims ; ++d){
+				longstartpos[d] = (long) startpos[d];
+				longendpos[d] = (long) endpos[d];
+				
+			}
+			
+			
+			Point startpoint = new Point(ndims);
+			Point endpoint = new Point(ndims);
+			startpoint.setPosition(longstartpos);
+			endpoint.setPosition(longendpos);
+			fitparamstart = Gethalfstartgaussparam(startpoint, radius, sigma);
+			fitparamend = Gethalfendgaussparam(endpoint, radius, sigma);
+			
+			final double[] startfit = new double[ndims];
+			final double[] endfit = new double[ndims];
+			
+			for (int d = 0; d < ndims ; ++d){
+				startfit[d] = fitparamstart[d + 1];
+				endfit[d] = fitparamend[d + 1];
+			}
+			
+			
+		//	final double[] startfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, startpos,
+		//			sigma, iterations, maxintensity, 1.0, slope, Endfit.Start);
+		//	final double[] endfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, endpos, sigma,
+		//			iterations, maxintensity, 1.0, slope, Endfit.End);
 
 			length = Distance(startfit, endfit);
 			final Indexedlength currentlength = new Indexedlength(label, length, startfit, endfit,
-					finalparam.get(labelindex).slope, finalparam.get(labelindex).intercept);
+					slope, intercept);
 
 			finallength.add(currentlength);
 

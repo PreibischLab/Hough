@@ -542,7 +542,7 @@ public class PushCurves {
 			count++;
 			
 			
-			if (steppos[0] >= maxVal[0] || steppos[1] >= maxVal[1]   )
+			if (steppos[0] >= maxVal[0]- stepsize || steppos[1] >= maxVal[1] - stepsize  )
 				break;
 		}
 		}
@@ -564,7 +564,7 @@ public class PushCurves {
 				negcount++;
 				
 				
-				if (steppos[0] >= maxVal[0]   || steppos[1] <= minVal[1] )
+				if (steppos[0] >= maxVal[0] - stepsize   || steppos[1] <= minVal[1] + stepsize )
 					break;
 			}	
 			

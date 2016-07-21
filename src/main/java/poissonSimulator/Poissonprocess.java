@@ -6,6 +6,7 @@ import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
@@ -28,6 +29,8 @@ public class Poissonprocess {
 			c.fwd();
 			r.setPosition( c );
 			c.get().set( r.get() );
+			
+			
 		}
 		
 		// based on an average intensity of 5 inside the sample
@@ -43,11 +46,16 @@ public class Poissonprocess {
 		final NumberGeneratorImage< FloatType> ng = new NumberGeneratorImage< FloatType>( img, mul );
 		final PoissonGenerator pg = new PoissonGenerator( ng, rnd );
 		
+		
+		
 		for ( final FloatType v : Views.iterable( img ) )
 		{
 			ng.fwd();
 			v.set( pg.nextValue().floatValue() );
 		}
+		
+		
+		
 	}
 	
 }
