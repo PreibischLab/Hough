@@ -20,18 +20,25 @@ public class HalfstartGaussianfit implements FitFunction {
 			final int ndims = x.length;
 			if (k == 0) {
 				// With respect to A
+			//	if (x[0] < a[1] && x[1] < a[2])
 				return E(x, a);
+			//	else
+			//		return 0;
 
 			} else if (k <= ndims) {
 				// With respect to xi
 				int dim = k - 1;
+			//	if (x[0] < a[1] && x[1] < a[2])
 				return 2 * a[dim+ndims] * (x[dim] - a[dim+1]) * a[0] * E(x, a);
+			//	else return 0;
 
 			} else if (k > ndims && k < 2*ndims + 1)  {
 				// With respect to ai
 				int dim = k - ndims - 1;
 				double di = x[dim] - a[dim+1];
+			//	if (x[0] < a[1] && x[1] < a[2])
 				return - di * di * a[0] * E(x, a);
+			//	else return 0;
 			}
 			
 			else{
@@ -128,10 +135,9 @@ public class HalfstartGaussianfit implements FitFunction {
 			for (int i = 0; i < x.length; i++) {
 				di = x[i] - a[i+1];
 				
-				if (di <= 0)
-				sum += a[i+ndims+1] * di * di;
-				else
-					sum = 0;
+				if (di < 0)
+				sum += a[i+ndims+1] * di * di  ;
+				
 			}
 			return Math.exp(-sum);
 		}

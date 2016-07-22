@@ -99,6 +99,50 @@ public class LengthDetection {
 
 		return start_param;
 	}
+	
+	
+	private final double[] makeBestfixedsigmaGuess(final Localizable point, final double[][] X, final double[] I,
+			final double[] psf) {
+
+		double[] start_param = new double[2 * ndims + 2];
+
+		double I_sum = 0;
+		double[] X_sum = new double[ndims];
+		for (int j = 0; j < ndims; j++) {
+			X_sum[j] = 0;
+			for (int i = 0; i < X.length; i++) {
+				X_sum[j] += X[i][j] * I[i];
+			}
+		}
+		double max_I = Double.NEGATIVE_INFINITY;
+		for (int i = 0; i < X.length; i++) {
+			I_sum += I[i];
+			if (I[i] > max_I) {
+				max_I = I[i];
+			}
+
+		}
+
+		start_param[0] = max_I;
+
+		for (int j = 0; j < ndims; j++) {
+			start_param[j + 1] = X_sum[j] / I_sum;
+		}
+
+		for (int j = 0; j < ndims; j++) {
+			double C = 0;
+			double dx;
+			for (int i = 0; i < X.length; i++) {
+				dx = X[i][j] - start_param[j + 1];
+				C += I[i] * dx * dx;
+			}
+			C /= I_sum;
+			start_param[ndims + j + 1] = 1 / C;
+		}
+		start_param[2 * ndims + 1] = 0;
+
+		return start_param;
+	}
 
 	private final double[] makeNoiseGuess() {
 		double[] start_param = new double[ndims];
@@ -217,7 +261,7 @@ public class LengthDetection {
 			index++;
 		}
 
-		final double[] start_param = makeBestGuess(point, X, I, psf);
+		final double[] start_param = makeBestfixedsigmaGuess(point, X, I, psf);
 
 		final double[] finalparam = start_param.clone();
 		int maxiter = 1000;
@@ -257,7 +301,7 @@ public class LengthDetection {
 			index++;
 		}
 
-		final double[] start_param = makeBestGuess(point, X, I, psf);
+		final double[] start_param = makeBestfixedsigmaGuess(point, X, I, psf);
 
 		final double[] finalparam = start_param.clone();
 		int maxiter = 1000;
@@ -557,7 +601,7 @@ public class LengthDetection {
 			
 			if (finalparam.get(listindex).Label == label){
 			
-			if ( finalparam.get(listindex).Intensity/maxintensity > 0.8)
+			if ( finalparam.get(listindex).Intensity/maxintensity > 0.9)
 			
 				
 				correctparamlist.add(finalparam.get(listindex));
@@ -653,17 +697,17 @@ public class LengthDetection {
             	maxintensity = labelmaxlist.get(listlabelindex).maxIntensity;
             	
 			}
+			/*
 			
 			 double [] fitparamstart = new double[2*ndims +2];
 			 double [] fitparamend = new double[2*ndims +2];
-			final long radius = (long)  Math.ceil(2 *  Math.sqrt( sigma[0] * sigma[0] +  sigma[1] * sigma[1]));
+			final long radius = (long)  Math.ceil(8 *  Math.sqrt( sigma[0] * sigma[0] +  sigma[1] * sigma[1]));
 			
 			final long [] longstartpos = new long[ndims];
 			final long [] longendpos = new long[ndims];
 			for (int d = 0; d < ndims ; ++d){
 				longstartpos[d] = (long) startpos[d];
 				longendpos[d] = (long) endpos[d];
-				
 			}
 			
 			
@@ -671,8 +715,9 @@ public class LengthDetection {
 			Point endpoint = new Point(ndims);
 			startpoint.setPosition(longstartpos);
 			endpoint.setPosition(longendpos);
-			fitparamstart = Gethalfstartgaussparam(startpoint, radius, sigma);
-			fitparamend = Gethalfendgaussparam(endpoint, radius, sigma);
+			final double[] newsigma = {3.2,3.2};
+			fitparamstart = Gethalfstartgaussparam(startpoint, radius, newsigma);
+			fitparamend = Gethalfendgaussparam(endpoint, radius, newsigma);
 			
 			final double[] startfit = new double[ndims];
 			final double[] endfit = new double[ndims];
@@ -682,11 +727,13 @@ public class LengthDetection {
 				endfit[d] = fitparamend[d + 1];
 			}
 			
+			*/
 			
-		//	final double[] startfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, startpos,
-		//			sigma, iterations, maxintensity, 1.0, slope, Endfit.Start);
-		//	final double[] endfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, endpos, sigma,
-		//			iterations, maxintensity, 1.0, slope, Endfit.End);
+			final double[] newsigma = {sigma[0], sigma[1]};
+		final double[] startfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, startpos,
+					newsigma, iterations, maxintensity, 1.0, slope, intercept, Endfit.Start);
+		final double[] endfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, endpos, newsigma,
+					iterations, maxintensity, 1.0, slope,intercept, Endfit.End);
 
 			length = Distance(startfit, endfit);
 			final Indexedlength currentlength = new Indexedlength(label, length, startfit, endfit,
