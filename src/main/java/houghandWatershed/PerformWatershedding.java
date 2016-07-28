@@ -1,8 +1,6 @@
 package houghandWatershed;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import com.sun.tools.javac.util.Pair;
 
@@ -11,7 +9,6 @@ import drawandOverlay.OverlayLines;
 import labeledObjects.Lineobjects;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
-import net.imglib2.Interval;
 import net.imglib2.KDTree;
 import net.imglib2.Point;
 import net.imglib2.RandomAccess;
@@ -40,7 +37,6 @@ import preProcessing.GlobalThresholding;
 
 @SuppressWarnings("deprecation")
 public class PerformWatershedding {
- 
 
 	public static enum InverseType {
 		Straight, Inverse
@@ -48,9 +44,7 @@ public class PerformWatershedding {
 
 	public static Pair<Img<IntType>, ArrayList<Lineobjects>> DowatersheddingandHough(
 			final RandomAccessibleInterval<FloatType> biginputimg,
-			final RandomAccessibleInterval<FloatType> processedimg,
-			final double minlength) 
-	{
+			final RandomAccessibleInterval<FloatType> processedimg, final double minlength, final Float val) {
 
 		// Prepare seed image for watershedding
 		NativeImgLabeling<Integer, IntType> oldseedLabeling = new NativeImgLabeling<Integer, IntType>(
@@ -76,95 +70,81 @@ public class PerformWatershedding {
 				new ArrayImgFactory<IntType>().create(biginputimg, new IntType()));
 
 		outputLabeling = GetlabeledImage(distimg, oldseedLabeling);
-		
-		ImageJFunctions.show(outputLabeling.getStorageImg());
-		
+
 		final double[] sizes = new double[biginputimg.numDimensions()];
 
 		// Automatic threshold determination for doing the Hough transform
-		final Float val = GlobalThresholding.AutomaticThresholding(processedimg);
-		
+
 		ArrayList<Lineobjects> linelist = new ArrayList<Lineobjects>(biginputimg.numDimensions());
-		
-		
-		for (int label = 1; label < Maxlabel-1; label++) {
 
-			System.out.println("Label Number:" +label);
-			
+		for (int label = 1; label < Maxlabel - 1; label++) {
 
-			RandomAccessibleInterval<FloatType> outimg = new ArrayImgFactory<FloatType>()
-							.create(biginputimg, new FloatType());
-		
-			outimg = CurrentLabelImage(outputLabeling.getStorageImg(), processedimg,label);
-			
+			System.out.println("Label Number:" + label);
+
+			RandomAccessibleInterval<FloatType> outimg = new ArrayImgFactory<FloatType>().create(biginputimg,
+					new FloatType());
+
+			outimg = CurrentLabelImage(outputLabeling.getStorageImg(), processedimg, label);
 
 			// Set size of pixels in Hough space
 			int mintheta = 0;
-			// Usually is 180 
-			int maxtheta = 180;
-			double size =   Math
+			// Usually is 180 but to allow for detection of vertical
+			// lines,allowing a few more degrees
+			int maxtheta = 190;
+			double size = Math
 					.sqrt((outimg.dimension(0) * outimg.dimension(0) + outimg.dimension(1) * outimg.dimension(1)));
 			int minRho = (int) -Math.round(size);
 			int maxRho = -minRho;
-			double thetaPerPixel = 0.05;
-			double rhoPerPixel = 0.8;
+			double thetaPerPixel = 0.3;
+			double rhoPerPixel = 0.3;
 			double[] min = { mintheta, minRho };
 			double[] max = { maxtheta, maxRho };
 			int pixelsTheta = (int) Math.round((maxtheta - mintheta) / thetaPerPixel);
 			int pixelsRho = (int) Math.round((maxRho - minRho) / rhoPerPixel);
 
 			double ratio = (max[0] - min[0]) / (max[1] - min[1]);
-			FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (pixelsRho )  });
+			FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (long) (pixelsRho * ratio ) });
 			final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
-			double[] minCorner =  new double[biginputimg.numDimensions()];
-			double[] maxCorner =  new double[biginputimg.numDimensions()];
-			
-			long[] longminCorner =  new long[biginputimg.numDimensions()];
-			long[] longmaxCorner =  new long[biginputimg.numDimensions()];
+			long[] minCorner = new long[biginputimg.numDimensions()];
+			long[] maxCorner = new long[biginputimg.numDimensions()];
 			minCorner = GetMincorners(outputLabeling.getStorageImg(), label);
 			maxCorner = GetMaxcorners(outputLabeling.getStorageImg(), label);
-			
-			for (int d = 0; d < biginputimg.numDimensions(); ++d){
-				
-				longminCorner[d] = (long) minCorner[d];
-				longmaxCorner[d] = (long) maxCorner[d];
-			}
-			
-			FinalInterval intervalsmall = new FinalInterval( longminCorner, longmaxCorner );
-			
+
+			FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
+
 			RandomAccessibleInterval<FloatType> outimgview = Views.interval(outimg, intervalsmall);
 			HoughPushCurves.Houghspace(outimgview, houghimage, min, max, val);
-
 
 			for (int d = 0; d < houghimage.numDimensions(); ++d)
 				sizes[d] = houghimage.dimension(d);
 			ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(
 					biginputimg.numDimensions());
 			SubpixelMinlist = GetLocalmaxmin.HoughspaceMaxima(houghimage, interval, sizes, thetaPerPixel, rhoPerPixel);
+
 			ReducedMinlist = OverlayLines.ReducedList(outimg, SubpixelMinlist, sizes, min, max, minlength);
+
 			double[] points = new double[biginputimg.numDimensions()];
-			
-			
-				for (int index = 0; index < ReducedMinlist.size(); ++index)
+
+			for (int index = 0; index < ReducedMinlist.size(); ++index)
 				MainMinlist.add(ReducedMinlist.get(index));
-			
-			points = OverlayLines.GetRhoTheta( ReducedMinlist, sizes, min, max, minlength);
-			 
-			// This object has rho, theta, min and max dimensions of the watershedded image along x 	
+
+			points = OverlayLines.GetRhoTheta(ReducedMinlist, sizes, min, max, minlength);
+
+			// This object has rho, theta, min and max dimensions of the
+			// watershedded image along x
 			final Lineobjects line = new Lineobjects(label, points[1], points[0], minCorner, maxCorner);
 
 			linelist.add(line);
-			
+
 		}
-		Pair<Img<IntType>, ArrayList<Lineobjects>> linepair = new Pair<Img<IntType>, ArrayList<Lineobjects>>(outputLabeling.getStorageImg(), linelist);
-		
+		Pair<Img<IntType>, ArrayList<Lineobjects>> linepair = new Pair<Img<IntType>, ArrayList<Lineobjects>>(
+				outputLabeling.getStorageImg(), linelist);
 
 		return linepair;
 	}
 
 	public static RandomAccessibleInterval<IntType> Labelobjects(
-			final RandomAccessibleInterval<FloatType> biginputimg) 
-	{
+			final RandomAccessibleInterval<FloatType> biginputimg) {
 
 		// Prepare seed image for watershedding
 		NativeImgLabeling<Integer, IntType> oldseedLabeling = new NativeImgLabeling<Integer, IntType>(
@@ -172,15 +152,11 @@ public class PerformWatershedding {
 
 		oldseedLabeling = PrepareSeedImage(biginputimg);
 
-		
-		
 		return oldseedLabeling.getStorageImg();
 	}
-	
-	
+
 	public static RandomAccessibleInterval<IntType> Dowatersheddingonly(
-			final RandomAccessibleInterval<FloatType> biginputimg) 
-	{
+			final RandomAccessibleInterval<FloatType> biginputimg) {
 
 		// Prepare seed image for watershedding
 		NativeImgLabeling<Integer, IntType> oldseedLabeling = new NativeImgLabeling<Integer, IntType>(
@@ -199,17 +175,12 @@ public class PerformWatershedding {
 				new ArrayImgFactory<IntType>().create(biginputimg, new IntType()));
 
 		outputLabeling = GetlabeledImage(distimg, oldseedLabeling);
-		
+
 		return outputLabeling.getStorageImg();
 	}
-	
-	
-	public static Lineobjects Getlabelobject(
-			final RandomAccessibleInterval<FloatType> biginputimg,
-			final RandomAccessibleInterval<FloatType> processedimg,
-			double minlength,
-			final int currentLabel) 
-	{
+
+	public static Lineobjects Getlabelobject(final RandomAccessibleInterval<FloatType> biginputimg,
+			final RandomAccessibleInterval<FloatType> processedimg, double minlength, final int currentLabel) {
 
 		// Prepare seed image for watershedding
 		NativeImgLabeling<Integer, IntType> oldseedLabeling = new NativeImgLabeling<Integer, IntType>(
@@ -232,92 +203,74 @@ public class PerformWatershedding {
 				new ArrayImgFactory<IntType>().create(biginputimg, new IntType()));
 
 		outputLabeling = GetlabeledImage(distimg, oldseedLabeling);
-		
+
 		final double[] sizes = new double[biginputimg.numDimensions()];
 
 		// Automatic threshold determination for doing the Hough transform
 		final Float val = GlobalThresholding.AutomaticThresholding(processedimg);
-		
+
 		ArrayList<Lineobjects> linelist = new ArrayList<Lineobjects>(biginputimg.numDimensions());
-		
+
 		// Declare minimum length of the line(in pixels) to be detected
 		int label = currentLabel;
 
-			System.out.println("Label Number:" +label);
-			
+		System.out.println("Label Number:" + label);
 
-			RandomAccessibleInterval<FloatType> outimg = new ArrayImgFactory<FloatType>()
-							.create(biginputimg, new FloatType());
-		
-			outimg = CurrentLabelImage(outputLabeling.getStorageImg(), processedimg,label);
-			
+		RandomAccessibleInterval<FloatType> outimg = new ArrayImgFactory<FloatType>().create(biginputimg,
+				new FloatType());
 
-			// Set size of pixels in Hough space
-			int mintheta = 0;
-			// Usually is 180 but to allow for detection of vertical
-			// lines,allowing a few more degrees
-			int maxtheta = 200;
-			double size = Math
-					.sqrt((outimg.dimension(0) * outimg.dimension(0) + outimg.dimension(1) * outimg.dimension(1)));
-			int minRho = (int) -Math.round(size);
-			int maxRho = -minRho;
-			double thetaPerPixel = 1;
-			double rhoPerPixel = 1;
-			double[] min = { mintheta, minRho };
-			double[] max = { maxtheta, maxRho };
-			int pixelsTheta = (int) Math.round((maxtheta - mintheta) / thetaPerPixel);
-			int pixelsRho = (int) Math.round((maxRho - minRho) / rhoPerPixel);
+		outimg = CurrentLabelImage(outputLabeling.getStorageImg(), processedimg, label);
 
-			double ratio = (max[0] - min[0]) / (max[1] - min[1]);
-			FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (long) (pixelsRho * ratio) });
-			final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
-			
-			double[] minCorner =  new double[biginputimg.numDimensions()];
-			double[] maxCorner =  new double[biginputimg.numDimensions()];
-			long[] longminCorner =  new long[biginputimg.numDimensions()];
-			long[] longmaxCorner =  new long[biginputimg.numDimensions()];
-			minCorner = GetMincorners(outputLabeling.getStorageImg(), label);
-			maxCorner = GetMaxcorners(outputLabeling.getStorageImg(), label);
-			
-			for (int d = 0; d < biginputimg.numDimensions(); ++d){
-				longminCorner[d] = (long) minCorner[d];
-				longmaxCorner[d] = (long) maxCorner[d];
-			}
-			FinalInterval intervalsmall = new FinalInterval( longminCorner, longmaxCorner );
-			
-			RandomAccessibleInterval<FloatType> outimgview = Views.interval(outimg, intervalsmall);
-			HoughPushCurves.Houghspace(outimgview, houghimage, min, max, val);
+		// Set size of pixels in Hough space
+		int mintheta = 0;
+		// Usually is 180 but to allow for detection of vertical
+		// lines,allowing a few more degrees
+		int maxtheta = 200;
+		double size = Math.sqrt((biginputimg.dimension(0) * biginputimg.dimension(0)
+				+ biginputimg.dimension(1) * biginputimg.dimension(1)));
+		int minRho = (int) -Math.round(size);
+		int maxRho = -minRho;
+		double thetaPerPixel = 1;
+		double rhoPerPixel = 1;
+		double[] min = { mintheta, minRho };
+		double[] max = { maxtheta, maxRho };
+		int pixelsTheta = (int) Math.round((maxtheta - mintheta) / thetaPerPixel);
+		int pixelsRho = (int) Math.round((maxRho - minRho) / rhoPerPixel);
+		double ratio = (max[0] - min[0]) / (max[1] - min[1]);
+		FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (long) (pixelsRho * ratio) });
+		final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
 
+		long[] minCorner = new long[biginputimg.numDimensions()];
+		long[] maxCorner = new long[biginputimg.numDimensions()];
 
-			for (int d = 0; d < houghimage.numDimensions(); ++d)
-				sizes[d] = houghimage.dimension(d);
-			ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(
-					biginputimg.numDimensions());
-			SubpixelMinlist = GetLocalmaxmin.HoughspaceMaxima(houghimage, interval, sizes, thetaPerPixel, rhoPerPixel);
-			
-			ReducedMinlist = OverlayLines.ReducedList(outimg, SubpixelMinlist, sizes, min, max, minlength);
-			double[] points = new double[biginputimg.numDimensions()];
-			
-			
-			points = OverlayLines.GetRhoTheta( ReducedMinlist, sizes, min, max, minlength);
-			 
-			// This object has rho, theta, min and max dimensions of the watershedded image along x 	
-			final Lineobjects line = new Lineobjects(label, points[1], points[0], minCorner, maxCorner);
+		minCorner = GetMincorners(outputLabeling.getStorageImg(), label);
+		maxCorner = GetMaxcorners(outputLabeling.getStorageImg(), label);
+		FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
 
-			linelist.add(line);
-			
-		
-		
-		
+		RandomAccessibleInterval<FloatType> outimgview = Views.interval(outimg, intervalsmall);
+		HoughPushCurves.Houghspace(outimgview, houghimage, min, max, val);
+
+		for (int d = 0; d < houghimage.numDimensions(); ++d)
+			sizes[d] = houghimage.dimension(d);
+		ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(biginputimg.numDimensions());
+		SubpixelMinlist = GetLocalmaxmin.HoughspaceMaxima(houghimage, interval, sizes, thetaPerPixel, rhoPerPixel);
+
+		ReducedMinlist = OverlayLines.ReducedList(outimg, SubpixelMinlist, sizes, min, max, minlength);
+		double[] points = new double[biginputimg.numDimensions()];
+
+		points = OverlayLines.GetRhoTheta(ReducedMinlist, sizes, min, max, minlength);
+
+		// This object has rho, theta, min and max dimensions of the
+		// watershedded image along x
+		final Lineobjects line = new Lineobjects(label, points[1], points[0], minCorner, maxCorner);
+
+		linelist.add(line);
 
 		return line;
 	}
 
-	public static void DistanceTransformImage(
-			RandomAccessibleInterval<FloatType> inputimg,
-			RandomAccessibleInterval<FloatType> outimg, 
-			final InverseType invtype) 
-	{
+	public static void DistanceTransformImage(RandomAccessibleInterval<FloatType> inputimg,
+			RandomAccessibleInterval<FloatType> outimg, final InverseType invtype) {
 		int n = inputimg.numDimensions();
 
 		final Img<BitType> bitimg = new ArrayImgFactory<BitType>().create(inputimg, new BitType());
@@ -382,9 +335,7 @@ public class PerformWatershedding {
 
 	}
 
-	public static NativeImgLabeling<Integer, IntType> PrepareSeedImage(
-			RandomAccessibleInterval<FloatType> inputimg) 
-	{
+	public static NativeImgLabeling<Integer, IntType> PrepareSeedImage(RandomAccessibleInterval<FloatType> inputimg) {
 
 		// Preparing the seed image
 		RandomAccessibleInterval<BitType> maximgBit = new ArrayImgFactory<BitType>().create(inputimg, new BitType());
@@ -413,14 +364,11 @@ public class PerformWatershedding {
 		return oldseedLabeling;
 	}
 
-      public static double[] GetMaxcorners(
-    		  Img<IntType> inputimg, 
-    		  int label){
-		
+	public static long[] GetMaxcorners(Img<IntType> inputimg, int label) {
 
 		Cursor<IntType> intCursor = inputimg.localizingCursor();
 		int n = inputimg.numDimensions();
-		double[] maxVal = { Double.MIN_VALUE, Double.MIN_VALUE };
+		long[] maxVal = { Long.MIN_VALUE, Long.MIN_VALUE };
 
 		while (intCursor.hasNext()) {
 			intCursor.fwd();
@@ -428,28 +376,25 @@ public class PerformWatershedding {
 			if (i == label) {
 
 				for (int d = 0; d < n; ++d) {
-					
-					final long p = intCursor.getLongPosition( d );
-					if ( p > maxVal[ d ] )
-						maxVal[ d ] = p;
-					
+
+					final long p = intCursor.getLongPosition(d);
+					if (p > maxVal[d])
+						maxVal[d] = p;
+
 				}
 
 			}
 		}
-         
-		
+
 		return maxVal;
-		
+
 	}
-	public static double[] GetMincorners(
-			Img<IntType> inputimg, 
-			int label){
-		
+
+	public static long[] GetMincorners(Img<IntType> inputimg, int label) {
 
 		Cursor<IntType> intCursor = inputimg.localizingCursor();
 		int n = inputimg.numDimensions();
-		double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
+		long[] minVal = { Long.MAX_VALUE, Long.MAX_VALUE };
 
 		while (intCursor.hasNext()) {
 			intCursor.fwd();
@@ -457,23 +402,20 @@ public class PerformWatershedding {
 			if (i == label) {
 
 				for (int d = 0; d < n; ++d) {
-					
-					final long p = intCursor.getLongPosition( d );
-					if ( p < minVal[ d ] )
-						minVal[ d ] = p;
+
+					final long p = intCursor.getLongPosition(d);
+					if (p < minVal[d])
+						minVal[d] = p;
 				}
 
 			}
 		}
-		
-		
+
 		return minVal;
-		
+
 	}
-	
-	public static Pair<long[], long[]> GetBoundingbox(
-			Img<IntType> inputimg, 
-			int label) {
+
+	public static Pair<long[], long[]> GetBoundingbox(Img<IntType> inputimg, int label) {
 
 		Cursor<IntType> intCursor = inputimg.localizingCursor();
 		int n = inputimg.numDimensions();
@@ -504,12 +446,8 @@ public class PerformWatershedding {
 		return boundingBox;
 	}
 
-	
+	public static int GetMaxlabelsseeded(RandomAccessibleInterval<IntType> intimg) {
 
-	public static int GetMaxlabelsseeded(
-			RandomAccessibleInterval<IntType> intimg) 
-	{
-		
 		// To get maximum Labels on the image
 		Cursor<IntType> intCursor = Views.iterable(intimg).cursor();
 		int currentLabel = 1;
@@ -532,10 +470,9 @@ public class PerformWatershedding {
 		return currentLabel;
 
 	}
-	public static NativeImgLabeling<Integer, IntType> GetlabeledImage(
-			RandomAccessibleInterval<FloatType> inputimg,
-			NativeImgLabeling<Integer, IntType> seedLabeling) 
-	{
+
+	public static NativeImgLabeling<Integer, IntType> GetlabeledImage(RandomAccessibleInterval<FloatType> inputimg,
+			NativeImgLabeling<Integer, IntType> seedLabeling) {
 
 		int n = inputimg.numDimensions();
 		long[] dimensions = new long[n];
@@ -561,18 +498,15 @@ public class PerformWatershedding {
 
 	}
 
-	public static RandomAccessibleInterval<FloatType> CurrentLabelImage(
-			Img<IntType> Intimg,
-			RandomAccessibleInterval<FloatType> originalimg, 
-			int currentLabel) 
-	{
+	public static RandomAccessibleInterval<FloatType> CurrentLabelImage(Img<IntType> Intimg,
+			RandomAccessibleInterval<FloatType> originalimg, int currentLabel) {
 
 		RandomAccess<FloatType> inputRA = originalimg.randomAccess();
 
 		Cursor<IntType> intCursor = Intimg.cursor();
-		
- 		RandomAccessibleInterval<FloatType> outimg = new ArrayImgFactory<FloatType>()
-				.create(originalimg, new FloatType());
+
+		RandomAccessibleInterval<FloatType> outimg = new ArrayImgFactory<FloatType>().create(originalimg,
+				new FloatType());
 		RandomAccess<FloatType> imageRA = outimg.randomAccess();
 
 		// Go through the whole image and add every pixel, that belongs to
@@ -584,9 +518,9 @@ public class PerformWatershedding {
 			imageRA.setPosition(inputRA);
 			int i = intCursor.get().get();
 			if (i == currentLabel) {
-				
+
 				imageRA.get().set(inputRA.get());
-				
+
 			}
 
 		}

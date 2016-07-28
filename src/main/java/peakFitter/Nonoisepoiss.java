@@ -50,7 +50,7 @@ public class Nonoisepoiss implements FitFunction {
 		final int ndims = x.length;
 		
 		double sum = 0;
-		for (int i = 0; i < ndims; i++) 
+		int i = ndims - 2;
 			sum += a[i];
 		
 		return Math.exp(-sum);

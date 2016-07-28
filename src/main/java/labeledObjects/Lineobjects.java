@@ -5,8 +5,8 @@ package labeledObjects;
 		public final int Label;
 		public final double Rho;
 		public final double Theta;
-		public final double [] boxmin;
-		public final double [] boxmax;
+		public final long [] boxmin;
+		public final long [] boxmax;
 		
 		
 
@@ -14,14 +14,14 @@ package labeledObjects;
 				final int Label,
 				final double Rho, 
 				final double Theta, 
-				final double [] boxmin, 
-				final double [] boxmax
+				final long[] minCorner, 
+				final long[] maxCorner
 				) {
 			this.Label = Label;
 			this.Rho = Rho;
 			this.Theta = Theta;
-			this.boxmin = boxmin;
-			this.boxmax = boxmax;
+			this.boxmin = minCorner;
+			this.boxmax = maxCorner;
 			
 			
 		}

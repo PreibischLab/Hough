@@ -486,11 +486,11 @@ public class PushCurves {
 			Finalfunction linefunction = new Finalfunction(realpos, slope, intercept);
 			distance = linefunction.Linefunctiondist();
 
-			if (distance < 3 * sigma)
+			if (distance < 5 * sigma)
 				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
 			else
 				intensity = 0;
-			intensity *= ranacinput.get().get();
+			//intensity *= ranacinput.get().get();
 
 			ranac.setPosition(inputcursor);
 			int i = ranac.get().get();
@@ -524,7 +524,7 @@ public class PushCurves {
 		// Moving along the line with a fixed step-size. This gives set of points along the line which are then convoluted with a Gaussian.
 		final double stepsize = 1;
 		final double[] steppos = new double[n];
-		int count = 1;
+		int count = 0;
 		if (slope >= 0){
 		while (true) {
 			
@@ -547,7 +547,7 @@ public class PushCurves {
 		}
 		}
 		
-		int negcount = 1;
+		int negcount = 0;
 		if (slope < 0){
 			while (true) {
 				
@@ -583,7 +583,6 @@ public class PushCurves {
 			centroidlist.add(pointlist.get(index), new FloatType(1));
 
 		}
-
 	}
 
 	public static void Drawexactline(RandomAccessibleInterval<FloatType> imgout, Img<IntType> intimg, double slope,

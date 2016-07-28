@@ -135,7 +135,7 @@ public class HalfstartGaussianfit implements FitFunction {
 			for (int i = 0; i < x.length; i++) {
 				di = x[i] - a[i+1];
 				
-				if (di < 0)
+			
 				sum += a[i+ndims+1] * di * di  ;
 				
 			}

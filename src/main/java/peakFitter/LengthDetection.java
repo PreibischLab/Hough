@@ -56,6 +56,12 @@ public class LengthDetection {
 		assert inputimg.numDimensions() == intimg.numDimensions();
 
 	}
+	
+	public static enum HalforFull{
+		
+		Half, Full;
+		
+	}
 
 	private final double[] makeBestGuess(final Localizable point, final double[][] X, final double[] I,
 			final double[] psf) {
@@ -99,8 +105,7 @@ public class LengthDetection {
 
 		return start_param;
 	}
-	
-	
+
 	private final double[] makeBestfixedsigmaGuess(final Localizable point, final double[][] X, final double[] I,
 			final double[] psf) {
 
@@ -145,10 +150,9 @@ public class LengthDetection {
 	}
 
 	private final double[] makeNoiseGuess() {
-		double[] start_param = new double[ndims];
+		double[] start_param = new double[ndims - 1];
 
-		for (int d = 0; d < ndims; ++d)
-			start_param[d] = 0.5;
+		start_param[ndims - 2] = 0.5;
 
 		return start_param;
 	}
@@ -240,7 +244,8 @@ public class LengthDetection {
 
 	}
 
-	public double[] Gethalfstartgaussparam(final Localizable point, final long radius, final double[] psf) throws Exception {
+	public double[] Gethalfstartgaussparam(final Localizable point, final long radius, final double[] psf)
+			throws Exception {
 
 		PointSampleList<FloatType> datalist = gatherData(point, radius);
 
@@ -279,8 +284,9 @@ public class LengthDetection {
 		return finalparam;
 
 	}
-	
-	public double[] Gethalfendgaussparam(final Localizable point, final long radius, final double[] psf) throws Exception {
+
+	public double[] Gethalfendgaussparam(final Localizable point, final long radius, final double[] psf)
+			throws Exception {
 
 		PointSampleList<FloatType> datalist = gatherData(point, radius);
 
@@ -319,9 +325,7 @@ public class LengthDetection {
 		return finalparam;
 
 	}
-	
-	
-	
+
 	public double[] Getfinalpointsparam(final Localizable point, final long radius) throws Exception {
 
 		PointSampleList<FloatType> datalist = gatherPointsData(point, radius);
@@ -408,24 +412,33 @@ public class LengthDetection {
 
 		for (int d = 0; d < ndims; ++d)
 			assert inputimg.dimension(d) == intimg.dimension(d);
-		
+
 		RandomAccess<FloatType> ranac = inputimg.randomAccess();
 
 		ranac.setPosition(point);
-		
+
 		RandomAccess<IntType> intranac = intimg.randomAccess();
 
-		intranac.setPosition(point);
 		
+		intranac.setPosition(point);
+
 		final double[] position = new double[ndims];
 		point.localize(position);
 
 		// Gather data around the point
 		boolean outofbounds = false;
+		for (int d = 0; d < ndims; d++) {
+			
+			if (position[d] < 0 || position[d] >= inputimg.dimension(d)){
+				
+				outofbounds = true;
+				break;
+			}
+		}
+		
 		HyperSphere<FloatType> region = new HyperSphere<FloatType>(inputimg, point, radius);
 
 		HyperSphereCursor<FloatType> localcursor = region.localizingCursor();
-		
 
 		final int label = intranac.get().get();
 
@@ -509,7 +522,7 @@ public class LengthDetection {
 		return Math.sqrt(distance);
 	}
 
-	public ArrayList<Finalobject>  Updateslopeandintercept( ArrayList<Finalobject> finalparam) {
+	public ArrayList<Finalobject> Updateslopeandintercept(ArrayList<Finalobject> finalparam) {
 
 		int Maxlabel = houghandWatershed.PerformWatershedding.GetMaxlabelsseeded(intimg);
 		final ArrayList<Finalobject> updateparamlist = new ArrayList<Finalobject>();
@@ -540,9 +553,26 @@ public class LengthDetection {
 				centroidlist.get(0).localize(pointone);
 				centroidlist.get(centroidlist.size() - 1).localize(pointtwo);
 
+				if (pointtwo[0] != pointone[0] ){
 				newslope = (pointtwo[1] - pointone[1]) / (pointtwo[0] - pointone[0]);
 				newintercept = pointtwo[1] - newslope * pointtwo[0];
+				}
+				
+				else{
+					centroidlist.get(centroidlist.size()/2).localize(pointone);
+					centroidlist.get(3*centroidlist.size()/4).localize(pointtwo);
+					newslope = (pointtwo[1] - pointone[1]) / (pointtwo[0] - pointone[0]);
+					newintercept = pointtwo[1] - newslope * pointtwo[0];
+				}
+				
 
+				if (Double.isNaN(newslope) ){
+					newslope = finalparam.get(labelindex).slope ;
+					newintercept = finalparam.get(labelindex).intercept;
+				}
+				
+					
+				
 			}
 
 			System.out.println("old: " + finalparam.get(labelindex).slope + " " + finalparam.get(labelindex).intercept);
@@ -552,8 +582,8 @@ public class LengthDetection {
 			for (int index = 0; index < finalparam.size(); ++index) {
 
 				if (finalparam.get(index).Label == label) {
-					Finalobject update = new Finalobject(label, finalparam.get(index).centroid, finalparam.get(index).Intensity,
-							finalparam.get(index).sigmaX, finalparam.get(index).sigmaY,
+					Finalobject update = new Finalobject(label, finalparam.get(index).centroid,
+							finalparam.get(index).Intensity, finalparam.get(index).sigmaX, finalparam.get(index).sigmaY,
 							newslope, newintercept);
 
 					updateparamlist.add(update);
@@ -566,57 +596,53 @@ public class LengthDetection {
 		return updateparamlist;
 	}
 
-	public ArrayList<Finalobject> Removepoints(ArrayList<Finalobject> finalparam, ArrayList<LabelMax> labelmaxlist ) {
+	public ArrayList<Finalobject> Removepoints(ArrayList<Finalobject> finalparam, ArrayList<LabelMax> labelmaxlist) {
 
 		int Maxlabel = houghandWatershed.PerformWatershedding.GetMaxlabelsseeded(intimg);
 
 		final ArrayList<Finalobject> correctparamlist = new ArrayList<Finalobject>();
-		
-		
-		
-		for (int label = 1; label < Maxlabel - 1; ++label){
+		for (int label = 1; label < Maxlabel - 1; ++label) {
 			
+			float[] pos = new float[ndims];
 			double maxintensity = Double.MIN_VALUE;
-			
-			for (int index = 0; index < finalparam.size() ; ++index){
-				
-				if (finalparam.get(index).Label == label){
+
+			for (int index = 0; index < finalparam.size(); ++index) {
+
+				if (finalparam.get(index).Label == label) {
+
 					
-				if (finalparam.get(index).Intensity > maxintensity){
-					
-					maxintensity = finalparam.get(index).Intensity;
-					
+					if (finalparam.get(index).Intensity > maxintensity) {
+
+						maxintensity = finalparam.get(index).Intensity;
+
+					}
+
 				}
-				
-				
+
+			}
+
+			final LabelMax labelmax = new LabelMax(label, maxintensity);
+			labelmaxlist.add(labelmax);
+			System.out.println("Label :" + label + " " + maxintensity);
+
+			for (int listindex = 0; listindex < finalparam.size(); ++listindex) {
+
+				if (finalparam.get(listindex).Label == label) {
+
+					if (finalparam.get(listindex).Intensity / maxintensity > 0.5   )
+
+						correctparamlist.add(finalparam.get(listindex));
 				}
-				
+
 			}
-				
-		final LabelMax labelmax = new LabelMax(label, maxintensity);
-		labelmaxlist.add(labelmax);
-		System.out.println("Label :" + label + " " + maxintensity);
-		
-		for (int listindex = 0; listindex < finalparam.size() ; ++listindex){
-			
-			if (finalparam.get(listindex).Label == label){
-			
-			if ( finalparam.get(listindex).Intensity/maxintensity > 0.9)
-			
-				
-				correctparamlist.add(finalparam.get(listindex));
-			}
-			
-		
 		}
-		}
-		
-   return correctparamlist;
-		
+
+		return correctparamlist;
+
 	}
 
-	public void Returnlengths(ArrayList<Finalobject> finalparam, ArrayList<Indexedlength> finallength, ArrayList<LabelMax> labelmaxlist,
-			double[] sigma) throws Exception {
+	public void Returnlengths(ArrayList<Finalobject> finalparam, ArrayList<Indexedlength> finallength,
+			ArrayList<LabelMax> labelmaxlist, double[] sigma) throws Exception {
 
 		int Maxlabel = houghandWatershed.PerformWatershedding.GetMaxlabelsseeded(intimg);
 
@@ -643,6 +669,7 @@ public class LengthDetection {
 						minposition[d] = finalparam.get(index).centroid.getDoublePosition(d);
 						maxposition[d] = finalparam.get(index).centroid.getDoublePosition(d);
 
+						
 						if (minposition[d] <= minVal[d]) {
 							minVal[d] = minposition[d];
 						}
@@ -652,7 +679,7 @@ public class LengthDetection {
 
 					}
 
-					if (finalparam.get(index).slope > 0) {
+					if (finalparam.get(index).slope >= 0) {
 
 						for (int d = 0; d < ndims; ++d) {
 
@@ -686,58 +713,25 @@ public class LengthDetection {
 			final int iterations = 5000;
 			double maxintensity = 0;
 
-			// FinalInterval range = Intervals.createMinMax((long) startpos[0],
-			// (long) startpos[1], (long) endpos[0], (long) endpos[1]);
-			// RandomAccessibleInterval< FloatType > region = Views.interval(
-			// inputimg, range );
-			for (int listlabelindex = 0; listlabelindex < labelmaxlist.size(); ++listlabelindex){
-				
-            if (labelmaxlist.get(listlabelindex).Label == label)
-            
-            	maxintensity = labelmaxlist.get(listlabelindex).maxIntensity;
-            	
+			for (int listlabelindex = 0; listlabelindex < labelmaxlist.size(); ++listlabelindex) {
+
+				if (labelmaxlist.get(listlabelindex).Label == label)
+
+					maxintensity = labelmaxlist.get(listlabelindex).maxIntensity;
+
 			}
-			/*
-			
-			 double [] fitparamstart = new double[2*ndims +2];
-			 double [] fitparamend = new double[2*ndims +2];
-			final long radius = (long)  Math.ceil(8 *  Math.sqrt( sigma[0] * sigma[0] +  sigma[1] * sigma[1]));
-			
-			final long [] longstartpos = new long[ndims];
-			final long [] longendpos = new long[ndims];
-			for (int d = 0; d < ndims ; ++d){
-				longstartpos[d] = (long) startpos[d];
-				longendpos[d] = (long) endpos[d];
-			}
+
+			final double[] newsigma = { sigma[0], sigma[1] };
+			final double[] startfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, startpos, newsigma,
+					iterations, maxintensity, 1.0, slope, intercept, Endfit.Start);
+			final double[] endfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, endpos, newsigma,
+					iterations, maxintensity, 1.0, slope, intercept, Endfit.End);
+
 			
 			
-			Point startpoint = new Point(ndims);
-			Point endpoint = new Point(ndims);
-			startpoint.setPosition(longstartpos);
-			endpoint.setPosition(longendpos);
-			final double[] newsigma = {3.2,3.2};
-			fitparamstart = Gethalfstartgaussparam(startpoint, radius, newsigma);
-			fitparamend = Gethalfendgaussparam(endpoint, radius, newsigma);
-			
-			final double[] startfit = new double[ndims];
-			final double[] endfit = new double[ndims];
-			
-			for (int d = 0; d < ndims ; ++d){
-				startfit[d] = fitparamstart[d + 1];
-				endfit[d] = fitparamend[d + 1];
-			}
-			
-			*/
-			
-			final double[] newsigma = {sigma[0], sigma[1]};
-		final double[] startfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, startpos,
-					newsigma, iterations, maxintensity, 1.0, slope, intercept, Endfit.Start);
-		final double[] endfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, endpos, newsigma,
-					iterations, maxintensity, 1.0, slope,intercept, Endfit.End);
 
 			length = Distance(startfit, endfit);
-			final Indexedlength currentlength = new Indexedlength(label, length, startfit, endfit,
-					slope, intercept);
+			final Indexedlength currentlength = new Indexedlength(label, length, startfit, endfit, slope, intercept);
 
 			finallength.add(currentlength);
 

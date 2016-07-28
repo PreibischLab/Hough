@@ -34,6 +34,8 @@ public class Gaussianlines {
 			endpos[0] = startpos[0] + 20;
 			endpos[1] = startpos[1] + rnd.nextDouble()*(endpos[0] - startpos[0]);
 			
+			
+			
 			double slope = (endpos[1] - startpos[1]) / (endpos[0] - startpos[0]);
 			double intercept = startpos[1] - slope * startpos[0];
 
@@ -47,7 +49,7 @@ public class Gaussianlines {
 			PushCurves.Drawshortline(outimg, linearray, slope, intercept, startpos, endpos, sigma);
 			
 			try {
-	            FileWriter writer = new FileWriter("initiallengths.txt", true);
+	            FileWriter writer = new FileWriter("initiallengthsbig.txt", true);
 	            writer.write( "StartX: "  + startpos[0]+  " " +
 	           		 "StartY: "+ startpos[1] + " " + "EndposX: " + endpos[0] +  
 	        		 " EndposY :" + endpos[1] + " Slope: " + slope 

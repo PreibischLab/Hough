@@ -27,7 +27,7 @@ public class Psfmain {
 	
 	public static void main(String[] args) throws Exception {
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/testbeads.tif"));
+				.openAs32Bit(new File("src/main/resources/Fresh_data/psf_488_12.tif"));
 		
 		new ImageJ();
       
@@ -67,7 +67,7 @@ public class Psfmain {
 		for (int index = 0; index < totalgausslist.size(); ++index){
 			
 			
-			System.out.println("Amp: " + totalgausslist.get(index)[0] + " " + "Mean X: "
+			System.out.println("Amp: " + 2 * totalgausslist.get(index)[0] + " " + "Mean X: "
 					+ totalgausslist.get(index)[1] + " " + "Mean Y: " + totalgausslist.get(index)[2] + " " + "SigX: "
 					+ Math.sqrt(1.0/totalgausslist.get(index)[3]) + " " + "SigY: "
 					+ Math.sqrt(1.0/totalgausslist.get(index)[4])+  " "+ "Noise: "+ totalgausslist.get(index)[5]);
@@ -76,7 +76,7 @@ public class Psfmain {
 			
 			
 		}
-	/*	
+		
 		System.out.println("Amplitude:  ");
 		for (int index = 0; index < totalgausslist.size(); ++index){
 		System.out.println(totalgausslist.get(index)[0]);
@@ -93,6 +93,6 @@ public class Psfmain {
 		for (int index = 0; index < totalgausslist.size(); ++index){
 			System.out.println(Math.sqrt(1.0/totalgausslist.get(index)[4]));	
 		}
-		*/
+		
 	}
 }

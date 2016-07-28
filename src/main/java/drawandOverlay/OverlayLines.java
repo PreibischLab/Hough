@@ -199,7 +199,7 @@ public class OverlayLines {
 		}
 		// System.out.println("Main file: "+ maxcount + " " + maxindex);
 		ArrayList<RefinedPeak<Point>> MainMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
-		if (maxcount > 0)	
+		if (maxcount > minlength)	
 		MainMinlist.add(SubpixelMinlist.get(maxindex));
 		return MainMinlist;
 	}
@@ -241,8 +241,7 @@ public class OverlayLines {
 			if (Math.abs(slope)!=Double.POSITIVE_INFINITY )
 			PushCurves.DrawTruncatedline(imgout, inputimg, intimg, centroidlist,lineparam, slope, intercept, label);
 			
-			
-			
+		
 			
 		}
 		

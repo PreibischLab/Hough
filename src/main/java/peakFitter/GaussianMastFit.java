@@ -77,7 +77,7 @@ public class GaussianMastFit {
 				break;
 
 			}
-			ImageJFunctions.show(gaussianMask);
+			//ImageJFunctions.show(gaussianMask);
 			// compute the sums
 			final Cursor<FloatType> cMask = gaussianMask.cursor();
 			final Cursor<FloatType> cImg = signalIterable.localizingCursor();
@@ -95,7 +95,7 @@ public class GaussianMastFit {
 				if (ranac.get().get() == label) {
 					final double signal = cImg.get().getRealDouble();
 					final double mask = cMask.get().getRealDouble();
-					final double weight = 32;
+					final double weight = 16;
 
 					final double signalmask = signal * mask * weight;
 
@@ -155,10 +155,20 @@ public class GaussianMastFit {
 
 			for (int d = 0; d < numDimensions; ++d) {
 				final double x = location[d] - cursor.getDoublePosition(d);
-
-					value *= Math.exp(-(x * x) / two_sq_sigma[d]) ;
-				if (cursor.getDoublePosition(1) >= location[1] - (cursor.getDoublePosition(0) - location[0])/slope)
+				
+				// Full Gaussian fit
+				value *= Math.exp(-(x * x) / two_sq_sigma[d]);
+				
+				
+			/*	
+				// Half Gaussian fit
+				  
+				value *= Math.exp(-(x * x) / two_sq_sigma[d]) ;
+				
+				if (cursor.getDoublePosition(1) >=   ( location[1] - (cursor.getDoublePosition(0) - location[0])/slope))
 					value *= 0;
+			*/	
+				
 
 			}
 
@@ -179,9 +189,20 @@ public class GaussianMastFit {
 
 			for (int d = 0; d < numDimensions; ++d) {
 				final double x = location[d] - cursor.getDoublePosition(d);
-					value *= Math.exp(-(x * x) / two_sq_sigma[d]) ;
-					if (cursor.getDoublePosition(1) <= location[1] - (cursor.getDoublePosition(0) - location[0])/slope)
-						value *= 0;
+				
+				// Full Gaussian fit
+				
+				value *= Math.exp(-(x * x) / two_sq_sigma[d]) ;
+				
+			/*
+				// Half Gaussian fit
+				
+				value *= Math.exp(-(x * x) / two_sq_sigma[d])  ;
+				
+				if (cursor.getDoublePosition(1) <= (location[1] - (cursor.getDoublePosition(0) - location[0])/slope))
+					value *= 0;
+			*/	
+					
 				
 			}
 
