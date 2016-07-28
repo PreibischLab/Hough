@@ -3,13 +3,9 @@ package drawandOverlay;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import com.sun.tools.hat.internal.server.FinalizerObjectsQuery;
-
 import houghandWatershed.Finalfunction;
 import houghandWatershed.TransformCordinates;
-import labeledObjects.Lineobjects;
 import labeledObjects.PreFinalobject;
-import mISC.Tree.Distance;
 import net.imglib2.Cursor;
 import net.imglib2.Point;
 import net.imglib2.PointSampleList;
@@ -274,66 +270,6 @@ public class PushCurves {
 		}
 	}
 
-	
-	public static void Drawshortline(RandomAccessibleInterval<FloatType> imgout, ArrayList<Fakeline> linearray,
-			double slope, double intercept, final double[] startpos,
-			final double[] endpos, final double[] sigma) {
-
-		int ndims = imgout.numDimensions();
-		double [] startline = new double[ndims];
-		double [] endline = new double[ndims];
-		
-		final double[] tmppos = new double[ndims];
-		
-		for (int d = 0; d < ndims; ++d){
-			
-			
-			final double locationdiff = startpos[d] - endpos[d];
-			final boolean minsearch = locationdiff > 0;
-			tmppos[d] = startpos[d];
-			
-			startline[d] = minsearch ? endpos[d] : startpos[d];
-			endline[d] = minsearch ? tmppos[d] : endpos[d];
-			
-			
-			
-		}
-		
-		final double stepsize = 1;
-		final double[] steppos = new double[ndims];
-		int count = 0;
-		double distance = 0;
-		while (true) {
-			
-			steppos[0] = startline[0] + count * stepsize / Math.sqrt(1 + slope * slope);
-			steppos[1] = startline[1] + count * stepsize * slope / Math.sqrt(1 + slope * slope);
-			
-			AddGaussian.addGaussian(imgout, 1.0,steppos, sigma);
-
-			distance = Distance(startline, steppos);
-			
-			count++;
-
-			
-			if (steppos[0] >= endline[0] || steppos[1] >= endline[1]  )
-				break;
-		}
-		Fakeline singleline = new Fakeline(distance, slope, intercept, startline, endline);
-		linearray.add(singleline);
-		
-	}
-	public static double Distance(final double[] cordone, final double[] cordtwo) {
-
-		double distance = 0;
-
-		for (int d = 0; d < cordone.length; ++d) {
-
-			distance += Math.pow((cordone[d] - cordtwo[d]), 2);
-
-		}
-		return Math.sqrt(distance);
-	}
-	
 	public static void Drawexactline(RandomAccessibleInterval<FloatType> imgout, double slope, double intercept,
 			final IntensityType setintensity) {
 
@@ -358,10 +294,10 @@ public class PushCurves {
 			distance = linefunction.Linefunctiondist();
 
 			outbound.setPosition(inputcursor);
-			//if (distance < 3*sigma)
+			if (distance < sigma)
 				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
-			//else
-			//	intensity = 0;
+			else
+				intensity = 0;
 
 			switch (setintensity) {
 			case Original:
@@ -461,19 +397,20 @@ public class PushCurves {
 			double slope, 
 			double intercept, 
 			int label) {
-       
+
 		int n = imgout.numDimensions();
 		final double[] realpos = new double[n];
 		double sigmasq, sigma = 1.0;
 		sigmasq = sigma * sigma;
 		final Cursor<FloatType> inputcursor = Views.iterable(imgout).localizingCursor();
 		ArrayList<Point> pointlist = new ArrayList<Point>(n);
+		ArrayList<FloatType> intensitylist = new ArrayList<FloatType>(n);
 		long[] newposition = new long[n];
 		RandomAccess<IntType> ranac = intimg.randomAccess();
 		final RandomAccess<FloatType> ranacinput = inputimg.randomAccess();
 		double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
 		double[] maxVal = { Double.MIN_VALUE, Double.MIN_VALUE };
-		 
+		
 		while (inputcursor.hasNext()) {
 
 			inputcursor.fwd();
@@ -490,7 +427,7 @@ public class PushCurves {
 				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
 			else
 				intensity = 0;
-			//intensity *= ranacinput.get().get();
+			intensity *= ranacinput.get().get();
 
 			ranac.setPosition(inputcursor);
 			int i = ranac.get().get();
@@ -519,8 +456,6 @@ public class PushCurves {
 			}
 		}
 		
-		
-		
 		// Moving along the line with a fixed step-size. This gives set of points along the line which are then convoluted with a Gaussian.
 		final double stepsize = 1;
 		final double[] steppos = new double[n];
@@ -537,12 +472,11 @@ public class PushCurves {
 			newpoint.setPosition((long) steppos[1], 1);
 
 			ranacinput.setPosition(newpoint);
+			intensitylist.add(ranacinput.get());
 			pointlist.add(newpoint);
 
 			count++;
-			
-			
-			if (steppos[0] >= maxVal[0]- stepsize || steppos[1] >= maxVal[1] - stepsize  )
+			if (steppos[0] >= maxVal[0] || steppos[1] >= maxVal[1])
 				break;
 		}
 		}
@@ -559,30 +493,29 @@ public class PushCurves {
 				newpoint.setPosition((long) steppos[0], 0);
 				newpoint.setPosition((long) steppos[1], 1);
 				ranacinput.setPosition(newpoint);
+				intensitylist.add(ranacinput.get());
 				pointlist.add(newpoint);
 
 				negcount++;
-				
-				
-				if (steppos[0] >= maxVal[0] - stepsize   || steppos[1] <= minVal[1] + stepsize )
+				if (steppos[0] >= maxVal[0] || steppos[1] <= minVal[1])
 					break;
 			}	
 			
 		}
+		assert intensitylist.size() == pointlist.size();
+		for (int index = 0; index < pointlist.size(); ++index) {
+			centroidlist.add(pointlist.get(index), intensitylist.get(index));
+
+		}
 		
-		for (int index = 0; index < pointlist.size(); ++index){
+           for (int index = 0; index < pointlist.size(); ++index){
 			
 			PreFinalobject line = new PreFinalobject(label, pointlist.get(index), new FloatType(1), slope, intercept);
 			
 			lineparam.add(line);
 			
 		}
-		
-		
-		for (int index = 0; index < pointlist.size(); ++index) {
-			centroidlist.add(pointlist.get(index), new FloatType(1));
 
-		}
 	}
 
 	public static void Drawexactline(RandomAccessibleInterval<FloatType> imgout, Img<IntType> intimg, double slope,
@@ -667,4 +600,64 @@ public class PushCurves {
 
 	}
 
+	
+	public static void Drawshortline(RandomAccessibleInterval<FloatType> imgout, ArrayList<Fakeline> linearray,
+			double slope, double intercept, final double[] startpos,
+			final double[] endpos, final double[] sigma) {
+
+		int ndims = imgout.numDimensions();
+		double [] startline = new double[ndims];
+		double [] endline = new double[ndims];
+		
+		final double[] tmppos = new double[ndims];
+		
+		for (int d = 0; d < ndims; ++d){
+			
+			
+			final double locationdiff = startpos[d] - endpos[d];
+			final boolean minsearch = locationdiff > 0;
+			tmppos[d] = startpos[d];
+			
+			startline[d] = minsearch ? endpos[d] : startpos[d];
+			endline[d] = minsearch ? tmppos[d] : endpos[d];
+			
+			
+			
+		}
+		
+		final double stepsize = 1;
+		final double[] steppos = new double[ndims];
+		int count = 0;
+		double distance = 0;
+		while (true) {
+			
+			steppos[0] = startline[0] + count * stepsize / Math.sqrt(1 + slope * slope);
+			steppos[1] = startline[1] + count * stepsize * slope / Math.sqrt(1 + slope * slope);
+			
+			AddGaussian.addGaussian(imgout, 1.0,steppos, sigma);
+
+			distance = Distance(startline, steppos);
+			
+			count++;
+
+			
+			if (steppos[0] >= endline[0] || steppos[1] >= endline[1]  )
+				break;
+		}
+		Fakeline singleline = new Fakeline(distance, slope, intercept, startline, endline);
+		linearray.add(singleline);
+		
+	}
+	
+	public static double Distance(final double[] cordone, final double[] cordtwo) {
+
+		double distance = 0;
+
+		for (int d = 0; d < cordone.length; ++d) {
+
+			distance += Math.pow((cordone[d] - cordtwo[d]), 2);
+
+		}
+		return Math.sqrt(distance);
+	}
 }

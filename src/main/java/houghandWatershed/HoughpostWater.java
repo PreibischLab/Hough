@@ -1,3 +1,4 @@
+
 package houghandWatershed;
 
 import java.io.File;
@@ -30,12 +31,8 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import pSF.Boundingbox.Objectproperties;
 import peakFitter.LengthDetection;
-import peakFitter.LengthDetection.HalforFull;
-import preProcessing.GetLocalmaxmin.IntensityType;
-import preProcessing.GlobalThresholding;
 import preProcessing.Kernels;
 import preProcessing.Kernels.ProcessingType;
-import preProcessing.MedianFilter;
 import util.ImgLib2Util;
 
 public class HoughpostWater {
@@ -43,11 +40,10 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
+				.openAs32Bit(new File("src/main/resources/small_mt.tif"));
 		// small_mt.tif image to be used for testing
 		// 2015-01-14_Seeds-1.tiff for actual
 		// mt_experiment.tif for big testing
-		// Fake_databignosnp.tif for fake data
 		new ImageJ();
 
 		new Normalize();
@@ -58,25 +54,16 @@ public class HoughpostWater {
 		final int n = biginputimg.numDimensions();
 
 		// Initialize empty images to be used later
-
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
-		RandomAccessibleInterval<FloatType> preinputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
-				new FloatType());
+
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
 		RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
 
 		// Preprocess image
-		final float SNR = 16f;
-		final int ndims = biginputimg.numDimensions();
-		double[] psf = new double[ndims];
-		psf[0] = 1.75;
-		psf[1] = 1.525;
-		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 
-		preinputimg = Kernels.Meanfilterandsupress(biginputimg, 1);
 		inputimg = Kernels.Preprocess(biginputimg, ProcessingType.CannyEdge);
 
 		ImageJFunctions.show(inputimg).setTitle("Preprocessed image");
@@ -90,24 +77,30 @@ public class HoughpostWater {
 
 		// Declare minimum length of the line(in pixels) to be detected
 		double minlength = 0;
-		// Automatic threshold determination for doing the Hough transform
-		final Float val = GlobalThresholding.AutomaticThresholding(inputimg);
-		linepair = PerformWatershedding.DowatersheddingandHough(biginputimg, inputimg, minlength, val);
+
+		linepair = PerformWatershedding.DowatersheddingandHough(biginputimg, inputimg, minlength);
 
 		// Overlay detected lines on the image
 
 		PointSampleList<FloatType> centroidlist = new PointSampleList<FloatType>(n);
 
+		final int ndims = biginputimg.numDimensions();
 		double[] final_param = new double[2 * ndims + 2];
-
 		double[] noise_param = new double[ndims - 1];
+		double[] psf = new double[ndims];
 
+		final Float SNR = 16f;
+		psf[0] = 1.75;
+		psf[1] = 1.525;
+
+		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		// Input the psf-sigma here to be used for convolving Gaussians on a
 		// line, will not change during iteration.
 
 		ArrayList<double[]> totalgausslist = new ArrayList<double[]>();
 
-		// Rough reconstruction of line after Hough detection
+		// Get a rough reconstruction of the line and the list of centroids
+		// where psf of the image has to be convolved
 
 		final ArrayList<PreFinalobject> prefinalparamlist = new ArrayList<PreFinalobject>();
 
@@ -122,7 +115,8 @@ public class HoughpostWater {
 		LengthDetection MTlength = new LengthDetection(biginputimg, linepair.fst);
 
 		final ArrayList<Finalobject> finalparamlist = new ArrayList<Finalobject>();
-
+		// Choose the noise level of the image, 0 for pre-processed image and >0
+		// for original image
 		for (int index = 0; index < prefinalparamlist.size(); ++index) {
 
 			// Do gradient descent to improve the Hough detected lines
@@ -130,8 +124,6 @@ public class HoughpostWater {
 			noise_param = MTlength.Getnoiseparam(prefinalparamlist.get(index).centroid, radius);
 
 			if (Math.exp(-noise_param[0]) > 1.0 / SNR) {
-
-				// System.out.println(Math.exp(-noise_param[0]));
 
 				final double[] newmeans = { final_param[1], final_param[2] };
 
@@ -145,8 +137,8 @@ public class HoughpostWater {
 				finalparamlist.add(finalline);
 
 			}
-
 		}
+
 		ArrayList<Indexedlength> finallength = new ArrayList<Indexedlength>();
 
 		// Since the centroid positions changed, update the slope and intercept
@@ -181,7 +173,7 @@ public class HoughpostWater {
 
 		}
 
-		// Draw the detected and iterated lines
+		// Draw the Gaussian convolved line fitted with the original data
 		PushCurves.DrawDetectedGaussians(gaussimg, totalgausslist);
 		ImageJFunctions.show(gaussimg).setTitle("Iterated Result");
 

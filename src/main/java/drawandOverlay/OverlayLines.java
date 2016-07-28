@@ -34,7 +34,7 @@ public class OverlayLines {
 
 		double rho;
 		double theta;
-		double minX, maxX, minY, maxY;
+		long minX, maxX, minY, maxY;
 
 		ImageStack stack = new ImageStack((int) inputimg.dimension(0), (int) inputimg.dimension(1));
 
@@ -187,7 +187,7 @@ public class OverlayLines {
 					if (inran.get().get() > 0)
 						count++;
 
-					if (count >= maxcount) {
+					if (count > maxcount) {
 						maxcount = count;
 						maxindex = index;
 
@@ -199,8 +199,9 @@ public class OverlayLines {
 		}
 		// System.out.println("Main file: "+ maxcount + " " + maxindex);
 		ArrayList<RefinedPeak<Point>> MainMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
-		if (maxcount > minlength)	
-		MainMinlist.add(SubpixelMinlist.get(maxindex));
+		if (maxcount > minlength) {
+			MainMinlist.add(SubpixelMinlist.get(maxindex));
+		}
 		return MainMinlist;
 	}
 
@@ -241,7 +242,8 @@ public class OverlayLines {
 			if (Math.abs(slope)!=Double.POSITIVE_INFINITY )
 			PushCurves.DrawTruncatedline(imgout, inputimg, intimg, centroidlist,lineparam, slope, intercept, label);
 			
-		
+			
+			
 			
 		}
 		
