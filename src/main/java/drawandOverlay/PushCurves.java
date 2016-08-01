@@ -440,7 +440,7 @@ public class PushCurves {
 
 				// To get the min and max co-rodinates along the line so we have starting points to
 				// move on the line smoothly
-				if (pointonline == 0) {
+				if (pointonline == 0 && inputcursor.get().get() > 1.0E-5 ) {
 					
 					for (int d = 0; d < n; ++d) {
 						if (inputcursor.getDoublePosition(d) <= minVal[d]) 
@@ -455,6 +455,7 @@ public class PushCurves {
 
 			}
 		}
+		
 		
 		// Moving along the line with a fixed step-size. This gives set of points along the line which are then convoluted with a Gaussian.
 		final double stepsize = 1;
@@ -510,7 +511,7 @@ public class PushCurves {
 		
            for (int index = 0; index < pointlist.size(); ++index){
 			
-			PreFinalobject line = new PreFinalobject(label, pointlist.get(index), new FloatType(1), slope, intercept);
+			PreFinalobject line = new PreFinalobject(label, pointlist.get(index), intensitylist.get(index), slope, intercept);
 			
 			lineparam.add(line);
 			

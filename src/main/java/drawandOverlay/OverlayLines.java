@@ -11,6 +11,7 @@ import ij.gui.Line;
 import ij.gui.Overlay;
 import labeledObjects.Lineobjects;
 import labeledObjects.PreFinalobject;
+import labeledObjects.Simpleobject;
 import net.imglib2.Cursor;
 import net.imglib2.Point;
 import net.imglib2.PointSampleList;
@@ -224,6 +225,7 @@ public class OverlayLines {
 			PointSampleList<FloatType> centroidlist,
 			ArrayList<PreFinalobject> lineparam,
 			ArrayList<Lineobjects> linelist,
+			ArrayList<Simpleobject> lineobject,
 			final long radius) {
 
 		for (int index = 0; index < linelist.size(); ++index) {
@@ -236,6 +238,8 @@ public class OverlayLines {
 			double slope = -1.0 / (Math.tan(Math.toRadians(theta)));
 			double intercept = rho / Math.sin(Math.toRadians(theta));
 
+			final Simpleobject simpleobj = new Simpleobject(label, slope, intercept);
+			lineobject.add(simpleobj);
 		//	System.out.println(slope +"  "+ theta);
 			//PushCurves.Drawexactline(testimgout,intimg, slope, intercept, label);
 			

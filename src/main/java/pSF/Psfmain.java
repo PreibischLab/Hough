@@ -79,7 +79,7 @@ public class Psfmain {
 		
 		System.out.println("Amplitude:  ");
 		for (int index = 0; index < totalgausslist.size(); ++index){
-		System.out.println(totalgausslist.get(index)[0]);
+		System.out.println(2 * totalgausslist.get(index)[0]);
 		}
 		System.out.println("SigmaX:  ");
 		for (int index = 0; index < totalgausslist.size(); ++index){

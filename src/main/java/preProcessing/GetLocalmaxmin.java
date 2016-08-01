@@ -368,7 +368,7 @@ public class GetLocalmaxmin {
 			ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(houghimage.numDimensions());
 
 			// Get local Minima in scale space to get Max rho-theta points
-			double minPeakValue =   houghval; 
+			double minPeakValue =  0.5 *  houghval; 
 			double smallsigma = 1;
 			double bigsigma = 1.1;
 			SubpixelMinlist = GetLocalmaxmin.ScalespaceMinima(houghimage, interval, thetaPerPixel, rhoPerPixel,
@@ -463,6 +463,31 @@ public class GetLocalmaxmin {
 		final Cursor<FloatType> cursor = Views.iterable(inputimg).cursor();
 
 		// initialize min and max with the first image value
+		double maxVal =  Double.MIN_VALUE;
+
+		// loop over the rest of the data and determine min and max value
+		while (cursor.hasNext()) {
+			// we need this type more than once
+			cursor.fwd();
+
+			
+
+			if (cursor.get().get() > maxVal) {
+				maxVal = cursor.get().getRealDouble();
+
+			}
+		}
+		
+		return maxVal;
+	}
+
+	public static double computeMaxIntensityinlabel(final RandomAccessibleInterval<FloatType> inputimg, 
+			final RandomAccessibleInterval<IntType> intimg, final int label ) {
+		// create a cursor for the image (the order does not matter)
+		final Cursor<FloatType> cursor = Views.iterable(inputimg).cursor();
+
+		final RandomAccess<IntType> intranac = intimg.randomAccess();
+		// initialize min and max with the first image value
 		FloatType type = cursor.next();
 		FloatType max = type.copy();
 
@@ -471,17 +496,21 @@ public class GetLocalmaxmin {
 			// we need this type more than once
 			type = cursor.next();
 
+			 intranac.setPosition(cursor);
+			int i = intranac.get().get();
 			
 
+			if (i == label){ 
 			if (type.compareTo(max) > 0) {
 				max.set(type);
 
+			}
 			}
 		}
 		final double maxintensity = max.getRealDouble();
 		return maxintensity;
 	}
-
+	
 	public static long[] computeMaxinLabel(
 			final RandomAccessibleInterval<FloatType> inputimg,
 			final RandomAccessibleInterval<IntType> intimg,

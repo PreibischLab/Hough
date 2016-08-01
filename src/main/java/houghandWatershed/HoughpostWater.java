@@ -16,6 +16,7 @@ import labeledObjects.Indexedlength;
 import labeledObjects.LabelMax;
 import labeledObjects.Lineobjects;
 import labeledObjects.PreFinalobject;
+import labeledObjects.Simpleobject;
 import net.imglib2.Cursor;
 import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccessibleInterval;
@@ -40,10 +41,12 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/small_mt.tif"));
+				.openAs32Bit(new File("src/main/resources/Fake_databignosnp.tif"));
 		// small_mt.tif image to be used for testing
 		// 2015-01-14_Seeds-1.tiff for actual
 		// mt_experiment.tif for big testing
+		// Fake_databigsnp.tif for fake data with noise
+		// small_test.tif for fake test data
 		new ImageJ();
 
 		new Normalize();
@@ -56,7 +59,8 @@ public class HoughpostWater {
 		// Initialize empty images to be used later
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
-
+		RandomAccessibleInterval<FloatType> preinputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
+				new FloatType());
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
 		RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(biginputimg,
@@ -64,7 +68,8 @@ public class HoughpostWater {
 
 		// Preprocess image
 
-		inputimg = Kernels.Preprocess(biginputimg, ProcessingType.CannyEdge);
+		preinputimg = Kernels.Supressthresh(biginputimg);
+		inputimg = Kernels.Preprocess(preinputimg, ProcessingType.CannyEdge);
 
 		ImageJFunctions.show(inputimg).setTitle("Preprocessed image");
 
@@ -85,13 +90,13 @@ public class HoughpostWater {
 		PointSampleList<FloatType> centroidlist = new PointSampleList<FloatType>(n);
 
 		final int ndims = biginputimg.numDimensions();
-		double[] final_param = new double[2 * ndims + 2];
+		double[] final_param = new double[2 * ndims + 1 ];
 		double[] noise_param = new double[ndims - 1];
 		double[] psf = new double[ndims];
 
-		final Float SNR = 16f;
-		psf[0] = 1.75;
-		psf[1] = 1.525;
+		final Float SNR = 25f;
+		psf[0] = 1.7;
+		psf[1] = 1.8;
 
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		// Input the psf-sigma here to be used for convolving Gaussians on a
@@ -103,8 +108,8 @@ public class HoughpostWater {
 		// where psf of the image has to be convolved
 
 		final ArrayList<PreFinalobject> prefinalparamlist = new ArrayList<PreFinalobject>();
-
-		OverlayLines.GetAlllines(imgout, biginputimg, linepair.fst, centroidlist, prefinalparamlist, linepair.snd,
+		final ArrayList<Simpleobject> simpleobject = new ArrayList<Simpleobject>();
+		OverlayLines.GetAlllines(imgout, biginputimg, linepair.fst, centroidlist, prefinalparamlist, linepair.snd, simpleobject,
 				radius);
 
 		ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
@@ -117,13 +122,24 @@ public class HoughpostWater {
 		final ArrayList<Finalobject> finalparamlist = new ArrayList<Finalobject>();
 		// Choose the noise level of the image, 0 for pre-processed image and >0
 		// for original image
-		for (int index = 0; index < prefinalparamlist.size(); ++index) {
+		for (int index = 0; index < simpleobject.size(); ++index) {
 
 			// Do gradient descent to improve the Hough detected lines
-			final_param = MTlength.Getfinalparam(prefinalparamlist.get(index).centroid, radius, psf);
-			noise_param = MTlength.Getnoiseparam(prefinalparamlist.get(index).centroid, radius);
-
-			if (Math.exp(-noise_param[0]) > 1.0 / SNR) {
+		
+			final_param = MTlength.Getfinallineparam(simpleobject.get(index).Label, simpleobject.get(index).slope,
+					simpleobject.get(index).intercept, psf);
+			
+			System.out.println( "Label: " + simpleobject.get(index).Label + " " + "Min:" + final_param[0] + " Min:" + final_param[1] + "Max:" 
+			+ final_param[2] + "Max: " +   final_param[3]);
+			
+			System.out.println("Oldslope: "+ simpleobject.get(index).slope + " " +  "intercept" + simpleobject.get(index).intercept);
+			System.out.println("Slope: "+ (final_param[3] - final_param[1])/ (final_param[2] - final_param[0])+
+					"Intercept :" + (final_param[1] - (final_param[3] - final_param[1])/ (final_param[2] - final_param[0])*final_param[0]));
+			
+		//final_param = MTlength.Getfinalparam(prefinalparamlist.get(index).centroid, radius);
+		//	noise_param = MTlength.Getnoiseparam(prefinalparamlist.get(index).centroid, radius);
+		/*	
+			if (Math.exp(-noise_param[0]) > 0*1.0 / SNR) {
 
 				final double[] newmeans = { final_param[1], final_param[2] };
 
@@ -135,7 +151,7 @@ public class HoughpostWater {
 						prefinalparamlist.get(index).slope, prefinalparamlist.get(index).intercept);
 
 				finalparamlist.add(finalline);
-
+				
 			}
 		}
 
@@ -148,6 +164,8 @@ public class HoughpostWater {
 
 		updateparamlist = MTlength.Updateslopeandintercept(finalparamlist);
 		ArrayList<LabelMax> labelmaxlist = new ArrayList<LabelMax>();
+		
+		
 		correctparamlist = MTlength.Removepoints(updateparamlist, labelmaxlist);
 
 		for (int index = 0; index < correctparamlist.size(); ++index) {
@@ -197,7 +215,7 @@ public class HoughpostWater {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-
+*/
 		}
 
 	}

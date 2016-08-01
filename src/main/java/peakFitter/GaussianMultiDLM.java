@@ -147,6 +147,8 @@ package peakFitter;
 			return Math.exp(-sum);
 		}
 		
+	
+		
 
 	}
 	
