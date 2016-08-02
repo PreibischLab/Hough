@@ -40,7 +40,7 @@ import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
-import peakFitter.GaussianMastFit.Endfit;
+import peakFitter.GaussianMaskFit.Endfit;
 import preProcessing.GetLocalmaxmin;
 import preProcessing.GetLocalmaxmin.IntensityType;
 
@@ -274,9 +274,9 @@ public class LengthDetection {
 			}
 
 			final double[] newsigma = { sigma[0], sigma[1] };
-			final double[] startfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, startpos, newsigma,
-					iterations, maxintensity, 1.0, slope, intercept, Endfit.Start);
-			final double[] endfit = peakFitter.GaussianMastFit.gaussianMaskFit(inputimg, intimg, endpos, newsigma,
+			final double[] startfit = peakFitter.GaussianMaskFit.gaussianMaskFit(inputimg, intimg, startpos, newsigma,
+					iterations, maxintensity,1.0,  slope, intercept, Endfit.Start);
+			final double[] endfit = peakFitter.GaussianMaskFit.gaussianMaskFit(inputimg, intimg, endpos, newsigma,
 					iterations, maxintensity, 1.0, slope, intercept, Endfit.End);
 
 			

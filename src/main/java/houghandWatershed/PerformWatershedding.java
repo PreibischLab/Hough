@@ -98,8 +98,8 @@ public class PerformWatershedding {
 					.sqrt((outimg.dimension(0) * outimg.dimension(0) + outimg.dimension(1) * outimg.dimension(1)));
 			int minRho = (int) -Math.round(size);
 			int maxRho = -minRho;
-			double thetaPerPixel = 0.2;
-			double rhoPerPixel = 0.2;
+			double thetaPerPixel = 1;
+			double rhoPerPixel = 1;
 			double[] min = { mintheta, minRho };
 			double[] max = { maxtheta, maxRho };
 			int pixelsTheta = (int) Math.round((maxtheta - mintheta) / thetaPerPixel);

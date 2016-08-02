@@ -11,7 +11,7 @@ import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
-public class GaussianMastFit {
+public class GaussianMaskFit {
 	public static enum Endfit {
 		Start, End
 	}
@@ -24,10 +24,10 @@ public class GaussianMastFit {
 			final Endfit startorend) {
 		final int n = signalInterval.numDimensions();
 
-		// pre-compute 2*sigma^2
+		// pre-compute sigma^2
 		final double[] two_sq_sigma = new double[n];
 		for (int d = 0; d < n; ++d)
-			two_sq_sigma[d] = 2 * sigma[d] * sigma[d];
+			two_sq_sigma[d] =  sigma[d] * sigma[d];
 
 		// make the interval we fit on iterable
 		final IterableInterval<FloatType> signalIterable = Views.iterable(signalInterval);
@@ -50,30 +50,16 @@ public class GaussianMastFit {
 
 		double N = 0;
 		int i = 0;
-
 		do {
-
-			int[] intlocation = new int[n];
-
-			for (int d = 0; d < n; ++d) {
-
-				intlocation[d] = (int) location[d];
-
-			}
-
-			RandomAccess<IntType> ranac = intimg.randomAccess();
-			ranac.setPosition(intlocation);
-
-			int label = ranac.get().get();
-
+			
 			switch (startorend) {
 
 			case Start:
-				setstartGaussian(translatedIterableMask, location, two_sq_sigma, maxintensity, deltas, slope, intercept);
+				setstartGaussian(translatedIterableMask, location, two_sq_sigma, maxintensity,deltas, slope, intercept);
 				break;
 
 			case End:
-				setendGaussian(translatedIterableMask, location, two_sq_sigma, maxintensity, deltas, slope, intercept);
+				setendGaussian(translatedIterableMask, location, two_sq_sigma, maxintensity,deltas,  slope, intercept);
 				break;
 
 			}
@@ -91,11 +77,10 @@ public class GaussianMastFit {
 				cMask.fwd();
 				cImg.fwd();
 
-				ranac.setPosition(cImg);
-				if (ranac.get().get() == label) {
+				
 					final double signal = cImg.get().getRealDouble();
 					final double mask = cMask.get().getRealDouble();
-					final double weight = 16;
+					final double weight = 8;
 
 					final double signalmask = signal * mask * weight;
 
@@ -116,10 +101,12 @@ public class GaussianMastFit {
 
 				++i;
 
-			}
+				
+				
+			
 		} while (i < iterations);
 		restoreBackground(signalIterable, bg);
-
+		//ImageJFunctions.show(gaussianMask);
 		return location;
 	}
 
@@ -143,7 +130,7 @@ public class GaussianMastFit {
 	}
 
 	final public static void setstartGaussian(final IterableInterval<FloatType> image, final double[] location,
-			final double[] two_sq_sigma, final double maxintensity, final double deltas, final double slope, final double intercept) {
+			final double[] two_sq_sigma, final double maxintensity,final double deltas,  final double slope, final double intercept) {
 		final int numDimensions = image.numDimensions();
 
 		final Cursor<FloatType> cursor = image.localizingCursor();
@@ -157,17 +144,24 @@ public class GaussianMastFit {
 				final double x = location[d] - cursor.getDoublePosition(d);
 				
 				// Full Gaussian fit
-				value *= Math.exp(-(x * x) / two_sq_sigma[d]);
+			
 				
+				double y = 0;
+				double z = 0;
+				if (d == 0){
+					y = x - deltas / ( Math.sqrt(1 + slope * slope));
+					z = y - deltas / ( Math.sqrt(1 + slope * slope));
+				}
+				if (d == 1){
+					y = x -  deltas * slope / ( Math.sqrt(1 + slope * slope));
+					z = y - deltas * slope / ( Math.sqrt(1 + slope * slope));
+				}
 				
-			/*	
-				// Half Gaussian fit
+			
 				  
-				value *= Math.exp(-(x * x) / two_sq_sigma[d]) ;
+				value *= Math.exp(-(x * x) / two_sq_sigma[d]) + Math.exp(-(y * y) / two_sq_sigma[d])+ Math.exp(-(z * z) / two_sq_sigma[d]) ;
 				
-				if (cursor.getDoublePosition(1) >=   ( location[1] - (cursor.getDoublePosition(0) - location[0])/slope))
-					value *= 0;
-			*/	
+		
 				
 
 			}
@@ -177,7 +171,7 @@ public class GaussianMastFit {
 	}
 
 	final public static void setendGaussian(final IterableInterval<FloatType> image, final double[] location,
-			final double[] two_sq_sigma, final double maxintensity, final double deltas, final double slope, final double intercept) {
+			final double[] two_sq_sigma, final double maxintensity, final double deltas,  final double slope, final double intercept) {
 		final int numDimensions = image.numDimensions();
 
 		final Cursor<FloatType> cursor = image.localizingCursor();
@@ -192,17 +186,25 @@ public class GaussianMastFit {
 				
 				// Full Gaussian fit
 				
-				value *= Math.exp(-(x * x) / two_sq_sigma[d]) ;
+		
 				
-			/*
-				// Half Gaussian fit
+				double y = 0;
+				double z = 0;
+				if (d == 0){
+					y = x + deltas / ( Math.sqrt(1 + slope * slope));
+				    z = y + deltas / ( Math.sqrt(1 + slope * slope));
+				}
+				if (d == 1){
+					y = x + deltas * slope / ( Math.sqrt(1 + slope * slope));
+                   z = y +	deltas * slope / ( Math.sqrt(1 + slope * slope));
+				}
 				
-				value *= Math.exp(-(x * x) / two_sq_sigma[d])  ;
 				
-				if (cursor.getDoublePosition(1) <= (location[1] - (cursor.getDoublePosition(0) - location[0])/slope))
-					value *= 0;
-			*/	
-					
+				value *= Math.exp(-(x * x) / two_sq_sigma[d]) + Math.exp(-(y * y) / two_sq_sigma[d]) + Math.exp(-(z * z) / two_sq_sigma[d]);
+				
+			
+				
+			
 				
 			}
 

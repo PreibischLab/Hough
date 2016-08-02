@@ -10,6 +10,7 @@ import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
+import peakFitter.GaussianMaskFit.Endfit;
 import preProcessing.GetLocalmaxmin;
 
 public class Linefitter {
@@ -29,8 +30,8 @@ public class Linefitter {
 	}
 	private final  double[] MakeLineguess(
 			double slope, 
-			double intercept, final double[][] X, final double[] I,
-			int label) {
+			double intercept, 
+			int label) throws Exception {
 
 		final double[] realpos = new double[ndims];
 		double sigmasq, sigma = 1.0;
@@ -44,7 +45,7 @@ public class Linefitter {
 		double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
 		double[] maxVal = { Double.MIN_VALUE, Double.MIN_VALUE };
 		
-		
+		Noiseclassifier MTnoise = new Noiseclassifier(inputimg, intimg);
 		final double maxintensity =	 GetLocalmaxmin.computeMaxIntensityinlabel(inputimg,intimg,label );
 		while (outcursor.hasNext()) {
 
@@ -79,7 +80,10 @@ public class Linefitter {
 				// To get the min and max co-rodinates along the line so we have starting points to
 				// move on the line smoothly
 				if (pointonline == 0 ) {
+				//	double[] noise_param = new double[ndims - 1];
+				//	MTnoise.Getnoiseparam(outcursor, 4);
 					
+				//	if (Math.exp(-noise_param[0]) > 0)
 					for (int d = 0; d < ndims; ++d) {
 						if (outcursor.getDoublePosition(d) <= minVal[d]) 
 							minVal[d] = outcursor.getDoublePosition(d);
@@ -131,7 +135,7 @@ public class Linefitter {
 			index++;
 		}
 
-		final double[] start_param = MakeLineguess(slope, intercept,X,I, label);
+		final double[] start_param = MakeLineguess(slope, intercept, label);
 		
 		System.out.println(start_param[0] + " " +  start_param[1] + " " +  start_param[2] + " " + start_param[3]);
 		final double[] fixed_param = new double[2*ndims];
@@ -145,9 +149,9 @@ public class Linefitter {
 		final double[] finalparam = start_param.clone();
 		
 		// LM solver part
-		int maxiter = 1000;
-		double lambda = 1e-2;
-		double termepsilon = 1e-3;
+		int maxiter = 300;
+		double lambda = 1e-3;
+		double termepsilon = 1e-2;
 
 		LevenbergMarquardtSolverLine.solve(X, finalparam, fixed_param, I, new GaussianLine(), lambda, termepsilon, maxiter);
 
@@ -157,8 +161,20 @@ public class Linefitter {
 				finalparam[j] = start_param[j];
 		}
 		
+		final double[] startpos = {finalparam[0], finalparam[1]};
+		final double[] endpos = {finalparam[2], finalparam[3]};
+		double maxintensity = finalparam[4];
+		int iterations = 100;
+		double newslope = (finalparam[3] - finalparam[1]) / (finalparam[2] - finalparam[0]);
+		double newintercept = finalparam[1] - slope * finalparam[0];
+		final double[] startfit = peakFitter.GaussianMaskFit.gaussianMaskFit(inputimg, intimg, startpos, sigma,
+				iterations, maxintensity,1,  newslope, newintercept, Endfit.Start);
+		final double[] endfit = peakFitter.GaussianMaskFit.gaussianMaskFit(inputimg, intimg, endpos, sigma,
+				iterations, maxintensity,1,  newslope, newintercept, Endfit.End);
 		
-		return finalparam;
+		final double[] refindedparam = {startfit[0],startfit[1], endfit[0], endfit[1], finalparam[4]};
+		
+		return refindedparam;
 		
 	}
 	
@@ -200,5 +216,18 @@ public class Linefitter {
 		return datalist;
 	}
 
+	
+
+	public double Distance(final double[] cordone, final double[] cordtwo) {
+
+		double distance = 0;
+
+		for (int d = 0; d < ndims; ++d) {
+
+			distance += Math.pow((cordone[d] - cordtwo[d]), 2);
+
+		}
+		return Math.sqrt(distance);
+	}
 	
 }
