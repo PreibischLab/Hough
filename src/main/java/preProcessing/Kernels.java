@@ -290,14 +290,16 @@ public class Kernels {
 			}
 			boolean isMaximum = true;
             final double tolerance = 20;
+        	final RandomAccess<FloatType> outbound = Threshcannyimg.randomAccess();
 			while (localcursor.hasNext()) {
 				localcursor.fwd();
+			
 				for (int d = 0; d < n; ++d)
 					// Before computing maxima check if it is along the gradient direction
 					if(localcursor.getDoublePosition(d)-left[d]==0 || localcursor.getDoublePosition(d)-right[d]==0){
 				    if (cursor.get().compareTo(localcursor.get()) < 0 ) {
 					isMaximum = false;
-					
+				    	
 					break;
 				}
 			}
@@ -309,21 +311,21 @@ public class Kernels {
 									Math.abs(localcursor.getDoublePosition(d)-right[d])>tolerance){
 				    	
 					isMaximum = false;
-					
+								
 					break;
 				}
 			}
 				
-			}
+			
 			
 			if (isMaximum) {
 				
-				final RandomAccess<FloatType> outbound = Threshcannyimg.randomAccess();
+				
 				outbound.setPosition(cursor);
 				outbound.get().set(cursor.get());
 				
 			}
-
+			}
 		}
 		
 

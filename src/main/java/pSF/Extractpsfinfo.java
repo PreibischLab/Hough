@@ -15,6 +15,7 @@ import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
+import peakFitter.Gausswback;
 import peakFitter.LengthDetection;
 import preProcessing.GetLocalmaxmin;
 import preProcessing.Kernels;
@@ -56,7 +57,8 @@ public class Extractpsfinfo {
 		}
 		
 			
-		 LengthDetection MTlength = new LengthDetection(inputimg,intimg);
+		 
+		 Gausswback  MTlength = new Gausswback(inputimg,intimg);
 		 
 		 double[] final_param= new double[2*ndims+2];
 		

@@ -1,6 +1,6 @@
 package peakFitter;
 import Jama.Matrix;
-public class LevenbergMarquardtSolverLocal {
+public class LevenbergMarquardtSolverPoints {
 	/**
 	 * Calculate the current sum-squared-error
 	 */
