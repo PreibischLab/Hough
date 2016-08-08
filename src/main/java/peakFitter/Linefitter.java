@@ -30,7 +30,7 @@ public class Linefitter {
 	}
 	private final  double[] MakeLineguess(
 			double slope, 
-			double intercept, 
+			double intercept,
 			int label) throws Exception {
 
 		final double[] realpos = new double[ndims];
@@ -44,8 +44,6 @@ public class Linefitter {
 		final RandomAccess<FloatType> ranacinput = inputimg.randomAccess();
 		double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
 		double[] maxVal = { Double.MIN_VALUE, Double.MIN_VALUE };
-		
-		Noiseclassifier MTnoise = new Noiseclassifier(inputimg, intimg);
 		final double maxintensity =	 GetLocalmaxmin.computeMaxIntensityinlabel(inputimg,intimg,label );
 		while (outcursor.hasNext()) {
 
@@ -59,10 +57,9 @@ public class Linefitter {
 			Finalfunction linefunction = new Finalfunction(realpos, slope, intercept);
 			distance = linefunction.Linefunctiondist();
 
-			if (distance < 5 * sigma)
+			
 				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
-			else
-				intensity = 0;
+			
 			intensity *= ranacinput.get().get();
 
 			ranac.setPosition(outcursor);
@@ -79,11 +76,10 @@ public class Linefitter {
 
 				// To get the min and max co-rodinates along the line so we have starting points to
 				// move on the line smoothly
+				
 				if (pointonline == 0 ) {
-				//	double[] noise_param = new double[ndims - 1];
-				//	MTnoise.Getnoiseparam(outcursor, 4);
 					
-				//	if (Math.exp(-noise_param[0]) > 0)
+						
 					for (int d = 0; d < ndims; ++d) {
 						if (outcursor.getDoublePosition(d) <= minVal[d]) 
 							minVal[d] = outcursor.getDoublePosition(d);
@@ -92,6 +88,9 @@ public class Linefitter {
 							maxVal[d] = outcursor.getDoublePosition(d);
 						
 					}
+					
+					
+					
 
 				}
 
@@ -116,7 +115,8 @@ public class Linefitter {
 
 	// Get line parameters for fitting line to a line in a label
 	
-	public double[] Getfinallineparam(final int label, final double slope, final double intercept, final double [] sigma) throws Exception{
+	public double[] Getfinallineparam(final int label, final double slope, final double intercept, final double[] psf,
+			final double [] sigma) throws Exception{
 		
 		PointSampleList<FloatType> datalist = gatherfullData(label);
 		final Cursor<FloatType> listcursor = datalist.localizingCursor();
@@ -167,10 +167,11 @@ public class Linefitter {
 		int iterations = 100;
 		double newslope = (finalparam[3] - finalparam[1]) / (finalparam[2] - finalparam[0]);
 		double newintercept = finalparam[1] - slope * finalparam[0];
+		final double radius = 0.25 * (psf[0] + psf[1]);
 		final double[] startfit = peakFitter.GaussianMaskFit.gaussianMaskFit(inputimg, intimg, startpos, sigma,
-				iterations, maxintensity,1,  newslope, newintercept, Endfit.Start);
+				iterations, maxintensity,radius,  newslope, newintercept, Endfit.Start);
 		final double[] endfit = peakFitter.GaussianMaskFit.gaussianMaskFit(inputimg, intimg, endpos, sigma,
-				iterations, maxintensity,1,  newslope, newintercept, Endfit.End);
+				iterations, maxintensity,radius,  newslope, newintercept, Endfit.End);
 		
 		final double[] refindedparam = {startfit[0],startfit[1], endfit[0], endfit[1], finalparam[4]};
 		

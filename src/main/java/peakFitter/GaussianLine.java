@@ -38,6 +38,9 @@ public final class GaussianLine implements MTFitFunction {
 	 * PRIVATE METHODS
 	 */
 
+	
+	
+	
 	private static final double E(final double[] x, final double[] a, final double[] b){
 		
 		final int ndims = x.length;
@@ -61,7 +64,7 @@ public final class GaussianLine implements MTFitFunction {
 		
 		
 		
-		final double stepsize =  Math.sqrt(b[0] * b[0] + b[1] * b[1]);
+		final double stepsize = 0.25* (b[0] + b[1]);
 		final double[] steppos = new double[ndims];
 		int count = 0;
 		if (slope >= 0){

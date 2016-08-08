@@ -11,7 +11,6 @@ import ij.plugin.HyperStackReducer;
 import labeledObjects.Finalobject;
 import labeledObjects.Indexedlength;
 import labeledObjects.LabelMax;
-import labeledObjects.PreFinalobject;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.IterableInterval;

@@ -106,7 +106,6 @@ public class GaussianMaskFit {
 			
 		} while (i < iterations);
 		restoreBackground(signalIterable, bg);
-		//ImageJFunctions.show(gaussianMask);
 		return location;
 	}
 
@@ -159,7 +158,8 @@ public class GaussianMaskFit {
 				
 			
 				  
-				value *= Math.exp(-(x * x) / two_sq_sigma[d]) + Math.exp(-(y * y) / two_sq_sigma[d])+ Math.exp(-(z * z) / two_sq_sigma[d]) ;
+				value *= Math.exp(-(x * x) / two_sq_sigma[d]) + Math.exp(-(y * y) / two_sq_sigma[d])
+				+ Math.exp(-(z * z) / two_sq_sigma[d]);
 				
 		
 				
@@ -200,7 +200,8 @@ public class GaussianMaskFit {
 				}
 				
 				
-				value *= Math.exp(-(x * x) / two_sq_sigma[d]) + Math.exp(-(y * y) / two_sq_sigma[d]) + Math.exp(-(z * z) / two_sq_sigma[d]);
+				value *= Math.exp(-(x * x) / two_sq_sigma[d]) + Math.exp(-(y * y) / two_sq_sigma[d]) 
+				+ Math.exp(-(z * z) / two_sq_sigma[d])  ;
 				
 			
 				

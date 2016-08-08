@@ -82,7 +82,7 @@ public class GetLocalmaxmin {
 					break;
 
 				case Gaussian:
-					AddGaussian.addGaussian(imgout, backpos, sigma, false);
+					AddGaussian.addGaussian(imgout, backpos, sigma);
 					break;
 				case One:
 					outbound.get().setReal(1);
@@ -194,7 +194,7 @@ public class GetLocalmaxmin {
 					break;
 
 				case Gaussian:
-					AddGaussian.addGaussian(output, position, sigma, false);
+					AddGaussian.addGaussian(output, position, sigma);
 					break;
 				case One:
 					outbound.get().setOne();
@@ -268,10 +268,10 @@ public class GetLocalmaxmin {
 					break;
 
 				case Gaussian:
-					AddGaussian.addGaussian(output, position, sigma, false);
+					AddGaussian.addGaussian(output, position, sigma);
 					break;
 				default:
-					AddGaussian.addGaussian(output, position, sigma, false);
+					AddGaussian.addGaussian(output, position, sigma);
 					break;
 
 				}
@@ -608,7 +608,7 @@ public class GetLocalmaxmin {
 					break;
 
 				case Gaussian:
-					AddGaussian.addGaussian(output, position, sigma, false);
+					AddGaussian.addGaussian(output, position, sigma);
 					break;
 
 				case One:
@@ -616,7 +616,7 @@ public class GetLocalmaxmin {
 					break;
 
 				default:
-					AddGaussian.addGaussian(output, position, sigma, false);
+					AddGaussian.addGaussian(output, position, sigma);
 					break;
 
 				}
@@ -676,7 +676,7 @@ public class GetLocalmaxmin {
 					break;
 
 				case Gaussian:
-					AddGaussian.addGaussian(output, position, sigma, false);
+					AddGaussian.addGaussian(output, position, sigma);
 					break;
 
 				case One:
@@ -684,7 +684,7 @@ public class GetLocalmaxmin {
 					break;
 
 				default:
-					AddGaussian.addGaussian(output, position, sigma, false);
+					AddGaussian.addGaussian(output, position, sigma);
 					break;
 
 				}

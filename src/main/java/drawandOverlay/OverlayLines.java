@@ -10,7 +10,6 @@ import ij.ImageStack;
 import ij.gui.Line;
 import ij.gui.Overlay;
 import labeledObjects.Lineobjects;
-import labeledObjects.PreFinalobject;
 import labeledObjects.Simpleobject;
 import net.imglib2.Cursor;
 import net.imglib2.Point;
@@ -180,8 +179,6 @@ public class OverlayLines {
 			RandomAccessibleInterval<FloatType> imgout,
 			RandomAccessibleInterval<FloatType> inputimg,
 			Img<IntType> intimg, 
-			PointSampleList<FloatType> centroidlist,
-			ArrayList<PreFinalobject> lineparam,
 			ArrayList<Lineobjects> linelist,
 			ArrayList<Simpleobject> lineobject,
 			final long radius) {
@@ -202,7 +199,7 @@ public class OverlayLines {
 			//PushCurves.Drawexactline(testimgout,intimg, slope, intercept, label);
 			
 			if (Math.abs(slope)!=Double.POSITIVE_INFINITY )
-			PushCurves.DrawTruncatedline(imgout, inputimg, intimg, centroidlist,lineparam, slope, intercept, label);
+			PushCurves.DrawTruncatedline(imgout, inputimg, intimg, slope, intercept, label);
 			
 			
 			

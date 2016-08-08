@@ -1,5 +1,6 @@
 package drawandOverlay;
 
+import lut.SinCosinelut;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
@@ -19,13 +20,14 @@ public class HoughPushCurves {
 		double Amplitude, Phase;
 
 		final Cursor<FloatType> inputcursor = Views.iterable(inputimage).localizingCursor();
-
+		
 		// for every function (as defined by an individual pixel)
 		while (inputcursor.hasNext()) {
 
 			inputcursor.fwd();
-			inputcursor.localize(position);
+			
 				if (inputcursor.get().get() > threshold ) {
+					inputcursor.localize(position);
 					Amplitude = Math.sqrt(Math.pow(position[0], 2) + Math.pow(position[1], 2));
 					Phase = Math.toDegrees(Math.atan2(position[0], position[1]));
 

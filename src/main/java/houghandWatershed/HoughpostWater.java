@@ -9,10 +9,11 @@ import java.util.ArrayList;
 import com.sun.tools.javac.util.Pair;
 
 import drawandOverlay.OverlayLines;
+import drawandOverlay.PushCurves;
 import ij.ImageJ;
 import labeledObjects.Lineobjects;
-import labeledObjects.PreFinalobject;
 import labeledObjects.Simpleobject;
+import lut.SinCosinelut;
 import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.stats.Normalize;
@@ -26,6 +27,7 @@ import peakFitter.LengthDetection;
 import peakFitter.Linefitter;
 import preProcessing.Kernels;
 import preProcessing.Kernels.ProcessingType;
+import preProcessing.MedianFilter;
 import util.ImgLib2Util;
 
 public class HoughpostWater {
@@ -64,16 +66,16 @@ public class HoughpostWater {
 				new FloatType());
 		RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
-
+		// Compute the Sin Cosine lookup table
+		SinCosinelut.getTable();
 		// Preprocess image
 
 		penulinputimg = Kernels.Meanfilterandsupress(biginputimg, radius);
 		preinputimg = Kernels.Preprocess(penulinputimg, ProcessingType.CannyEdge);
-		// MedianFilter.medianFilter(preinputimg, inputimg, new int[] {3,3});
-		Kernels.MeanFilter(preinputimg, inputimg, radius);
+		 Kernels.MeanFilter(preinputimg, inputimg, radius);
+		
 
 		ImageJFunctions.show(inputimg).setTitle("Preprocessed image");
-
 		ArrayList<Lineobjects> linelist = new ArrayList<Lineobjects>(biginputimg.numDimensions());
 		Img<IntType> Intimg = new ArrayImgFactory<IntType>().create(biginputimg, new IntType());
 		Pair<Img<IntType>, ArrayList<Lineobjects>> linepair = new Pair<Img<IntType>, ArrayList<Lineobjects>>(Intimg,
@@ -88,20 +90,19 @@ public class HoughpostWater {
 
 		// Overlay detected lines on the image
 
-		PointSampleList<FloatType> centroidlist = new PointSampleList<FloatType>(ndims);
 
 		double[] final_param = new double[2 * ndims + 1];
 
-		final Float SNR = 25f;
+		
+		// If there is no noise in the data put SNR = 0
 
 		ArrayList<double[]> totalgausslist = new ArrayList<double[]>();
 
 		// Get a rough reconstruction of the line and the list of centroids
 		// where psf of the image has to be convolved
 
-		final ArrayList<PreFinalobject> prefinalparamlist = new ArrayList<PreFinalobject>();
 		final ArrayList<Simpleobject> simpleobject = new ArrayList<Simpleobject>();
-		OverlayLines.GetAlllines(imgout, biginputimg, linepair.fst, centroidlist, prefinalparamlist, linepair.snd,
+		OverlayLines.GetAlllines(imgout, biginputimg, linepair.fst, linepair.snd,
 				simpleobject, radius);
 
 		ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
@@ -119,11 +120,16 @@ public class HoughpostWater {
 			// Do gradient descent to improve the Hough detected lines
 
 			final_param = MTline.Getfinallineparam(simpleobject.get(index).Label, simpleobject.get(index).slope,
-					simpleobject.get(index).intercept, sigma);
+					simpleobject.get(index).intercept,psf, sigma);
 			final double[] cordone = { final_param[0], final_param[1] };
 			final double[] cordtwo = { final_param[2], final_param[3] };
 
 			double distance = MTline.Distance(cordone, cordtwo);
+			
+			
+			PushCurves.DrawfinalLine(gaussimg,final_param, psf);
+			
+			
 			System.out
 					.println(
 							"Label: " + simpleobject.get(index).Label + " " + "StartX:" + final_param[0] + " StartY:"
@@ -149,6 +155,11 @@ public class HoughpostWater {
 
 		}catch (IOException e) { e.printStackTrace(); }
 		}
+		
+		
+		ImageJFunctions.show(gaussimg);
+		
+		
 	}
 }
 		

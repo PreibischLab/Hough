@@ -21,7 +21,7 @@ public class SimulateBeads {
 
 		for (int listindex = 0; listindex < meanlist.size(); ++listindex){
 			
-			drawandOverlay.AddGaussian.addGaussian(imgout, 1.0, meanlist.get(listindex), sigma);
+			drawandOverlay.AddGaussian.addGaussian(imgout, 2.0, meanlist.get(listindex), sigma);
 			
 		}
 		
@@ -48,8 +48,8 @@ public class SimulateBeads {
 
 	
 	public static void main(String[] args) {
-		final int numPoints = 100;
-		final double[] sigma = new double[] { 1, 1 };
+		final int numPoints = 30;
+		final double[] sigma = new double[] { 1.8, 1.7 };
 		final Random rnd = new Random(500);
 		final FinalInterval range = new FinalInterval(512, 512);
 		 RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(range, new FloatType());
