@@ -21,9 +21,9 @@ public class GaussianMaskFit {
 	public static double[] gaussianMaskFit(final RandomAccessibleInterval<FloatType> signalInterval,
 			final RandomAccessibleInterval<IntType> intimg, final double[] location, final double[] sigma,
 			final int iterations, final double maxintensity, final double deltas, final double slope, final double intercept,
-			final Endfit startorend) {
+			final Endfit startorend) throws Exception {
 		final int n = signalInterval.numDimensions();
-
+		final long radius = (long) Math.ceil(Math.sqrt(sigma[0] * sigma[0] + sigma[1] * sigma[1]));
 		// pre-compute sigma^2
 		final double[] two_sq_sigma = new double[n];
 		for (int d = 0; d < n; ++d)
@@ -63,11 +63,22 @@ public class GaussianMaskFit {
 				break;
 
 			}
+			
+			final long[] longintlocation = new long[n];
+			for (int d = 0; d <n; ++d){
+				longintlocation[d] = (long) location[d];
+				
+			}
+				
 			//ImageJFunctions.show(gaussianMask);
 			// compute the sums
 			final Cursor<FloatType> cMask = gaussianMask.cursor();
 			final Cursor<FloatType> cImg = signalIterable.localizingCursor();
 
+			final RandomAccess<IntType> intranac = intimg.randomAccess();
+			
+			intranac.setPosition(longintlocation);
+			final int label = intranac.get().get();
 			double sumLocSN[] = new double[n]; // int_{all_px} d * S[ d ] * N[ d
 												// ]
 			double sumSN = 0; // int_{all_px} S[ d ] * N[ d ]
@@ -77,7 +88,12 @@ public class GaussianMaskFit {
 				cMask.fwd();
 				cImg.fwd();
 
+				intranac.setPosition(cImg);
 				
+				if (intranac.get().get() == label){
+					Noiseclassifier noise = new Noiseclassifier(signalInterval, intimg);
+					final double[] noiseparam = noise.Getnoiseparam(cMask, radius/2);
+					//if (noiseparam[0] > 1.0/25){
 					final double signal = cImg.get().getRealDouble();
 					final double mask = cMask.get().getRealDouble();
 					final double weight = 8;
@@ -101,9 +117,8 @@ public class GaussianMaskFit {
 
 				++i;
 
-				
-				
-			
+				}
+		//	}
 		} while (i < iterations);
 		restoreBackground(signalIterable, bg);
 		return location;

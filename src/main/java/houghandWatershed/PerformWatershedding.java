@@ -124,14 +124,14 @@ public class PerformWatershedding {
 					biginputimg.numDimensions());
 			SubpixelMinlist = GetLocalmaxmin.HoughspaceMaxima(houghimage, interval, sizes, thetaPerPixel, rhoPerPixel);
 
-			ReducedMinlist = OverlayLines.ReducedList(outimg, SubpixelMinlist, sizes, min, max, minlength);
+			ReducedMinlist = OverlayLines.ReducedList(outimg, SubpixelMinlist, sizes, min, max);
 
 			double[] points = new double[biginputimg.numDimensions()];
 
 			for (int index = 0; index < ReducedMinlist.size(); ++index)
 				MainMinlist.add(ReducedMinlist.get(index));
 
-			points = OverlayLines.GetRhoTheta(ReducedMinlist, sizes, min, max, minlength);
+			points = OverlayLines.GetRhoTheta(ReducedMinlist, sizes, min, max);
 
 			// This object has rho, theta, min and max dimensions of the
 			// watershedded image along x
@@ -260,11 +260,11 @@ public class PerformWatershedding {
 		ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(biginputimg.numDimensions());
 		SubpixelMinlist = GetLocalmaxmin.HoughspaceMaxima(houghimage, interval, sizes, thetaPerPixel, rhoPerPixel);
 
-		ReducedMinlist = OverlayLines.ReducedList(outimg, SubpixelMinlist, sizes, min, max, minlength);
+		ReducedMinlist = OverlayLines.ReducedList(outimg, SubpixelMinlist, sizes, min, max);
 
 		double[] points = new double[biginputimg.numDimensions()];
 
-		points = OverlayLines.GetRhoTheta(ReducedMinlist, sizes, min, max, minlength);
+		points = OverlayLines.GetRhoTheta(ReducedMinlist, sizes, min, max);
 
 		// This object has rho, theta, min and max dimensions of the
 		// watershedded image along x

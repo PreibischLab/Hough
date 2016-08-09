@@ -12,6 +12,7 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import peakFitter.GaussianMaskFit.Endfit;
 import preProcessing.GetLocalmaxmin;
+import sun.tools.tree.ThrowStatement;
 
 public class Linefitter {
 	
@@ -33,6 +34,10 @@ public class Linefitter {
 			double intercept,
 			int label) throws Exception {
 
+		if (Math.abs(slope)==Double.POSITIVE_INFINITY || Math.abs(intercept)==Double.POSITIVE_INFINITY  )
+			return null;
+		else{
+		
 		final double[] realpos = new double[ndims];
 		double sigmasq, sigma = 1.0;
 		sigmasq = sigma * sigma;
@@ -99,24 +104,45 @@ public class Linefitter {
 		}
 		
 		final double[] MinandMax = new double[2*ndims + 1];
+		
+		if (slope >= 0){
 		for (int d = 0; d < ndims; ++d) {
 			
 			MinandMax[d] = minVal[d];
 			MinandMax[d + ndims] = maxVal[d];
 		}
 		
+		}
+		
+		if (slope < 0){
+			
+			MinandMax[0] = minVal[0];
+			MinandMax[1] = maxVal[1];
+			MinandMax[2] = maxVal[0];
+			MinandMax[3] = minVal[1];
+			
+		}
+		
 		MinandMax[2*ndims] = maxintensity;
+		
+		for (int d = 0; d < ndims; ++d) {
+			
+			if (MinandMax[d] == Double.MAX_VALUE || MinandMax[d + ndims] == Double.MIN_VALUE)
+				 return null;
+			
+		}
+		
 		
 		return MinandMax;
 		
 		}
 	
-	
+	}
 
 	// Get line parameters for fitting line to a line in a label
 	
 	public double[] Getfinallineparam(final int label, final double slope, final double intercept, final double[] psf,
-			final double [] sigma) throws Exception{
+			final double [] sigma, double minlength) throws Exception{
 		
 		PointSampleList<FloatType> datalist = gatherfullData(label);
 		final Cursor<FloatType> listcursor = datalist.localizingCursor();
@@ -135,9 +161,11 @@ public class Linefitter {
 			index++;
 		}
 
-		final double[] start_param = MakeLineguess(slope, intercept, label);
 		
-		System.out.println(start_param[0] + " " +  start_param[1] + " " +  start_param[2] + " " + start_param[3]);
+			final double[] start_param = MakeLineguess(slope, intercept, label);
+			if(start_param==null)
+				return null;
+			else{
 		final double[] fixed_param = new double[2*ndims];
 		
 		for (int d = 0; d < ndims; ++d){
@@ -147,14 +175,19 @@ public class Linefitter {
 			fixed_param[ndims] = slope;
 			fixed_param[ndims + 1] = intercept;
 		final double[] finalparam = start_param.clone();
+				
 		
 		// LM solver part
 		int maxiter = 300;
 		double lambda = 1e-3;
 		double termepsilon = 1e-2;
-
+		
+			System.out.println(slope + " "+ intercept + " " + label);
+	        System.out.println(start_param[0] + " " +  start_param[1] + " " +  start_param[2] + " " + start_param[3]);
+		
 		LevenbergMarquardtSolverLine.solve(X, finalparam, fixed_param, I, new GaussianLine(), lambda, termepsilon, maxiter);
-
+		
+		
 		// NaN protection: we prefer returning the crude estimate than NaN
 		for (int j = 0; j < finalparam.length; j++) {
 			if (Double.isNaN(finalparam[j]))
@@ -163,19 +196,31 @@ public class Linefitter {
 		
 		final double[] startpos = {finalparam[0], finalparam[1]};
 		final double[] endpos = {finalparam[2], finalparam[3]};
+		double cutoffdistance = Distance(startpos, endpos);
+		
 		double maxintensity = finalparam[4];
+			
+		if (cutoffdistance > minlength ){
 		int iterations = 100;
 		double newslope = (finalparam[3] - finalparam[1]) / (finalparam[2] - finalparam[0]);
 		double newintercept = finalparam[1] - slope * finalparam[0];
 		final double radius = 0.25 * (psf[0] + psf[1]);
 		final double[] startfit = peakFitter.GaussianMaskFit.gaussianMaskFit(inputimg, intimg, startpos, sigma,
 				iterations, maxintensity,radius,  newslope, newintercept, Endfit.Start);
-		final double[] endfit = peakFitter.GaussianMaskFit.gaussianMaskFit(inputimg, intimg, endpos, sigma,
+		final double[] endfit =	peakFitter.GaussianMaskFit.gaussianMaskFit(inputimg, intimg, endpos, sigma,
 				iterations, maxintensity,radius,  newslope, newintercept, Endfit.End);
 		
 		final double[] refindedparam = {startfit[0],startfit[1], endfit[0], endfit[1], finalparam[4]};
 		
 		return refindedparam;
+		}
+				
+			
+		else
+			
+		return null;
+			}
+		
 		
 	}
 	

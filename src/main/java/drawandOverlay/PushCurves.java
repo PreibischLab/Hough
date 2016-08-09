@@ -127,8 +127,8 @@ public class PushCurves {
 		// starting point
 		// Input angles in degrees for the lut.
 		position[0] = min[0];
-		position[1] = amplitude * SinCosinelut.getTable().getSine(position[0] + phase);
-				//amplitude * Math.sin(Math.toRadians(position[0] + phase));
+		position[1] = //amplitude * SinCosinelut.getTable().getSine(position[0] + phase);
+				amplitude * Math.sin(Math.toRadians(position[0] + phase));
 		newpos[0] = position[0];
 		newpos[1] = position[1];
 		sigma[0] = 1;
@@ -158,8 +158,8 @@ public class PushCurves {
 			// Increment from starting position (min) towards max
 			
 			newpos[0] = position[0] + stepsize;
-			newpos[1] = amplitude * SinCosinelut.getTable().getSine(newpos[0] + phase); 
-					//amplitude * Math.sin(Math.toRadians(newpos[0] + phase));
+			newpos[1] = //amplitude * SinCosinelut.getTable().getSine(newpos[0] + phase); 
+					amplitude * Math.sin(Math.toRadians(newpos[0] + phase));
 			// General Stopping criteria of moving along a curve, when we hit a
 			// boundary
 			if (newpos[0] >= max[0] || newpos[0] <= min[0] || newpos[1] >= max[1] || newpos[1] <= min[1])
@@ -317,30 +317,22 @@ public class PushCurves {
 			final double[] final_param, final double[] sigma) {
 
 		int ndims = imgout.numDimensions();
-		double [] startline = new double[ndims];
-		double [] endline = new double[ndims];
-		double[] startpos = {final_param[0], final_param[1]};
-		double[] endpos = {final_param[2], final_param[3]};
-		final double[] tmppos = new double[ndims];
+		
+		double[] startline = new double[ndims];
+		double[] endline = new double[ndims];
+		
 		
 		for (int d = 0; d < ndims; ++d){
-			
-			
-			final double locationdiff = startpos[d] - endpos[d];
-			final boolean minsearch = locationdiff > 0;
-			tmppos[d] = startpos[d];
-			
-			startline[d] = minsearch ? endpos[d] : startpos[d];
-			endline[d] = minsearch ? tmppos[d] : endpos[d];
-			
-			
-			
-		}
+		startline[d] = final_param[d];
+		endline[d] = final_param[ndims +d];
+			}
 		
-		final double stepsize = 1;
+		double slope = ( endline[1] - startline[1] ) / (endline[0] - startline[0]);
+		final double stepsize = 0.25*(sigma[0] + sigma[1]);
 		final double[] steppos = new double[ndims];
 		int count = 0;
-		double slope =( endpos[1] - startpos[1] ) / (endpos[0] - startpos[0]);
+		
+		if (slope >= 0){
 		while (true) {
 			
 			steppos[0] = startline[0] + count * stepsize / Math.sqrt(1 + slope * slope);
@@ -353,6 +345,23 @@ public class PushCurves {
 			if (steppos[0] >= endline[0] || steppos[1] >= endline[1]  )
 				break;
 		}
+		}
+		int negcount = 0;
+		if (slope < 0){
+			while (true) {
+				
+				steppos[0] = startline[0] + negcount * stepsize / Math.sqrt(1 + slope * slope);
+				steppos[1] = startline[1] + negcount * stepsize * slope / Math.sqrt(1 + slope * slope);
+				
+				AddGaussian.addGaussian(imgout, 1.0,steppos, sigma);
+
+				negcount++;
+				
+				if (steppos[0] >= endline[0] || steppos[1] <= endline[1]  )
+					break;
+			}
+			}
+		
 		
 		
 	}

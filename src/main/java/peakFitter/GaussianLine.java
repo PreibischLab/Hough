@@ -49,11 +49,26 @@ public final class GaussianLine implements MTFitFunction {
 		 double[] maxVal = new double[ndims];
 		
 		
-			for (int i = 0; i < x.length; i++) {
-				minVal[i] = a[i];
-				maxVal[i] = a[ndims + i];
-			}
+			
 		
+			
+			if (slope >= 0){
+				for (int i = 0; i < x.length; i++) {
+					minVal[i] = a[i];
+					maxVal[i] = a[ndims + i];
+				}
+				
+			}
+			
+			if (slope < 0){
+					minVal[0] = a[0];
+					minVal[1] = a[ndims + 1];
+					maxVal[0] = a[ndims];
+					maxVal[1] = a[1];
+				
+				
+				
+			}
 		
 		
 		final double intercept = b[ndims + 1];
@@ -67,7 +82,6 @@ public final class GaussianLine implements MTFitFunction {
 		final double stepsize = 0.25* (b[0] + b[1]);
 		final double[] steppos = new double[ndims];
 		int count = 0;
-		if (slope >= 0){
 		while (true) {
 			
 			steppos[0] = minVal[0] + count * stepsize / Math.sqrt(1 + slope * slope);
@@ -85,30 +99,10 @@ public final class GaussianLine implements MTFitFunction {
 		}
 		
 		
-		}
 		
-		int negcount = 0;
-		if (slope < 0){
-			while (true) {
-				
-				steppos[0] = minVal[0] + negcount * stepsize / Math.sqrt(1 + slope * slope);
-				steppos[1] = maxVal[1] + negcount * stepsize * slope / Math.sqrt(1 + slope * slope);
-				sum = 0;
-				for (int i = 0; i < x.length; i++) {
-					di = x[i] - steppos[i];
-					sum += b[i] * di * di;
-				}
-				sumofgaussians +=Math.exp(-sum);
-				
-
-				negcount++;
-				if (steppos[0] > maxVal[0] || steppos[1] < minVal[1])
-					break;
-			}
 			
 			
-			
-		}
+		
 		
 		
 		

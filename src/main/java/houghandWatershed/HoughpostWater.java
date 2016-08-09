@@ -35,7 +35,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/Fake_databignosnp.tif"));
+				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
 		// small_mt.tif image to be used for testing
 		// 2015-01-14_Seeds-1.tiff for actual
 		// mt_experiment.tif for big testing
@@ -52,8 +52,8 @@ public class HoughpostWater {
 		final int ndims = biginputimg.numDimensions();
 		// Define the psf of the microscope
 		double[] psf = new double[ndims];
-		psf[0] = 1.7;
-		psf[1] = 1.8;
+		psf[0] = 1.75;
+		psf[1] = 1.525;
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		// Initialize empty images to be used later
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
@@ -70,10 +70,11 @@ public class HoughpostWater {
 		SinCosinelut.getTable();
 		// Preprocess image
 
-		penulinputimg = Kernels.Meanfilterandsupress(biginputimg, radius);
-		preinputimg = Kernels.Preprocess(penulinputimg, ProcessingType.CannyEdge);
-		 Kernels.MeanFilter(preinputimg, inputimg, radius);
-		
+		inputimg = Kernels.Meanfilterandsupress(biginputimg, radius);
+		//inputimg = Kernels.Supressthresh(biginputimg);
+	    // inputimg = Kernels.Preprocess(biginputimg, ProcessingType.CannyEdge);
+		// Kernels.MeanFilter(preinputimg, inputimg, 0.5*radius);
+	//	MedianFilter.medianFilter(preinputimg, inputimg,  new int[]{3,3});
 
 		ImageJFunctions.show(inputimg).setTitle("Preprocessed image");
 		ArrayList<Lineobjects> linelist = new ArrayList<Lineobjects>(biginputimg.numDimensions());
@@ -96,7 +97,6 @@ public class HoughpostWater {
 		
 		// If there is no noise in the data put SNR = 0
 
-		ArrayList<double[]> totalgausslist = new ArrayList<double[]>();
 
 		// Get a rough reconstruction of the line and the list of centroids
 		// where psf of the image has to be convolved
@@ -115,19 +115,24 @@ public class HoughpostWater {
 		double[] sigma = new double[ndims];
 		sigma[0] = psf[0];
 		sigma[1] = psf[1];
+		double distance = 0;
 		for (int index = 0; index < simpleobject.size(); ++index) {
 
 			// Do gradient descent to improve the Hough detected lines
 
 			final_param = MTline.Getfinallineparam(simpleobject.get(index).Label, simpleobject.get(index).slope,
-					simpleobject.get(index).intercept,psf, sigma);
+					simpleobject.get(index).intercept,psf, sigma, minlength);
+			if (final_param!=null){
 			final double[] cordone = { final_param[0], final_param[1] };
 			final double[] cordtwo = { final_param[2], final_param[3] };
 
-			double distance = MTline.Distance(cordone, cordtwo);
 			
+			distance = MTline.Distance(cordone, cordtwo);
+		
 			
 			PushCurves.DrawfinalLine(gaussimg,final_param, psf);
+			
+			
 			
 			
 			System.out
@@ -135,29 +140,29 @@ public class HoughpostWater {
 							"Label: " + simpleobject.get(index).Label + " " + "StartX:" + final_param[0] + " StartY:"
 									+ final_param[1] + " " + "EndX:" + final_param[2] + "EndY: " + final_param[3]) ;
 					System.out.println( "Slope: "
-									+ (final_param[3] - final_param[1]) / (final_param[2] - final_param[0])
+									+ (final_param[3] - final_param[1]) / (final_param[2] - final_param[0]) + " "
 									+ "Intercept :"
 									+ (final_param[1] - (final_param[3] - final_param[1])
-											/ (final_param[2] - final_param[0]) * final_param[0])
+											/ (final_param[2] - final_param[0]) * final_param[0]) + " "
 									+ "Length: " + distance);
 			try { FileWriter writer = new
-					  FileWriter("finallengthsbigchange.txt", true); 
+					  FileWriter("Lengths:2015-01-14_Seeds-1.txt", true); 
 			writer.write("StartX:" + final_param[0] + " StartY:"
 					+ final_param[1] + " " + "EndX:" + final_param[2] + "EndY: " + final_param[3] + " "
 					+ " " + "Slope: "
-					+ (final_param[3] - final_param[1]) / (final_param[2] - final_param[0])
-					+ "Intercept :"
+					+ (final_param[3] - final_param[1]) / (final_param[2] - final_param[0]) + " "
+					+ "Intercept : "
 					+ (final_param[1] - (final_param[3] - final_param[1])
 							/ (final_param[2] - final_param[0]) * final_param[0])
-					+ "Length: " + distance
+					+ "Length: " + " " + distance
 					  ); writer.write("\r\n"); writer.close();
 			
 
 		}catch (IOException e) { e.printStackTrace(); }
 		}
 		
-		
-		ImageJFunctions.show(gaussimg);
+		}
+		ImageJFunctions.show(gaussimg).setTitle("Exact-line");
 		
 		
 	}

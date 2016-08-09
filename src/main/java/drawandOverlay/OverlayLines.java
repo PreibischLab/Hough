@@ -114,8 +114,7 @@ public class OverlayLines {
 	
 
 	public static ArrayList<RefinedPeak<Point>> ReducedList(RandomAccessibleInterval<FloatType> inputimg,
-			ArrayList<RefinedPeak<Point>> SubpixelMinlist, double[] sizes, double[] min, double[] max,
-			double minlength) {
+			ArrayList<RefinedPeak<Point>> SubpixelMinlist, double[] sizes, double[] min, double[] max) {
 
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(inputimg, new FloatType());
 		double[] points = new double[imgout.numDimensions()];
@@ -157,14 +156,14 @@ public class OverlayLines {
 		}
 		// System.out.println("Main file: "+ maxcount + " " + maxindex);
 		ArrayList<RefinedPeak<Point>> MainMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
-		if (maxcount > minlength) {
+		if (maxcount > 0) {
 			MainMinlist.add(SubpixelMinlist.get(maxindex));
 		}
 		return MainMinlist;
 	}
 
 	public static double[] GetRhoTheta(ArrayList<RefinedPeak<Point>> MainMinlist, double[] sizes, double[] min,
-			double[] max, double minlength) {
+			double[] max) {
 
 		double[] points = new double[sizes.length];
 		for (int index = 0; index < MainMinlist.size(); ++index) {
@@ -192,9 +191,10 @@ public class OverlayLines {
 			
 			double slope = -1.0 / (Math.tan(Math.toRadians(theta)));
 			double intercept = rho / Math.sin(Math.toRadians(theta));
-
+			if (Math.abs(slope)!=Double.POSITIVE_INFINITY || Math.abs(intercept)!=Double.POSITIVE_INFINITY  ){
 			final Simpleobject simpleobj = new Simpleobject(label, slope, intercept);
 			lineobject.add(simpleobj);
+			}
 		//	System.out.println(slope +"  "+ theta);
 			//PushCurves.Drawexactline(testimgout,intimg, slope, intercept, label);
 			
