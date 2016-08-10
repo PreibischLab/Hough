@@ -62,8 +62,6 @@ public class GaussianMaskFit {
 				break;
 
 			}
-			
-			
 			final long[] longintlocation = new long[n];
 			for (int d = 0; d <n; ++d){
 				longintlocation[d] = (long) location[d];
@@ -84,6 +82,8 @@ public class GaussianMaskFit {
             }
             if (outofbounds == false){
             final int label = intranac.get().get();
+            
+		
             
 			//ImageJFunctions.show(gaussianMask);
 			// compute the sums
@@ -122,13 +122,11 @@ public class GaussianMaskFit {
 				N = sumSN / sumSS;
 
 				++i;
-
-				
 			}
-            }
-            
-            else
+			}
+			else
             	break;
+		
 		} while (i < iterations);
 		restoreBackground(signalIterable, bg);
 		//ImageJFunctions.show(gaussianMask);
@@ -164,35 +162,34 @@ public class GaussianMaskFit {
 			cursor.fwd();
 
 			double value = maxintensity;
-
+			
+		
+			double constbox = Math.exp(-deltas*deltas/((1+slope*slope)*two_sq_sigma[0]))*
+					Math.exp(-slope*slope*deltas*deltas/((1+slope*slope)*two_sq_sigma[1]));
+			double secondconstbox = Math.exp(-4*deltas*deltas/((1+slope*slope)*two_sq_sigma[0]))*
+					Math.exp(-slope*slope*4*deltas*deltas/((1+slope*slope)*two_sq_sigma[1]));
+			double totalbox = constbox;
+			double secondtoolbox = secondconstbox;
+			
 			for (int d = 0; d < numDimensions; ++d) {
 				final double x = location[d] - cursor.getDoublePosition(d);
 				
 				// Full Gaussian fit
 			
 				
-				double y = 0;
-				double z = 0;
+			if (d == 0){
+				totalbox *= Math.exp(2*x*deltas/(two_sq_sigma[d]*Math.sqrt(1+slope*slope)));
+				secondtoolbox *= Math.exp(2*2*x*deltas/(two_sq_sigma[d]*Math.sqrt(1+slope*slope)));
 				
-				if (d == 0){
-					y = x - deltas / ( Math.sqrt(1 + slope * slope));
-					z = y - deltas / ( Math.sqrt(1 + slope * slope));
+			}
+			if (d == 1){
+				totalbox *=Math.exp(2*slope*x*deltas/(two_sq_sigma[d]*Math.sqrt(1+slope*slope)));
+				secondtoolbox *=Math.exp(2*2*slope*x*deltas/(two_sq_sigma[d]*Math.sqrt(1+slope*slope)));
 				
-				}
-				if (d == 1){
-					y = x -  deltas * slope / ( Math.sqrt(1 + slope * slope));
-					z = y - deltas * slope / ( Math.sqrt(1 + slope * slope));
-					
-				}
-				
-			
+			}
 				  
-				value *= Math.exp(-(x * x) / two_sq_sigma[d]) + 0*Math.exp(-(y * y) / two_sq_sigma[d])
-				+ 0*Math.exp(-(z * z) / two_sq_sigma[d])  ;
+				value *= Math.exp(-(x * x) / two_sq_sigma[d]) * (1 + totalbox + secondtoolbox)  ;
 				
-		
-				
-
 			}
 
 			cursor.get().setReal(value);
@@ -209,31 +206,33 @@ public class GaussianMaskFit {
 			cursor.fwd();
 
 			double value = maxintensity;
-
+			
+			
+			
+			double constbox = Math.exp(-deltas*deltas/((1+slope*slope)*two_sq_sigma[0]))*
+					Math.exp(-slope*slope*deltas*deltas/((1+slope*slope)*two_sq_sigma[1]));
+			double secondconstbox = Math.exp(-4*deltas*deltas/((1+slope*slope)*two_sq_sigma[0]))*
+					Math.exp(-slope*slope*4*deltas*deltas/((1+slope*slope)*two_sq_sigma[1]));
+			double secondtoolbox = secondconstbox;
+			double totalbox = constbox;
 			for (int d = 0; d < numDimensions; ++d) {
 				final double x = location[d] - cursor.getDoublePosition(d);
 				
 				// Full Gaussian fit
 				
 		
-				
-				double y = 0;
-				double z = 0;
-				
 				if (d == 0){
-					y = x + deltas / ( Math.sqrt(1 + slope * slope));
-				    z = y + deltas / ( Math.sqrt(1 + slope * slope));
-				   
+					totalbox *=Math.exp(-2*x*deltas/(two_sq_sigma[d]*Math.sqrt(1+slope*slope)));
+					secondtoolbox *= Math.exp(-2*2*x*deltas/(two_sq_sigma[d]*Math.sqrt(1+slope*slope)));
+					
 				}
 				if (d == 1){
-					y = x + deltas * slope / ( Math.sqrt(1 + slope * slope));
-                   z = y +	deltas * slope / ( Math.sqrt(1 + slope * slope));
-                  
+					totalbox *=Math.exp(-2*slope*x*deltas/(two_sq_sigma[d]*Math.sqrt(1+slope*slope)));
+					secondtoolbox *=Math.exp(-2*2*slope*x*deltas/(two_sq_sigma[d]*Math.sqrt(1+slope*slope)));
+					
 				}
 				
-				
-				value *= Math.exp(-(x * x) / two_sq_sigma[d]) + 0*Math.exp(-(y * y) / two_sq_sigma[d]) 
-				+ 0*Math.exp(-(z * z) / two_sq_sigma[d]);
+				value *= Math.exp(-(x * x) / two_sq_sigma[d]) * (1 + totalbox + secondtoolbox) ;
 				
 			
 				

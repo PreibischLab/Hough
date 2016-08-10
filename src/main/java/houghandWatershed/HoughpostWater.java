@@ -77,9 +77,10 @@ public class HoughpostWater {
 		// Compute the Sin Cosine lookup table
 		SinCosinelut.getTable();
 		// Preprocess image
-		inputimg = Kernels.Supressthresh(biginputimg);
-		//inputimg = Kernels.Preprocess(preinputimg, ProcessingType.CannyEdge);
-		// preinputimg = Kernels.Preprocess(penulinputimg, ProcessingType.Horizontaledge);
+		//inputimg = Kernels.Supressthresh(biginputimg);
+		preinputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter);
+		// preinputimg = Kernels.Preprocess(biginputimg, ProcessingType.Gradientmag);
+		 inputimg = Kernels.Supressthresh(preinputimg);
 		//MedianFilter.medianFilter(biginputimg, preinputimg,  new int[]{3,3});
 		
 	    
@@ -94,7 +95,7 @@ public class HoughpostWater {
 		// Do watershedding and Hough
 
 		// Declare minimum length of the line(in pixels) to be detected
-		double minlength = 5;
+		double minlength = 0;
 
 		linepair = PerformWatershedding.DowatersheddingandHough(biginputimg, inputimg, minlength);
 

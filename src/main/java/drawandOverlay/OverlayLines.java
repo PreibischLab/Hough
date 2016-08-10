@@ -57,7 +57,7 @@ public class OverlayLines {
 		int maxindex = 0;
 		
 		ArrayList<OverlayLines> listmultiple = new ArrayList<OverlayLines>();
-		
+		ArrayList<RefinedPeak<Point>> MainMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
 		for (int index = 0; index < SubpixelMinlist.size(); ++index) {
 			points = TransformCordinates.transformfwd(new double[] { SubpixelMinlist.get(index).getDoublePosition(0),
 					SubpixelMinlist.get(index).getDoublePosition(1) }, sizes, min, max);
@@ -94,8 +94,8 @@ public class OverlayLines {
 
 			}
 		}
-		
-		
+		/*
+		if (maxcount > 0){
 
 		singlepoint = TransformCordinates.transformfwd(new double[] { SubpixelMinlist.get(maxindex).getDoublePosition(0),
 				SubpixelMinlist.get(maxindex).getDoublePosition(1) }, sizes, min, max);
@@ -122,19 +122,20 @@ public class OverlayLines {
 			}
 			
 		}
+	/*	if (secondmaxcount > 0 && secondmaxindex!=maxindex ){
+			MainMinlist.add(SubpixelMinlist.get(secondmaxindex));
+			// System.out.println(" Second: "+ secondmaxindex + " First " + maxindex );
+			
+		}
+		*/
+	//	}
 		
-		
-		ArrayList<RefinedPeak<Point>> MainMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
 		if (maxcount > 0) {
 			MainMinlist.add(SubpixelMinlist.get(maxindex));
 			
 		}
 		
-		if (secondmaxcount > 0 && secondmaxindex!=maxindex ){
-			MainMinlist.add(SubpixelMinlist.get(secondmaxindex));
-			// System.out.println(" Second: "+ secondmaxindex + " First " + maxindex );
-			
-		}
+		
 		
 		
 		return MainMinlist;
@@ -177,7 +178,6 @@ public class OverlayLines {
 
 			final Simpleobject simpleobj = new Simpleobject(label, slope, intercept);
 			lineobject.add(simpleobj);
-	System.out.println("Label" + label + " " + " Slope" + slope);
 			
 			PushCurves.DrawTruncatedline(imgout, inputimg, intimg, slope, intercept, label);
 

@@ -1,7 +1,9 @@
 package peakFitter;
 
 import houghandWatershed.Finalfunction;
+import houghandWatershed.PerformWatershedding;
 import net.imglib2.Cursor;
+import net.imglib2.FinalInterval;
 import net.imglib2.Point;
 import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccess;
@@ -203,8 +205,10 @@ public class Linefitter {
 		
 		double newslope = (finalparam[3] - finalparam[1]) / (finalparam[2] - finalparam[0]);
 		double newintercept = finalparam[1] - slope * finalparam[0];
-		final double radius = 0.25 * (psf[0] + psf[1]);
-		final double[] bigsigma = {sigma[0]/2, sigma[1]/2};
+		final double radius =  0.25; 
+		final double[] bigsigma = {sigma[0]*Math.sqrt(1.2), sigma[1]*Math.sqrt(1.2)};
+	
+		
 		final double[] startfit = peakFitter.GaussianMaskFit.gaussianMaskFit(inputimg, intimg, startpos, sigma,
 				iterations, maxintensity,radius,  newslope, newintercept, Endfit.Start);
 		final double[] endfit =	peakFitter.GaussianMaskFit.gaussianMaskFit(inputimg, intimg, endpos, sigma,
