@@ -98,8 +98,8 @@ public class PerformWatershedding {
 					.sqrt((outimg.dimension(0) * outimg.dimension(0) + outimg.dimension(1) * outimg.dimension(1)));
 			int minRho = (int) -Math.round(size);
 			int maxRho = -minRho;
-			double thetaPerPixel = 1;
-			double rhoPerPixel = 1;
+			double thetaPerPixel = 0.5;
+			double rhoPerPixel = 0.5;
 			double[] min = { mintheta, minRho };
 			double[] max = { maxtheta, maxRho };
 			int pixelsTheta = (int) Math.round((maxtheta - mintheta) / thetaPerPixel);
@@ -126,7 +126,7 @@ public class PerformWatershedding {
 
 			ReducedMinlist = OverlayLines.ReducedList(outimg, SubpixelMinlist, sizes, min, max);
 
-			double[] points = new double[biginputimg.numDimensions()];
+			ArrayList<double[]> points = new ArrayList<double[]>();  //double[biginputimg.numDimensions()];
 
 			for (int index = 0; index < ReducedMinlist.size(); ++index)
 				MainMinlist.add(ReducedMinlist.get(index));
@@ -135,7 +135,7 @@ public class PerformWatershedding {
 
 			// This object has rho, theta, min and max dimensions of the
 			// watershedded image along x
-			final Lineobjects line = new Lineobjects(label, points[1], points[0], minCorner, maxCorner);
+			final Lineobjects line = new Lineobjects(label, points, minCorner, maxCorner);
 
 			linelist.add(line);
 
@@ -181,7 +181,7 @@ public class PerformWatershedding {
 
 		return outputLabeling.getStorageImg();
 	}
-
+/*
 	public static Lineobjects Getlabelobject(final RandomAccessibleInterval<FloatType> biginputimg,
 			final RandomAccessibleInterval<FloatType> processedimg, final int currentLabel) {
 
@@ -274,7 +274,7 @@ public class PerformWatershedding {
 
 		return line;
 	}
-
+*/
 	public static void DistanceTransformImage(RandomAccessibleInterval<FloatType> inputimg,
 			RandomAccessibleInterval<FloatType> outimg, final InverseType invtype) {
 		int n = inputimg.numDimensions();

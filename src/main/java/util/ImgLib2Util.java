@@ -13,6 +13,7 @@ import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.real.FloatType;
 
 public class ImgLib2Util
@@ -21,6 +22,7 @@ public class ImgLib2Util
 	{
 		return openAs32Bit( file, new ArrayImgFactory< FloatType >() );
 	}
+	
 
 	public static Img< FloatType > openAs32Bit( final File file, final ImgFactory< FloatType > factory )
 	{
@@ -81,6 +83,10 @@ public class ImgLib2Util
 		return img;
 	}
 
+	
+	
+
+	
 	public static void main( String[] args )
 	{
 		new ImageJ();

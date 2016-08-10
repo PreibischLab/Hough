@@ -20,11 +20,14 @@ import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import peakFitter.LengthDetection;
 import peakFitter.Linefitter;
+import preProcessing.GetLocalmaxmin;
+import preProcessing.GlobalThresholding;
 import preProcessing.Kernels;
 import preProcessing.Kernels.ProcessingType;
 import preProcessing.MedianFilter;
@@ -35,7 +38,10 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
+				.openAs32Bit(new File("src/main/resources/Fake_databignosnp.tif"));
+		
+		
+
 		// small_mt.tif image to be used for testing
 		// 2015-01-14_Seeds-1.tiff for actual
 		// mt_experiment.tif for big testing
@@ -48,12 +54,14 @@ public class HoughpostWater {
 		FloatType maxval = new FloatType(1);
 
 		Normalize.normalize(Views.iterable(biginputimg), minval, maxval);
+		
+		
 		ImageJFunctions.show(biginputimg);
 		final int ndims = biginputimg.numDimensions();
 		// Define the psf of the microscope
 		double[] psf = new double[ndims];
-		psf[0] = 1.75;
-		psf[1] = 1.525;
+		psf[0] = 1.7;
+		psf[1] = 1.8;
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		// Initialize empty images to be used later
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
@@ -69,12 +77,13 @@ public class HoughpostWater {
 		// Compute the Sin Cosine lookup table
 		SinCosinelut.getTable();
 		// Preprocess image
-
-		inputimg = Kernels.Meanfilterandsupress(biginputimg, radius);
-		//inputimg = Kernels.Supressthresh(biginputimg);
-	    // inputimg = Kernels.Preprocess(biginputimg, ProcessingType.CannyEdge);
-		// Kernels.MeanFilter(preinputimg, inputimg, 0.5*radius);
-	//	MedianFilter.medianFilter(preinputimg, inputimg,  new int[]{3,3});
+		inputimg = Kernels.Supressthresh(biginputimg);
+		//inputimg = Kernels.Preprocess(preinputimg, ProcessingType.CannyEdge);
+		// preinputimg = Kernels.Preprocess(penulinputimg, ProcessingType.Horizontaledge);
+		//MedianFilter.medianFilter(biginputimg, preinputimg,  new int[]{3,3});
+		
+	    
+		
 
 		ImageJFunctions.show(inputimg).setTitle("Preprocessed image");
 		ArrayList<Lineobjects> linelist = new ArrayList<Lineobjects>(biginputimg.numDimensions());
@@ -85,7 +94,7 @@ public class HoughpostWater {
 		// Do watershedding and Hough
 
 		// Declare minimum length of the line(in pixels) to be detected
-		double minlength = 0;
+		double minlength = 5;
 
 		linepair = PerformWatershedding.DowatersheddingandHough(biginputimg, inputimg, minlength);
 
@@ -119,7 +128,6 @@ public class HoughpostWater {
 		for (int index = 0; index < simpleobject.size(); ++index) {
 
 			// Do gradient descent to improve the Hough detected lines
-
 			final_param = MTline.Getfinallineparam(simpleobject.get(index).Label, simpleobject.get(index).slope,
 					simpleobject.get(index).intercept,psf, sigma, minlength);
 			if (final_param!=null){
@@ -146,7 +154,7 @@ public class HoughpostWater {
 											/ (final_param[2] - final_param[0]) * final_param[0]) + " "
 									+ "Length: " + distance);
 			try { FileWriter writer = new
-					  FileWriter("Lengths:2015-01-14_Seeds-1.txt", true); 
+					  FileWriter("Lengths-2015-01-14_Seeds-1-2gauss.txt", true); 
 			writer.write("StartX:" + final_param[0] + " StartY:"
 					+ final_param[1] + " " + "EndX:" + final_param[2] + "EndY: " + final_param[3] + " "
 					+ " " + "Slope: "

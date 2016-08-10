@@ -7,6 +7,9 @@ import net.imglib2.Cursor;
 import net.imglib2.Point;
 import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import peakFitter.Gausswback;
@@ -25,7 +28,7 @@ public class Extractpsfinfo {
 	}
 	
 	public void Extractparams(ArrayList<double[]> totalgausslist, final long radius,final boolean ignorebrightpeaks) throws Exception{
-		
+	
 		RandomAccessibleInterval<IntType> intimg = PerformWatershedding.Dowatersheddingonly(inputimg);
 		
 		final int maxlabel = PerformWatershedding.GetMaxlabelsseeded(intimg); 

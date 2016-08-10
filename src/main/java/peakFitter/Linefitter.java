@@ -34,9 +34,6 @@ public class Linefitter {
 			double intercept,
 			int label) throws Exception {
 
-		if (Math.abs(slope)==Double.POSITIVE_INFINITY || Math.abs(intercept)==Double.POSITIVE_INFINITY  )
-			return null;
-		else{
 		
 		final double[] realpos = new double[ndims];
 		double sigmasq, sigma = 1.0;
@@ -135,7 +132,7 @@ public class Linefitter {
 		
 		return MinandMax;
 		
-		}
+		
 	
 	}
 
@@ -182,8 +179,7 @@ public class Linefitter {
 		double lambda = 1e-3;
 		double termepsilon = 1e-2;
 		
-			System.out.println(slope + " "+ intercept + " " + label);
-	        System.out.println(start_param[0] + " " +  start_param[1] + " " +  start_param[2] + " " + start_param[3]);
+			
 		
 		LevenbergMarquardtSolverLine.solve(X, finalparam, fixed_param, I, new GaussianLine(), lambda, termepsilon, maxiter);
 		
@@ -196,29 +192,33 @@ public class Linefitter {
 		
 		final double[] startpos = {finalparam[0], finalparam[1]};
 		final double[] endpos = {finalparam[2], finalparam[3]};
-		double cutoffdistance = Distance(startpos, endpos);
-		
+		System.out.println((endpos[1] -startpos[1])/(endpos[0]-startpos[0]) + " "
+		+ (startpos[1] - ((endpos[1] -startpos[1])/(endpos[0]-startpos[0]))*startpos[0])+ " " + label);
+        System.out.println(startpos[0] + " " +  startpos[1] + " " +  endpos[0] + " " + endpos[1]);
 		double maxintensity = finalparam[4];
-			
+		double cutoffdistance = Distance(startpos, endpos);
 		if (cutoffdistance > minlength ){
-		int iterations = 100;
+		
+			int iterations = 100;
+		
 		double newslope = (finalparam[3] - finalparam[1]) / (finalparam[2] - finalparam[0]);
 		double newintercept = finalparam[1] - slope * finalparam[0];
 		final double radius = 0.25 * (psf[0] + psf[1]);
+		final double[] bigsigma = {sigma[0]/2, sigma[1]/2};
 		final double[] startfit = peakFitter.GaussianMaskFit.gaussianMaskFit(inputimg, intimg, startpos, sigma,
 				iterations, maxintensity,radius,  newslope, newintercept, Endfit.Start);
 		final double[] endfit =	peakFitter.GaussianMaskFit.gaussianMaskFit(inputimg, intimg, endpos, sigma,
 				iterations, maxintensity,radius,  newslope, newintercept, Endfit.End);
 		
-		final double[] refindedparam = {startfit[0],startfit[1], endfit[0], endfit[1], finalparam[4]};
+		final double[] refindedparam = {startfit[0],startfit[1], 
+				endfit[0], endfit[1], finalparam[4]};
 		
 		return refindedparam;
 		}
-				
-			
 		else
 			
-		return null;
+			return null;
+		
 			}
 		
 		

@@ -15,9 +15,11 @@ import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import preProcessing.GetLocalmaxmin;
+import preProcessing.GlobalThresholding;
 import preProcessing.Kernels;
 import preProcessing.Kernels.ProcessingType;
 import util.ImgLib2Util;
@@ -28,6 +30,7 @@ public class Psfmain {
 	public static void main(String[] args) throws Exception {
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
 				.openAs32Bit(new File("src/main/resources/example_beads.tif"));
+		
 		
 		new ImageJ();
       
@@ -44,8 +47,10 @@ public class Psfmain {
 				RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(inputimg,
 						new FloatType());
 				 final int ndims = inputimg.numDimensions();
-				
-				
+				 final Img<BitType> bitimg = new ArrayImgFactory<BitType>().create(inputimg, new BitType());
+				 final Float threshold = GlobalThresholding.AutomaticThresholding(inputimg);
+					GetLocalmaxmin.ThresholdingBit(inputimg, bitimg, threshold);
+
 		Extractpsfinfo getpsf = new Extractpsfinfo(inputimg);
 		
 		ArrayList<double[]> totalgausslist = new ArrayList<double[]>();

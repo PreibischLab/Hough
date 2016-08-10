@@ -10,7 +10,6 @@ import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
-
 public class GaussianMaskFit {
 	public static enum Endfit {
 		Start, End
@@ -21,9 +20,9 @@ public class GaussianMaskFit {
 	public static double[] gaussianMaskFit(final RandomAccessibleInterval<FloatType> signalInterval,
 			final RandomAccessibleInterval<IntType> intimg, final double[] location, final double[] sigma,
 			final int iterations, final double maxintensity, final double deltas, final double slope, final double intercept,
-			final Endfit startorend) throws Exception {
+			final Endfit startorend) {
 		final int n = signalInterval.numDimensions();
-		final long radius = (long) Math.ceil(Math.sqrt(sigma[0] * sigma[0] + sigma[1] * sigma[1]));
+
 		// pre-compute sigma^2
 		final double[] two_sq_sigma = new double[n];
 		for (int d = 0; d < n; ++d)
@@ -64,21 +63,33 @@ public class GaussianMaskFit {
 
 			}
 			
+			
 			final long[] longintlocation = new long[n];
 			for (int d = 0; d <n; ++d){
 				longintlocation[d] = (long) location[d];
 				
 			}
-				
+			
+            final RandomAccess<IntType> intranac = intimg.randomAccess();
+			
+             boolean outofbounds = false;
+            for (int d = 0; d <n ; ++d ){
+			
+            	if (longintlocation[d] <= 0 || longintlocation[d] >= intimg.dimension(d)){
+            	outofbounds = true;
+            		break;
+            	}
+            	else
+            	intranac.setPosition(longintlocation);
+            }
+            if (outofbounds == false){
+            final int label = intranac.get().get();
+            
 			//ImageJFunctions.show(gaussianMask);
 			// compute the sums
 			final Cursor<FloatType> cMask = gaussianMask.cursor();
 			final Cursor<FloatType> cImg = signalIterable.localizingCursor();
 
-			final RandomAccess<IntType> intranac = intimg.randomAccess();
-			
-			intranac.setPosition(longintlocation);
-			final int label = intranac.get().get();
 			double sumLocSN[] = new double[n]; // int_{all_px} d * S[ d ] * N[ d
 												// ]
 			double sumSN = 0; // int_{all_px} S[ d ] * N[ d ]
@@ -87,13 +98,8 @@ public class GaussianMaskFit {
 			while (cMask.hasNext()) {
 				cMask.fwd();
 				cImg.fwd();
-
 				intranac.setPosition(cImg);
-				
 				if (intranac.get().get() == label){
-					Noiseclassifier noise = new Noiseclassifier(signalInterval, intimg);
-					final double[] noiseparam = noise.Getnoiseparam(cMask, radius/2);
-					//if (noiseparam[0] > 1.0/25){
 					final double signal = cImg.get().getRealDouble();
 					final double mask = cMask.get().getRealDouble();
 					final double weight = 8;
@@ -117,10 +123,15 @@ public class GaussianMaskFit {
 
 				++i;
 
-				}
-		//	}
+				
+			}
+            }
+            
+            else
+            	break;
 		} while (i < iterations);
 		restoreBackground(signalIterable, bg);
+		//ImageJFunctions.show(gaussianMask);
 		return location;
 	}
 
@@ -162,19 +173,22 @@ public class GaussianMaskFit {
 				
 				double y = 0;
 				double z = 0;
+				
 				if (d == 0){
 					y = x - deltas / ( Math.sqrt(1 + slope * slope));
 					z = y - deltas / ( Math.sqrt(1 + slope * slope));
+				
 				}
 				if (d == 1){
 					y = x -  deltas * slope / ( Math.sqrt(1 + slope * slope));
 					z = y - deltas * slope / ( Math.sqrt(1 + slope * slope));
+					
 				}
 				
 			
 				  
-				value *= Math.exp(-(x * x) / two_sq_sigma[d]) + Math.exp(-(y * y) / two_sq_sigma[d])
-				+ Math.exp(-(z * z) / two_sq_sigma[d]);
+				value *= Math.exp(-(x * x) / two_sq_sigma[d]) + 0*Math.exp(-(y * y) / two_sq_sigma[d])
+				+ 0*Math.exp(-(z * z) / two_sq_sigma[d])  ;
 				
 		
 				
@@ -205,18 +219,21 @@ public class GaussianMaskFit {
 				
 				double y = 0;
 				double z = 0;
+				
 				if (d == 0){
 					y = x + deltas / ( Math.sqrt(1 + slope * slope));
 				    z = y + deltas / ( Math.sqrt(1 + slope * slope));
+				   
 				}
 				if (d == 1){
 					y = x + deltas * slope / ( Math.sqrt(1 + slope * slope));
                    z = y +	deltas * slope / ( Math.sqrt(1 + slope * slope));
+                  
 				}
 				
 				
-				value *= Math.exp(-(x * x) / two_sq_sigma[d]) + Math.exp(-(y * y) / two_sq_sigma[d]) 
-				+ Math.exp(-(z * z) / two_sq_sigma[d])  ;
+				value *= Math.exp(-(x * x) / two_sq_sigma[d]) + 0*Math.exp(-(y * y) / two_sq_sigma[d]) 
+				+ 0*Math.exp(-(z * z) / two_sq_sigma[d]);
 				
 			
 				

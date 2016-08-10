@@ -2,6 +2,8 @@ package drawandOverlay;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Collection;
+
 import com.sun.tools.javac.util.Pair;
 
 import houghandWatershed.TransformCordinates;
@@ -29,87 +31,19 @@ import preProcessing.GetLocalmaxmin.IntensityType;
 
 public class OverlayLines {
 	
-
-	public static void OverlayObject(RandomAccessibleInterval<FloatType> inputimg, ArrayList<Lineobjects> linelist) {
-
-		double rho;
-		double theta;
-		long minX, maxX, minY, maxY;
-
-		ImageStack stack = new ImageStack((int) inputimg.dimension(0), (int) inputimg.dimension(1));
-
-		stack.addSlice(ImageJFunctions.wrap(inputimg, "").getProcessor());
-
-		ImagePlus imp = new ImagePlus("scale space hough", stack);
-		imp.show();
-
-		Overlay o = imp.getOverlay();
-
-		if (o == null) {
-			o = new Overlay();
-			imp.setOverlay(o);
-		}
-
-		o.clear();
-		for (int index = 0; index < linelist.size(); ++index) {
-			rho = linelist.get(index).Rho;
-			theta = linelist.get(index).Theta;
-			minX = linelist.get(index).boxmin[0];
-			maxX = linelist.get(index).boxmax[0];
-
-			Line newline = new Line(minX,
-					rho / Math.sin(Math.toRadians(theta)) - minX / Math.tan(Math.toRadians(theta)), maxX,
-					rho / Math.sin(Math.toRadians(theta)) - maxX / Math.tan(Math.toRadians(theta)));
-
-			newline.setStrokeColor(Color.GREEN);
-			newline.setStrokeWidth(0.8);
-
-			o.add(newline);
-		}
-		imp.updateAndDraw();
+	private double slope;
+	private double intercept;
+	private int count;
+	private int index;
+	private  OverlayLines(double slope, double intercept, int count, int index){
+		
+		this.slope = slope;
+		this.intercept = intercept;
+		this.count = count;
+		this.index = index;
+		
 	}
 
-	// OverlayLines for an input ArrayList<RefinedPeak<Point>>
-
-	public static void Overlay(RandomAccessibleInterval<FloatType> inputimg,
-			ArrayList<RefinedPeak<Point>> SubpixelMinlist, double[] sizes, double[] min, double[] max, int label,
-			long minX, long maxX) {
-
-		double[] points = new double[inputimg.numDimensions()];
-
-		ImageStack stack = new ImageStack((int) inputimg.dimension(0), (int) inputimg.dimension(1));
-
-		stack.addSlice(ImageJFunctions.wrap(inputimg, "").getProcessor());
-
-		ImagePlus imp = new ImagePlus("scale space hough", stack);
-		imp.show();
-
-		Overlay o = imp.getOverlay();
-
-		if (o == null) {
-			o = new Overlay();
-			imp.setOverlay(o);
-		}
-
-		o.clear();
-
-		for (int index = 0; index < SubpixelMinlist.size(); ++index) {
-			points = TransformCordinates.transformfwd(new double[] { SubpixelMinlist.get(index).getDoublePosition(0),
-					SubpixelMinlist.get(index).getDoublePosition(1) }, sizes, min, max);
-			// System.out.println(" Found Peaks at :" + "Theta: " + points[0] +
-			// " Rho: " + points[1]);
-
-			Line newline = new Line(minX,
-					points[1] / Math.sin(Math.toRadians(points[0])) - minX / Math.tan(Math.toRadians(points[0])), maxX,
-					points[1] / Math.sin(Math.toRadians(points[0])) - (maxX) / Math.tan(Math.toRadians(points[0])));
-
-			newline.setStrokeColor(Color.GREEN);
-			newline.setStrokeWidth(0.8);
-
-			o.add(newline);
-		}
-		imp.updateAndDraw();
-	}
 
 	
 
@@ -118,21 +52,24 @@ public class OverlayLines {
 
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(inputimg, new FloatType());
 		double[] points = new double[imgout.numDimensions()];
-
+		double[] singlepoint = new double[imgout.numDimensions()];
 		int maxcount = 0;
 		int maxindex = 0;
+		
+		ArrayList<OverlayLines> listmultiple = new ArrayList<OverlayLines>();
+		
 		for (int index = 0; index < SubpixelMinlist.size(); ++index) {
 			points = TransformCordinates.transformfwd(new double[] { SubpixelMinlist.get(index).getDoublePosition(0),
 					SubpixelMinlist.get(index).getDoublePosition(1) }, sizes, min, max);
 
 			double slope = -1.0 / Math.tan(Math.toRadians(points[0]));
 			double intercept = points[1] / Math.sin(Math.toRadians(points[0]));
-			// System.out.println(" Found Peaks at :" + "Theta: " + points[0] +
-			// " Rho: " + points[1]);
+			
 			PushCurves.Drawexactline(imgout, slope, intercept, IntensityType.Gaussian);
 
 			RandomAccess<FloatType> inran = inputimg.randomAccess();
 			Cursor<FloatType> outcursor = Views.iterable(imgout).localizingCursor();
+			
 
 			int count = 0;
 			while (outcursor.hasNext()) {
@@ -144,6 +81,9 @@ public class OverlayLines {
 					if (inran.get().get() > 0)
 						count++;
 
+					
+					OverlayLines multipleinlabel = new OverlayLines(slope, intercept, count, index);
+					listmultiple.add(multipleinlabel);
 					if (count > maxcount) {
 						maxcount = count;
 						maxindex = index;
@@ -154,22 +94,62 @@ public class OverlayLines {
 
 			}
 		}
-		// System.out.println("Main file: "+ maxcount + " " + maxindex);
+		
+		
+
+		singlepoint = TransformCordinates.transformfwd(new double[] { SubpixelMinlist.get(maxindex).getDoublePosition(0),
+				SubpixelMinlist.get(maxindex).getDoublePosition(1) }, sizes, min, max);
+		double singleslope = -1.0 / Math.tan(Math.toRadians(singlepoint[0]));
+		double tolerance = 30;
+		int secondmaxcount = 0;
+		int secondmaxindex = 0;
+		int seccount =	0;
+		for (int secindex = 0; secindex < listmultiple.size(); ++secindex){
+			
+			double anglebetweenlines = 
+			(listmultiple.get(secindex).slope - singleslope)/(1 + listmultiple.get(secindex).slope*singleslope);
+			if (Math.abs(Math.toDegrees((Math.atan(anglebetweenlines)))) >= tolerance  ){
+				
+            		
+				
+            			if (seccount >= secondmaxcount){
+            				
+            				secondmaxcount = seccount;
+            				secondmaxindex = listmultiple.get(secindex).index;
+				}
+				seccount++;
+				
+			}
+			
+		}
+		
+		
 		ArrayList<RefinedPeak<Point>> MainMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
 		if (maxcount > 0) {
 			MainMinlist.add(SubpixelMinlist.get(maxindex));
+			
 		}
+		
+		if (secondmaxcount > 0 && secondmaxindex!=maxindex ){
+			MainMinlist.add(SubpixelMinlist.get(secondmaxindex));
+			// System.out.println(" Second: "+ secondmaxindex + " First " + maxindex );
+			
+		}
+		
+		
 		return MainMinlist;
 	}
 
-	public static double[] GetRhoTheta(ArrayList<RefinedPeak<Point>> MainMinlist, double[] sizes, double[] min,
+	public static ArrayList<double[]> GetRhoTheta(ArrayList<RefinedPeak<Point>> MainMinlist, double[] sizes, double[] min,
 			double[] max) {
 
-		double[] points = new double[sizes.length];
+		ArrayList<double[]> points = new ArrayList<double[]>(); //[sizes.length];
 		for (int index = 0; index < MainMinlist.size(); ++index) {
 
-			points = TransformCordinates.transformfwd(new double[] { MainMinlist.get(index).getDoublePosition(0),
+		final double[]	point = TransformCordinates.transformfwd(new double[] { MainMinlist.get(index).getDoublePosition(0),
 					MainMinlist.get(index).getDoublePosition(1) }, sizes, min, max);
+		
+		points.add(point);
 		}
 		return points;
 	}
@@ -185,25 +165,23 @@ public class OverlayLines {
 		for (int index = 0; index < linelist.size(); ++index) {
 
 			final int label = linelist.get(index).Label;
-			final double rho = linelist.get(index).Rho;
-			final double theta = linelist.get(index).Theta;
 			
+			ArrayList<double[]> rhothetalist = linelist.get(index).rhotheta;
+			
+			for (int arrayindex = 0; arrayindex < rhothetalist.size(); ++arrayindex){
+			final double rho = rhothetalist.get(arrayindex)[1];
+			final double theta = rhothetalist.get(arrayindex)[0];
 			
 			double slope = -1.0 / (Math.tan(Math.toRadians(theta)));
 			double intercept = rho / Math.sin(Math.toRadians(theta));
-			if (Math.abs(slope)!=Double.POSITIVE_INFINITY || Math.abs(intercept)!=Double.POSITIVE_INFINITY  ){
+
 			final Simpleobject simpleobj = new Simpleobject(label, slope, intercept);
 			lineobject.add(simpleobj);
-			}
-		//	System.out.println(slope +"  "+ theta);
-			//PushCurves.Drawexactline(testimgout,intimg, slope, intercept, label);
+	System.out.println("Label" + label + " " + " Slope" + slope);
 			
-			if (Math.abs(slope)!=Double.POSITIVE_INFINITY )
 			PushCurves.DrawTruncatedline(imgout, inputimg, intimg, slope, intercept, label);
-			
-			
-			
-			
+
+			}
 		}
 		
 	}
@@ -217,8 +195,12 @@ public class OverlayLines {
 		for (int index = 0; index < linelist.size(); ++index) {
 
 			final int label = linelist.get(index).Label;
-			final double rho = linelist.get(index).Rho;
-			final double theta = linelist.get(index).Theta;
+			
+		ArrayList<double[]> rhothetalist = linelist.get(index).rhotheta;
+		
+		for (int arrayindex = 0; arrayindex < rhothetalist.size(); ++arrayindex){
+			final double rho = linelist.get(index).rhotheta.get(arrayindex)[1];
+			final double theta = linelist.get(index).rhotheta.get(arrayindex)[0];
 		
 		if (label == currentlabel){
 			
@@ -229,6 +211,7 @@ public class OverlayLines {
 			maximgout = GetLocalmaxmin.FindandDisplayLocalMaxima(imgout,
 					IntensityType.Original, new double[]{1,1});
 			
+		}
 		}
 		}
 	}

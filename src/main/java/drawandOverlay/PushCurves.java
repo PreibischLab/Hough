@@ -547,43 +547,87 @@ public class PushCurves {
 		double sigmasq, sigma = 1.0;
 		sigmasq = sigma * sigma;
 		final Cursor<FloatType> inputcursor = Views.iterable(imgout).localizingCursor();
-		long[] newposition = new long[n];
+		double[] newposition = new double[n];
 		RandomAccess<IntType> ranac = intimg.randomAccess();
 		final RandomAccess<FloatType> ranacinput = inputimg.randomAccess();
-		
+		double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
+		double[] maxVal = { Double.MIN_VALUE, Double.MIN_VALUE };
 		while (inputcursor.hasNext()) {
 
 			inputcursor.fwd();
 			inputcursor.localize(realpos);
 			ranacinput.setPosition(inputcursor);
-			// To set the pixel intensity as the shortest distance to the curve
-			double distance = 0;
-			double intensity = 0;
+		
 
-			Finalfunction linefunction = new Finalfunction(realpos, slope, intercept);
-			distance = linefunction.Linefunctiondist();
-
-			if (distance < 5 * sigma)
-				intensity = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-distance * distance / (2 * sigmasq));
-			else
-				intensity = 0;
-			intensity *= ranacinput.get().get();
 
 			ranac.setPosition(inputcursor);
 			int i = ranac.get().get();
 
 			if (i == label) {
-				inputcursor.get().setReal(intensity);
 				inputcursor.localize(newposition);
+				long pointonline = (long) (newposition[1] - slope * newposition[0] - intercept);
 
+				// To get the min and max co-rodinates along the line so we have starting points to
+				// move on the line smoothly
 				
+				if (pointonline == 0 ) {
+					
+						
+					for (int d = 0; d < n; ++d) {
+						if (inputcursor.getDoublePosition(d) <= minVal[d]) 
+							minVal[d] = inputcursor.getDoublePosition(d);
+						
+						if (inputcursor.getDoublePosition(d) >= maxVal[d]) 
+							maxVal[d] = inputcursor.getDoublePosition(d);
+						
+					}
+					
 
 				}
 
 			}
+		
+		
 		}
 		
+		
+		
+		
+		final double[] steppos = new double[n];
+		int count = 0;
+		double stepsize = 1;
+		if (slope >= 0){
+		while (true) {
+			
+			steppos[0] = minVal[0] + count * stepsize / Math.sqrt(1 + slope * slope);
+			steppos[1] = minVal[1] + count * stepsize * slope / Math.sqrt(1 + slope * slope);
+			
+			AddGaussian.addGaussian(imgout, 1.0,steppos, new double[] {sigma,sigma});
 
+			count++;
+			
+			if (steppos[0] >= maxVal[0] || steppos[1] >= maxVal[1]  )
+				break;
+		}
+		}
+		int negcount = 0;
+		if (slope < 0){
+			while (true) {
+				
+				steppos[0] = minVal[0] + negcount * stepsize / Math.sqrt(1 + slope * slope);
+				steppos[1] = maxVal[1] + negcount * stepsize * slope / Math.sqrt(1 + slope * slope);
+				
+				AddGaussian.addGaussian(imgout, 1.0,steppos, new double[] {sigma,sigma});
+
+				negcount++;
+				
+				if (steppos[0] >= maxVal[0] || steppos[1] <= minVal[1]  )
+					break;
+			}
+			}
+		
+		
+	}
 
 	
 
