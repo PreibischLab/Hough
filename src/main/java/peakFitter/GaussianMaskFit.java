@@ -54,11 +54,11 @@ public class GaussianMaskFit {
 			switch (startorend) {
 
 			case Start:
-				setstartGaussian(translatedIterableMask, location, sq_sigma, maxintensity,deltas, slope, intercept);
+				setstartGaussiantypeII(translatedIterableMask, location, sq_sigma, maxintensity,deltas, slope, intercept);
 				break;
 
 			case End:
-				setendGaussian(translatedIterableMask, location, sq_sigma, maxintensity,deltas,  slope, intercept);
+				setendGaussiantypeII(translatedIterableMask, location, sq_sigma, maxintensity,deltas,  slope, intercept);
 				break;
 
 			}
@@ -126,7 +126,9 @@ public class GaussianMaskFit {
 			t.setReal(t.get() + value);
 	}
 
-	final public static void setstartGaussian(final IterableInterval<FloatType> image, final double[] location,
+	
+
+	final public static void setstartGaussiantypeII(final IterableInterval<FloatType> image, final double[] location,
 			final double[] sq_sigma, final double maxintensity,final double deltas,  final double slope, final double intercept) {
 		final int numDimensions = image.numDimensions();
 
@@ -136,45 +138,48 @@ public class GaussianMaskFit {
 			cursor.fwd();
 
 			double value = maxintensity;
-			double constbox, secondconstbox, thirdconstbox, fourthconstbox;
-		
-			constbox = Math.exp(-deltas*deltas/((1+slope*slope)*sq_sigma[0]))*
-					Math.exp(-slope*slope*deltas*deltas/((1+slope*slope)*sq_sigma[1]));
-			secondconstbox = Math.exp(-4*deltas*deltas/((1+slope*slope)*sq_sigma[0]))*
-					Math.exp(-slope*slope*4*deltas*deltas/((1+slope*slope)*sq_sigma[1]));
 			
-			double totalbox = constbox;
-			double secondtotalbox = secondconstbox;
-			
+			double dx;
 			for (int d = 0; d < numDimensions; ++d) {
 				final double x = location[d] - cursor.getDoublePosition(d);
-				
+				double y = 0;
+				double z = 0;
+				double a = 0;
+				if (d == 0)
+				 dx = deltas/Math.sqrt(1+ slope*slope);
+				else
+				 dx = slope*deltas/Math.sqrt(1+ slope*slope);
 				// Full Gaussian fit
 			
 				
 			if (d == 0){
 				if (slope >= 0){
-				totalbox *= Math.exp(2*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
-				secondtotalbox *= Math.exp(2*2*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
+				y = x - dx;
+				z = y - dx;
+				a = z - dx;
 				}
 				else{
-				totalbox *= Math.exp(-2*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
-				secondtotalbox *= Math.exp(-2*2*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
+				y = x + dx;
+				z = y + dx;
+				a = z + dx;
 				}
 				
 			}
 			if (d == 1){
 				if (slope >=0){
-				totalbox *=Math.exp(2*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
-				secondtotalbox *=Math.exp(2*2*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
+				y = x - dx;
+				z = y - dx;
+				a = z - dx;
 				}
 				else{
-				totalbox *=Math.exp(2*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
-				secondtotalbox *=Math.exp(2*2*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
+				y = x - dx;
+				z = y - dx;
+				a = z - dx;
 				}
 			}
 				  
-				value *= Math.exp(-(x * x) / sq_sigma[d]) * (1 + totalbox + secondtotalbox  )  ;
+				value *= Math.exp(-(x * x) / sq_sigma[d]) + Math.exp(-(y * y) / sq_sigma[d])+ Math.exp(-(z * z) / sq_sigma[d])
+				+ Math.exp(-(a * a) / sq_sigma[d]);
 				
 			}
 
@@ -182,7 +187,8 @@ public class GaussianMaskFit {
 		}
 	}
 
-	final public static void setendGaussian(final IterableInterval<FloatType> image, final double[] location,
+	
+	final public static void setendGaussiantypeII(final IterableInterval<FloatType> image, final double[] location,
 			final double[] sq_sigma, final double maxintensity, final double deltas,  final double slope, final double intercept) {
 		final int numDimensions = image.numDimensions();
 
@@ -193,49 +199,48 @@ public class GaussianMaskFit {
 
 			double value = maxintensity;
 			
-			double constbox, secondconstbox;
 			
-			constbox = Math.exp(-deltas*deltas/((1+slope*slope)*sq_sigma[0]))*
-					Math.exp(-slope*slope*deltas*deltas/((1+slope*slope)*sq_sigma[1]));
-			secondconstbox = Math.exp(-4*deltas*deltas/((1+slope*slope)*sq_sigma[0]))*
-					Math.exp(-slope*slope*4*deltas*deltas/((1+slope*slope)*sq_sigma[1]));
-			
-			double totalbox = constbox;
-			double secondtotalbox = secondconstbox;
-		
+		    double dx;
 			for (int d = 0; d < numDimensions; ++d) {
 				final double x = location[d] - cursor.getDoublePosition(d);
-				
+				double y = 0;
+				double z = 0;
+				double a = 0;
+				if (d == 0)
+				 dx = deltas/Math.sqrt(1+ slope*slope);
+				else
+				 dx = slope*deltas/Math.sqrt(1+ slope*slope);
 				// Full Gaussian fit
 				
 		
 				if (d == 0){
 					if (slope >= 0){
-					totalbox *=Math.exp(-2*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
-					secondtotalbox *=Math.exp(-2*2*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
-					
+					y = x + dx;
+					z = y + dx;
+					a = z + dx;
 					}
 					else{
-					totalbox *=Math.exp(2*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));	
-					secondtotalbox *=Math.exp(2*2*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));	
-					
+					y = x - dx;
+					z = y - dx;
+					a = z - dx;
 					}
 				}
 				if (d == 1){
 					if (slope >= 0){
-					totalbox *=Math.exp(-2*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
-					secondtotalbox *=Math.exp(-2*2*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
-					
+					y = x + dx;
+					z = y + dx;
+					a = z + dx;
 					}
 					else{
-					totalbox *=Math.exp(-2*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
-					secondtotalbox *=Math.exp(-2*2*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
-					
+					y = x + dx;
+					z = y + dx;
+					a = z + dx;
 					}
 					
 				}
 				
-				value *= Math.exp(-(x * x) / sq_sigma[d]) * (1 + totalbox + secondtotalbox ) ;
+				value *= Math.exp(-(x * x) / sq_sigma[d]) + Math.exp(-(y * y) / sq_sigma[d]) + Math.exp(-(z * z) / sq_sigma[d])
+				+ Math.exp(-(a * a) / sq_sigma[d]);
 				
 			
 				
@@ -248,6 +253,5 @@ public class GaussianMaskFit {
 	
 	
 	}
-	
 
 }
