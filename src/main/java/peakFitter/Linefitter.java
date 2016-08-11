@@ -205,8 +205,8 @@ public class Linefitter {
 		
 		double newslope = (finalparam[3] - finalparam[1]) / (finalparam[2] - finalparam[0]);
 		double newintercept = finalparam[1] - slope * finalparam[0];
-		final double radius =  0.25; 
-		final double[] bigsigma = {sigma[0]*Math.sqrt(1.2), sigma[1]*Math.sqrt(1.2)};
+		final double radius =  1; 
+		final double[] bigsigma = {sigma[0]*Math.sqrt(1.5), sigma[1]*Math.sqrt(1.5)};
 	
 		
 		final double[] startfit = peakFitter.GaussianMaskFit.gaussianMaskFit(inputimg, intimg, startpos, sigma,
