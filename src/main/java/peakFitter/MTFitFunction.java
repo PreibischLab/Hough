@@ -2,7 +2,7 @@ package peakFitter;
 
 public interface MTFitFunction {
 	
-
+        // Defines the Microtubule fit function as a line
 		
 		/**
 		 * Evaluate this function at point <code>x</code>. The function is
@@ -23,6 +23,7 @@ public interface MTFitFunction {
 		 * <code>ak</code><sup>th</sup> parameter, evaluated at point <code>x</code>.
 		 * @param x  the point to evaluate the gradient at
 		 * @param a  the set of parameters that defines the function
+		 *  @param b the set of parameters which are fixed
 		 * @param ak the index of the parameter to compute the gradient 
 		 * @return the kth component of the gradient <code>df(x,a)/da_k</code>
 		 * @see #val(double[], double[])

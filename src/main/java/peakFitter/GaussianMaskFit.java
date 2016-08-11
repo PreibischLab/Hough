@@ -62,30 +62,7 @@ public class GaussianMaskFit {
 				break;
 
 			}
-			/*
-			final long[] longintlocation = new long[n];
-			for (int d = 0; d <n; ++d){
-				longintlocation[d] = (long) location[d];
-				
-			}
-			
-            final RandomAccess<IntType> intranac = intimg.randomAccess();
-			
-             boolean outofbounds = false;
-            for (int d = 0; d <n ; ++d ){
-			
-            	if (longintlocation[d] <= 0 || longintlocation[d] >= intimg.dimension(d)){
-            	outofbounds = true;
-            		break;
-            	}
-            	else
-            	intranac.setPosition(longintlocation);
-            }
-            if (outofbounds == false){
-            final int label = intranac.get().get();
-            
 		
-            */
 			//ImageJFunctions.show(gaussianMask);
 			// compute the sums
 			final Cursor<FloatType> cMask = gaussianMask.cursor();
@@ -99,8 +76,7 @@ public class GaussianMaskFit {
 			while (cMask.hasNext()) {
 				cMask.fwd();
 				cImg.fwd();
-			//	intranac.setPosition(cImg);
-			//	if (intranac.get().get() == label){
+			
 					final double signal = cImg.get().getRealDouble();
 					final double mask = cMask.get().getRealDouble();
 					final double weight = 8;
@@ -123,10 +99,7 @@ public class GaussianMaskFit {
 				N = sumSN / sumSS;
 
 				++i;
-		//	}
-		//	}
-		//	else
-         //   	break;
+		
 		
 		} while (i < iterations);
 		restoreBackground(signalIterable, bg);
@@ -163,18 +136,15 @@ public class GaussianMaskFit {
 			cursor.fwd();
 
 			double value = maxintensity;
-			double constbox, secondconstbox, thirdconstbox;
+			double constbox, secondconstbox, thirdconstbox, fourthconstbox;
 		
 			constbox = Math.exp(-deltas*deltas/((1+slope*slope)*sq_sigma[0]))*
 					Math.exp(-slope*slope*deltas*deltas/((1+slope*slope)*sq_sigma[1]));
 			secondconstbox = Math.exp(-4*deltas*deltas/((1+slope*slope)*sq_sigma[0]))*
 					Math.exp(-slope*slope*4*deltas*deltas/((1+slope*slope)*sq_sigma[1]));
-			thirdconstbox = Math.exp(-9*deltas*deltas/((1+slope*slope)*sq_sigma[0]))*
-					Math.exp(-slope*slope*9*deltas*deltas/((1+slope*slope)*sq_sigma[1]));
-		
+			
 			double totalbox = constbox;
 			double secondtotalbox = secondconstbox;
-			double thirdtotalbox = thirdconstbox;
 			
 			for (int d = 0; d < numDimensions; ++d) {
 				final double x = location[d] - cursor.getDoublePosition(d);
@@ -186,12 +156,10 @@ public class GaussianMaskFit {
 				if (slope >= 0){
 				totalbox *= Math.exp(2*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
 				secondtotalbox *= Math.exp(2*2*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
-				thirdtotalbox *= Math.exp(2*3*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
 				}
 				else{
 				totalbox *= Math.exp(-2*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
 				secondtotalbox *= Math.exp(-2*2*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
-				thirdtotalbox *= Math.exp(-2*3*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
 				}
 				
 			}
@@ -199,16 +167,14 @@ public class GaussianMaskFit {
 				if (slope >=0){
 				totalbox *=Math.exp(2*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
 				secondtotalbox *=Math.exp(2*2*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
-				thirdtotalbox *=Math.exp(2*3*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
 				}
 				else{
 				totalbox *=Math.exp(2*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
 				secondtotalbox *=Math.exp(2*2*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
-				thirdtotalbox *=Math.exp(2*3*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
 				}
 			}
 				  
-				value *= Math.exp(-(x * x) / sq_sigma[d]) * (1 + totalbox + secondtotalbox + thirdtotalbox )  ;
+				value *= Math.exp(-(x * x) / sq_sigma[d]) * (1 + totalbox + secondtotalbox  )  ;
 				
 			}
 
@@ -227,18 +193,16 @@ public class GaussianMaskFit {
 
 			double value = maxintensity;
 			
-			double constbox, secondconstbox, thirdconstbox;
+			double constbox, secondconstbox;
 			
 			constbox = Math.exp(-deltas*deltas/((1+slope*slope)*sq_sigma[0]))*
 					Math.exp(-slope*slope*deltas*deltas/((1+slope*slope)*sq_sigma[1]));
 			secondconstbox = Math.exp(-4*deltas*deltas/((1+slope*slope)*sq_sigma[0]))*
 					Math.exp(-slope*slope*4*deltas*deltas/((1+slope*slope)*sq_sigma[1]));
-			thirdconstbox = Math.exp(-9*deltas*deltas/((1+slope*slope)*sq_sigma[0]))*
-					Math.exp(-slope*slope*9*deltas*deltas/((1+slope*slope)*sq_sigma[1]));
 			
 			double totalbox = constbox;
 			double secondtotalbox = secondconstbox;
-			double thirdtotalbox = thirdconstbox;
+		
 			for (int d = 0; d < numDimensions; ++d) {
 				final double x = location[d] - cursor.getDoublePosition(d);
 				
@@ -249,29 +213,29 @@ public class GaussianMaskFit {
 					if (slope >= 0){
 					totalbox *=Math.exp(-2*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
 					secondtotalbox *=Math.exp(-2*2*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
-					thirdtotalbox *=Math.exp(-2*3*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
+					
 					}
 					else{
 					totalbox *=Math.exp(2*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));	
 					secondtotalbox *=Math.exp(2*2*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));	
-					thirdtotalbox *=Math.exp(2*3*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));	
+					
 					}
 				}
 				if (d == 1){
 					if (slope >= 0){
 					totalbox *=Math.exp(-2*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
 					secondtotalbox *=Math.exp(-2*2*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
-					thirdtotalbox *=Math.exp(-2*3*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
+					
 					}
 					else{
 					totalbox *=Math.exp(-2*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
 					secondtotalbox *=Math.exp(-2*2*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
-					thirdtotalbox *=Math.exp(-2*3*slope*x*deltas/(sq_sigma[d]*Math.sqrt(1+slope*slope)));
+					
 					}
 					
 				}
 				
-				value *= Math.exp(-(x * x) / sq_sigma[d]) * (1 + totalbox + secondtotalbox + thirdtotalbox) ;
+				value *= Math.exp(-(x * x) / sq_sigma[d]) * (1 + totalbox + secondtotalbox ) ;
 				
 			
 				
