@@ -35,13 +35,13 @@ public class Fakedata {
 		for (int d = 0; d < ndims; ++d)
 			Ci[d] = 1.0 / Math.pow(sigma[d],2);
 		
-		//Kernels.SaltandPepperNoise(imgout);
+		Kernels.SaltandPepperNoise(imgout);
 		final int numlines = 10;
-		Gaussianlines.Drawsimulatedlines(imgout, range,rnd,Ci, numlines);
+		Gaussianlines.Drawsimulatedlines(imgout, range,rnd,sigma, numlines);
 		
 		ImageJFunctions.show(imgout);
-		//noisyimg = Poissonprocess.poissonProcess(imgout, 25f);
-		noisyimg = imgout;
+		noisyimg = Poissonprocess.poissonProcess(imgout, 25f);
+		//noisyimg = imgout;
 		
 		FloatType minval = new FloatType(0);
 		FloatType maxval = new FloatType(1);

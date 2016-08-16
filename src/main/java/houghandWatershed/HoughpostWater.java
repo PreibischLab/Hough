@@ -68,8 +68,7 @@ public class HoughpostWater {
 				new FloatType());
 		RandomAccessibleInterval<FloatType> preinputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
-		RandomAccessibleInterval<FloatType> penulinputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
-				new FloatType());
+		
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
 		RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(biginputimg,
@@ -77,10 +76,10 @@ public class HoughpostWater {
 		// Compute the Sin Cosine lookup table
 		SinCosinelut.getTable();
 		// Preprocess image
-		//inputimg = Kernels.Supressthresh(biginputimg);
-		preinputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter);
-		// preinputimg = Kernels.Preprocess(biginputimg, ProcessingType.Gradientmag);
-		 inputimg = Kernels.Supressthresh(preinputimg);
+		preinputimg = Kernels.Supressthresh(biginputimg);
+		//preinputimg = Kernels.Preprocess(biginputimg, ProcessingType.Meanfilter);
+		inputimg = Kernels.Preprocess(preinputimg, ProcessingType.CannyEdge);
+		// inputimg = Kernels.Supressthresh(preinputimg);
 		//MedianFilter.medianFilter(biginputimg, preinputimg,  new int[]{3,3});
 		
 	    
@@ -102,7 +101,7 @@ public class HoughpostWater {
 		// Overlay detected lines on the image
 
 
-		double[] final_param = new double[2 * ndims + 1];
+		double[] final_param = new double[2 * ndims + 2];
 
 		
 		// If there is no noise in the data put SNR = 0
@@ -130,7 +129,7 @@ public class HoughpostWater {
 
 			// Do gradient descent to improve the Hough detected lines
 			final_param = MTline.Getfinallineparam(simpleobject.get(index).Label, simpleobject.get(index).slope,
-					simpleobject.get(index).intercept,psf, sigma, minlength);
+					simpleobject.get(index).intercept,psf, minlength);
 			if (final_param!=null){
 			final double[] cordone = { final_param[0], final_param[1] };
 			final double[] cordtwo = { final_param[2], final_param[3] };
@@ -142,18 +141,18 @@ public class HoughpostWater {
 			PushCurves.DrawfinalLine(gaussimg,final_param, psf);
 			
 			
-			
-			
+			final double slope = (final_param[3] - final_param[1]) / (final_param[2] - final_param[0]);
+			final double intercept = final_param[1] - slope * final_param[0];
 			System.out
 					.println(
 							"Label: " + simpleobject.get(index).Label + " " + "StartX:" + final_param[0] + " StartY:"
 									+ final_param[1] + " " + "EndX:" + final_param[2] + "EndY: " + final_param[3]) ;
 					System.out.println( "Slope: "
-									+ (final_param[3] - final_param[1]) / (final_param[2] - final_param[0]) + " "
-									+ "Intercept :"
-									+ (final_param[1] - (final_param[3] - final_param[1])
-											/ (final_param[2] - final_param[0]) * final_param[0]) + " "
-									+ "Length: " + distance);
+									+ slope + " "
+									+ "Intercept: "
+									+ intercept 
+									+ " ds: " + " "+ Math.sqrt(final_param[4]*final_param[4] +slope * final_param[4]*final_param[4])   + " "
+									+ " " + "Length: " + distance);
 			try { FileWriter writer = new
 					  FileWriter("Lengths-2015-01-14_Seeds-1-2gauss.txt", true); 
 			writer.write("StartX:" + final_param[0] + " StartY:"

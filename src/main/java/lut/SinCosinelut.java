@@ -2,7 +2,7 @@ package lut;
 
 public class SinCosinelut {
 	
-	    static final int precision = 100; 
+	    static final int precision = 1000; 
 	    
 	    static final int length = 361*precision;
 		static float[] cos = new float[length];
