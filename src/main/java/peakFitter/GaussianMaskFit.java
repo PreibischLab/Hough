@@ -1,5 +1,8 @@
 package peakFitter;
 
+import com.sun.tools.javac.util.Pair;
+
+import houghandWatershed.PerformWatershedding;
 import net.imglib2.Cursor;
 import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccess;
@@ -21,9 +24,9 @@ public class GaussianMaskFit {
 	public static double[] sumofgaussianMaskFit(final RandomAccessibleInterval<FloatType> signalInterval,
 			final RandomAccessibleInterval<IntType> intimg, final double[] location, final double[] sigma,
 			final int iterations, final double maxintensity, final double dx, final double dy, final double slope, final int numberofgaussians,
-			final Endfit startorend) {
+			final Endfit startorend, int label) throws Exception {
 		final int n = signalInterval.numDimensions();
-
+		
 		// pre-compute sigma^2
 		final double[] sq_sigma = new double[n];
 		for (int d = 0; d < n; ++d)
@@ -44,7 +47,7 @@ public class GaussianMaskFit {
 
 		final RandomAccessibleInterval<FloatType> translatedMask = Views.translate(gaussianMask, translation);
 		final IterableInterval<FloatType> translatedIterableMask = Views.iterable(translatedMask);
-
+		final Pair<long[], long[]> minandmax = PerformWatershedding.GetBoundingbox(intimg, label);
 		// remove background in the input
 		final double bg = removeBackground(signalIterable);
 
@@ -63,7 +66,14 @@ public class GaussianMaskFit {
 				break;
 
 			}
-
+			
+  			final long[] longintlocation = new long[n];
+  			for (int d = 0; d <n; ++d){
+  				longintlocation[d] = (long) location[d];
+  				
+  			}
+  			
+ 			
 			// ImageJFunctions.show(gaussianMask);
 			// compute the sums
 			final Cursor<FloatType> cMask = gaussianMask.cursor();
@@ -73,15 +83,18 @@ public class GaussianMaskFit {
 												// ]
 			double sumSN = 0; // int_{all_px} S[ d ] * N[ d ]
 			double sumSS = 0; // int_{all_px} S[ d ] * S[ d ]
-
+			
+			
 			while (cMask.hasNext()) {
 				cMask.fwd();
 				cImg.fwd();
-
+				//intranac.setPosition(cImg);
+				//if (intranac.get().get() == label){
 				final double signal = cImg.get().getRealDouble();
 				final double mask = cMask.get().getRealDouble();
 				final double weight = 8;
-
+				
+				
 				final double signalmask = signal * mask * weight;
 
 				sumSN += signalmask;
@@ -92,19 +105,27 @@ public class GaussianMaskFit {
 					sumLocSN[d] += l * signalmask;
 				}
 
+				
 			}
-
 			for (int d = 0; d < n; ++d)
 				location[d] = sumLocSN[d] / sumSN;
 
 			N = sumSN / sumSS;
 
 			++i;
+			
 
 		} while (i < iterations);
 		restoreBackground(signalIterable, bg);
+		
+		
+		
 		// ImageJFunctions.show(gaussianMask);
+		if ((long) location[0] >= minandmax.fst[0] && (long) location[1] >= minandmax.fst[1] 
+				&& (long) location[0] <= minandmax.snd[0] &&  (long) location[1] <= minandmax.snd[1] )
 		return location;
+		else 
+			return null;
 	}
 
 	
@@ -218,13 +239,12 @@ public class GaussianMaskFit {
 
 			double value = maxintensity;
 
-			
+			double sumofgaussians = 0;
 			for (int d = 0; d < numDimensions; ++d) {
 				final double x = location[d] - cursor.getDoublePosition(d);
-				double sumofgaussians = 0;
-
+				sumofgaussians = Math.exp(-(x * x) / sq_sigma[d]);
 				double y = 0;
-			for (int i = 0; i <= numberofgaussians; ++i){	
+			for (int i = 1; i < numberofgaussians; ++i){	
 				if (d == 0) {
 					if (slope >= 0) {
 						y = x - i*dx;
@@ -269,13 +289,13 @@ public class GaussianMaskFit {
 
 			double value = maxintensity;
 
-			
+			double sumofgaussians = 0;
 			for (int d = 0; d < numDimensions; ++d) {
 				final double x = location[d] - cursor.getDoublePosition(d);
-				double sumofgaussians = 0;
-
+				
+				sumofgaussians = Math.exp(-(x * x) / sq_sigma[d]);
 				double y = 0;
-			for (int i = 0; i <= numberofgaussians; ++i){			
+			for (int i = 1; i < numberofgaussians; ++i){			
 				if (d == 0) {
 					if (slope >= 0) {
 						y = x + i*dx;
@@ -308,14 +328,6 @@ public class GaussianMaskFit {
 	}
 		
 	}
-	
-	
-	
-	
-
-	
-	
-	
 	
 	
 	final public static void setsingleGaussian(final IterableInterval<FloatType> image, final double[] location,

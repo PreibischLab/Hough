@@ -33,7 +33,12 @@ public class Linefitter {
 
 	}
 
-	private final double[] MakeLineguess(double slope, double intercept, double [] psf, int label) throws Exception {
+	public static enum Noise {
+		nonoise, noise;
+
+	}
+	protected Noise Noise;
+	private final double[] MakeLineguess(double slope, double intercept, double[] psf, int label) throws Exception {
 
 		final double[] realpos = new double[ndims];
 		double sigmasq, sigma = 1.0;
@@ -101,7 +106,7 @@ public class Linefitter {
 			for (int d = 0; d < ndims; ++d) {
 
 				MinandMax[d] = minVal[d];
-				MinandMax[d + ndims] = maxVal[d];
+				MinandMax[d + ndims + 1] = maxVal[d];
 			}
 
 		}
@@ -110,13 +115,16 @@ public class Linefitter {
 
 			MinandMax[0] = minVal[0];
 			MinandMax[1] = maxVal[1];
-			MinandMax[2] = maxVal[0];
-			MinandMax[3] = minVal[1];
+			MinandMax[3] = maxVal[0];
+			MinandMax[4] = minVal[1];
 
 		}
 
-		MinandMax[2 * ndims] = 0.5*(psf[0] + psf[1]) ;
+		MinandMax[ndims] = 1.5;
+
 		MinandMax[2 * ndims + 1] = maxintensity;
+		System.out.println(
+				MinandMax[0] + " " + MinandMax[1] + " " + MinandMax[2] + " " + MinandMax[3] + " " + MinandMax[4]);
 
 		for (int d = 0; d < ndims; ++d) {
 
@@ -132,7 +140,7 @@ public class Linefitter {
 	// Get line parameters for fitting line to a line in a label
 
 	public double[] Getfinallineparam(final int label, final double slope, final double intercept, final double[] psf,
-			 double minlength) throws Exception {
+			double minlength, double SNR, final Noise noiseorno) throws Exception {
 
 		PointSampleList<FloatType> datalist = gatherfullData(label);
 		final Cursor<FloatType> listcursor = datalist.localizingCursor();
@@ -166,9 +174,9 @@ public class Linefitter {
 			final double[] finalparam = start_param.clone();
 
 			// LM solver part
-			int maxiter = 750;
-			double lambda = 1e-4;
-			double termepsilon = 1e-3;
+			int maxiter = 350;
+			double lambda = 1e-3;
+			double termepsilon = 1e-1;
 
 			LevenbergMarquardtSolverLine.solve(X, finalparam, fixed_param, I, new GaussianLine(), lambda, termepsilon,
 					maxiter);
@@ -180,9 +188,10 @@ public class Linefitter {
 			}
 
 			final double[] startpos = { finalparam[0], finalparam[1] };
-			final double[] endpos = { finalparam[2], finalparam[3] };
-
-			double maxintensity = finalparam[5];
+			final double[] endpos = { finalparam[3], finalparam[4] };
+			System.out.println(startpos[0] + " " + startpos[1] + " " + endpos[0] + " " + endpos[1] + " "
+					+ Distance(startpos, endpos));
+			double maxintensity = finalparam[4];
 			double cutoffdistance = Distance(startpos, endpos);
 
 			if (cutoffdistance > minlength) {
@@ -200,28 +209,100 @@ public class Linefitter {
 				double[] startfit = new double[ndims];
 				double[] endfit = new double[ndims];
 
-				final double dx = finalparam[4]/ Math.sqrt( 1 + newslope * newslope);
-				final double dy = newslope * finalparam[4];
+				long[] longstartfit = new long[ndims];
+				long[] longendfit = new long[ndims];
 
-				final int maxgaussian = 10;
+				final double dx = finalparam[2] / Math.sqrt(1 + slope * slope);
+				final double dy = slope * dx / Math.sqrt(1 + slope * slope);
+
+				final double ds = Math.sqrt(dx * dx + dy * dy);
+				int maxgaussian;
+				switch (noiseorno) {
+				case nonoise:
+					maxgaussian = (int) Math.ceil((Math.max(psf[0], psf[1])) / ds);
+					break;
+				case noise:
+					maxgaussian = (int) Math.ceil((Math.max(psf[0], psf[1])) / ds);
+					break;
+				default:	
+					maxgaussian = 2;
+					break;
+				}
 
 				ArrayList<double[]> startlist = new ArrayList<double[]>();
 				ArrayList<double[]> endlist = new ArrayList<double[]>();
+				final Noiseclassifier noiseinterval = new Noiseclassifier(inputimg, intimg);
+				final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
+				final int numberofgaussians = maxgaussian;
+				// for (int numberofgaussians = 0; numberofgaussians <
+				// maxgaussian; numberofgaussians++) {
+				startfit = peakFitter.GaussianMaskFit.sumofgaussianMaskFit(inputimg, intimg, startpos, psf, iterations,
+						maxintensity, dx, dy, slope, numberofgaussians, Endfit.Start, label);
 
-				for (int numberofgaussians = 0; numberofgaussians < maxgaussian; numberofgaussians++) {
-					startfit = peakFitter.GaussianMaskFit.sumofgaussianMaskFit(inputimg, intimg, startpos, psf,
-							iterations, maxintensity, dx, dy, newslope, numberofgaussians, Endfit.Start);
+				if (startfit != null) {
+					switch (noiseorno) {
+					case noise:
+						RandomAccess<FloatType> ranac = inputimg.randomAccess();
+						for (int d = 0; d < ndims; ++d) {
+							longstartfit[d] = (long) startfit[d];
 
-					final double[] startandgauss = { startfit[0], startfit[1], numberofgaussians, newslope };
-					startlist.add(startandgauss);
+						}
+						ranac.setPosition(longstartfit);
+						double[] noiseparam = noiseinterval.Getnoiseparam(ranac, radius);
+						if (noiseparam[0] > 1.0 / SNR) {
+							final double[] startandgauss = { startfit[0], startfit[1], numberofgaussians, slope };
+							startlist.add(startandgauss);
+						}
+						
+						break;
+					case nonoise:
+						final double[] startandgauss = { startfit[0], startfit[1], numberofgaussians, slope };
+						startlist.add(startandgauss);
+						break;
+					}
+				
 				}
-				for (int numberofgaussians = 0; numberofgaussians < maxgaussian; numberofgaussians++) {
-					endfit = peakFitter.GaussianMaskFit.sumofgaussianMaskFit(inputimg, intimg, endpos, psf,
-							iterations, maxintensity, dx, dy, newslope, numberofgaussians, Endfit.End);
-					final double[] endandgauss = { endfit[0], endfit[1], numberofgaussians, newslope };
-					endlist.add(endandgauss);
+				
+
+						
+					
+				
+				// }
+				// for (int numberofgaussians = 0; numberofgaussians <
+				// maxgaussian; numberofgaussians++) {
+				endfit = peakFitter.GaussianMaskFit.sumofgaussianMaskFit(inputimg, intimg, endpos, psf, iterations,
+						maxintensity, dx, dy, slope, numberofgaussians, Endfit.End, label);
+				if (endfit != null) {
+					switch(noiseorno){
+						
+					case noise:
+						
+						RandomAccess<FloatType> ranac = inputimg.randomAccess();
+						for (int d = 0; d < ndims; ++d) {
+							longendfit[d] = (long) endfit[d];
+						}
+						ranac.setPosition(longendfit);
+						double[] noiseparam = noiseinterval.Getnoiseparam(ranac, radius);
+
+						if (noiseparam[0] > 1.0 / SNR) {
+
+							final double[] endandgauss = { endfit[0], endfit[1], numberofgaussians, slope };
+							endlist.add(endandgauss);
+						}
+						
+						break;
+						
+					case nonoise:
+						final double[] endandgauss = { endfit[0], endfit[1], numberofgaussians, slope };
+						endlist.add(endandgauss);
+
+						break;
+					}
+
+					
 
 				}
+				// }
 
 				double mindistance = Double.MAX_VALUE;
 				double maxdistance = -Double.MIN_VALUE;
@@ -231,12 +312,11 @@ public class Linefitter {
 				double seconddistance = 0;
 				double[] finalstartfit = new double[ndims];
 				double[] finalendfit = new double[ndims];
-				
+
 				for (int listindex = 0; listindex < startlist.size(); ++listindex) {
 
 					double[] startpoint = { startlist.get(listindex)[0], startlist.get(listindex)[1] };
 
-					
 					startdistance = Math.abs(startpoint[1]) + Math.abs(startpoint[0]);
 
 					if (startdistance <= mindistance) {
@@ -247,30 +327,30 @@ public class Linefitter {
 
 					}
 
-					for (int secondindex = 0; secondindex < endlist.size(); ++secondindex) {
-						double[] endpoint = { endlist.get(secondindex)[0], endlist.get(secondindex)[1] };
-
-					
-						seconddistance = Math.abs(endpoint[1]) + Math.abs(endpoint[0]);
-
-					//	System.out.println(startpoint[0] + " " + startpoint[1] + " " + endpoint[0] + " " + endpoint[1]);
-					
-
-						if (seconddistance >= maxdistance) {
-
-							maxdistance = seconddistance;
-
-							finalendfit = endpoint;
-
-							finalnumbersecond = (int) endlist.get(secondindex)[2];
-						}
-
-					}
+					System.out.println(startpoint[0] + " " + startpoint[1]);
 				}
+				for (int secondindex = 0; secondindex < endlist.size(); ++secondindex) {
+					double[] endpoint = { endlist.get(secondindex)[0], endlist.get(secondindex)[1] };
+
+					seconddistance = Math.abs(endpoint[1]) + Math.abs(endpoint[0]);
+
+					System.out.println(endpoint[0] + " " + endpoint[1]);
+
+					if (seconddistance >= maxdistance) {
+
+						maxdistance = seconddistance;
+
+						finalendfit = endpoint;
+
+						finalnumbersecond = (int) endlist.get(secondindex)[2];
+					}
+
+				}
+
 				System.out.println("Number of gaussians used for start:" + (finalnumber) + " "
 						+ "Number of gaussians used for end:" + (finalnumbersecond));
-				final double[] refindedparam = { finalstartfit[0], finalstartfit[1], finalendfit[0], finalendfit[1],
-						finalparam[4], newslope * finalparam[4], finalparam[5] };
+				final double[] refindedparam = { finalstartfit[0], finalstartfit[1], finalendfit[0], finalendfit[1], dx,
+						dy, finalparam[5] };
 
 				return refindedparam;
 			}

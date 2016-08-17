@@ -1,5 +1,6 @@
 package simulateLines;
 
+import java.io.File;
 import java.util.Random;
 
 import ij.ImageJ;
@@ -14,6 +15,7 @@ import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 import poissonSimulator.Poissonprocess;
 import preProcessing.Kernels;
+import util.ImgLib2Util;
 
 public class Fakedata {
 
@@ -40,7 +42,10 @@ public class Fakedata {
 		Gaussianlines.Drawsimulatedlines(imgout, range,rnd,sigma, numlines);
 		
 		ImageJFunctions.show(imgout);
-		noisyimg = Poissonprocess.poissonProcess(imgout, 25f);
+		
+		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
+				.openAs32Bit(new File("src/main/resources/fake_data_blur.tif"));
+		noisyimg = Poissonprocess.poissonProcess(biginputimg, 25f);
 		//noisyimg = imgout;
 		
 		FloatType minval = new FloatType(0);

@@ -328,9 +328,9 @@ public class PerformWatershedding {
 
 	}
 
-	public static Pair<long[], long[]> GetBoundingbox(Img<IntType> inputimg, int label) {
+	public static Pair<long[], long[]> GetBoundingbox(RandomAccessibleInterval<IntType> inputimg, int label) {
 
-		Cursor<IntType> intCursor = inputimg.localizingCursor();
+		Cursor<IntType> intCursor = Views.iterable(inputimg).localizingCursor();
 		int n = inputimg.numDimensions();
 		long[] position = new long[n];
 		long[] minVal = { Long.MAX_VALUE, Long.MAX_VALUE };
