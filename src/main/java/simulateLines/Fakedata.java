@@ -43,9 +43,7 @@ public class Fakedata {
 		
 		ImageJFunctions.show(imgout);
 		
-		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/fake_data_blur.tif"));
-		noisyimg = Poissonprocess.poissonProcess(biginputimg, 25f);
+		noisyimg = Poissonprocess.poissonProcess(imgout, 25f);
 		//noisyimg = imgout;
 		
 		FloatType minval = new FloatType(0);

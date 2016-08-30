@@ -4,6 +4,7 @@ package houghandWatershed;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import com.sun.tools.javac.util.Pair;
@@ -42,9 +43,6 @@ public class HoughpostWater {
 				.openAs32Bit(new File("src/main/resources/Fake_databignosnp.tif"));
 		
 		
-		// If there is no noise in the data put SNR = 0 and Noise.nonoise for Noise else use SNR for your data and Noise.noise for Noise
-		 Noise noiseornonoise = Noise.nonoise;
-				double SNR = 25;
 		// small_mt.tif image to be used for testing
 		// 2015-01-14_Seeds-1.tiff for actual
 		// mt_experiment.tif for big testing
@@ -71,7 +69,6 @@ public class HoughpostWater {
 				new FloatType());
 		RandomAccessibleInterval<FloatType> preinputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
-		
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
 		RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(biginputimg,
@@ -79,11 +76,10 @@ public class HoughpostWater {
 		// Compute the Sin Cosine lookup table
 		SinCosinelut.getTable();
 		// Preprocess image
-		//preinputimg = Kernels.Supressthresh(biginputimg);
-		preinputimg = Kernels.Preprocess(biginputimg, ProcessingType.CannyEdge);
+		
+		//preinputimg = Kernels.Preprocess(biginputimg, ProcessingType.CannyEdge);
 		inputimg = Kernels.Meanfilterandsupress(biginputimg, radius);
-		// inputimg = Kernels.Supressthresh(preinputimg);
-		//MedianFilter.medianFilter(biginputimg, preinputimg,  new int[]{3,3});
+		
 		
 	    
 		
@@ -97,8 +93,9 @@ public class HoughpostWater {
 		// Do watershedding and Hough
 
 		// Declare minimum length of the line(in pixels) to be detected
-		double minlength = 0;
+		double minlength = 5;
 
+		System.out.println("Doing Hough transform in labels: ");
 		linepair = PerformWatershedding.DowatersheddingandHough(biginputimg, inputimg, minlength);
 
 		// Overlay detected lines on the image
@@ -131,7 +128,7 @@ public class HoughpostWater {
 
 			// Do gradient descent to improve the Hough detected lines
 			final_param = MTline.Getfinallineparam(simpleobject.get(index).Label, simpleobject.get(index).slope,
-					simpleobject.get(index).intercept,psf, minlength, SNR, noiseornonoise);
+					simpleobject.get(index).intercept,psf, minlength);
 			if (final_param!=null){
 			final double[] cordone = { final_param[0], final_param[1] };
 			final double[] cordtwo = { final_param[2], final_param[3] };
@@ -143,27 +140,19 @@ public class HoughpostWater {
 			PushCurves.DrawfinalLine(gaussimg,final_param, psf);
 			
 			
-			final double slope = (final_param[3] - final_param[1]) / (final_param[2] - final_param[0]);
-			final double intercept = final_param[1] - slope * final_param[0];
+		
 			System.out
-					.println(
-							"Label: " + simpleobject.get(index).Label + " " + "StartX:" + final_param[0] + " StartY:"
+					.println("Final SOG Mask fits :" +
+							 "StartX:" + final_param[0] + " StartY:"
 									+ final_param[1] + " " + "EndX:" + final_param[2] + "EndY: " + final_param[3]) ;
-					System.out.println( "Slope: "
-									+ slope + " "
-									+ "Intercept: "+ intercept + " " 
-									+ "ds: " + Math.sqrt(final_param[4]*final_param[4] + final_param[5]*final_param[5])
+					System.out.println(  "Length: " + distance);
 									
-									+ " " + "Length: " + distance);
+									
 			try { FileWriter writer = new
 					  FileWriter("Cleandata.txt", true); 
 			writer.write("StartX:" + final_param[0] + " StartY:"
 					+ final_param[1] + " " + "EndX:" + final_param[2] + "EndY: " + final_param[3] + " "
-					+ " " + "Slope: "
-					+ (final_param[3] - final_param[1]) / (final_param[2] - final_param[0]) + " "
-					+ "Intercept : "
-					+ (final_param[1] - (final_param[3] - final_param[1])
-							/ (final_param[2] - final_param[0]) * final_param[0]) +  " "
+					  
 					+ " ds: " + Math.sqrt(final_param[4]*final_param[4] + final_param[5]*final_param[5])
 					+ "Length: " + " " + distance
 					  ); writer.write("\r\n"); writer.close();

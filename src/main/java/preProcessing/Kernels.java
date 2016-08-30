@@ -215,7 +215,7 @@ public class Kernels {
 	}
 public static void SaltandPepperNoise(RandomAccessibleInterval<FloatType> inputimg){
 		
-		final  int saltandpepperlevel = 10;
+		final  int saltandpepperlevel = 1;
 		final Random rnd = new Random(saltandpepperlevel);
 		
 		Cursor<FloatType> cursor = Views.iterable(inputimg).localizingCursor();
@@ -227,10 +227,10 @@ public static void SaltandPepperNoise(RandomAccessibleInterval<FloatType> inputi
 			cursor.fwd();
 			
 			for (int d = 0; d < inputimg.numDimensions(); ++d)
-			x[d] = (long) (Math.random() * cursor.getDoublePosition(d));
+			x[d] = (long) (cursor.getDoublePosition(d));
 			
 			ranac.setPosition(x);
-			ranac.get().setReal(rnd.nextDouble());
+			ranac.get().setReal(0.5*rnd.nextDouble());
 			
 			
 		}

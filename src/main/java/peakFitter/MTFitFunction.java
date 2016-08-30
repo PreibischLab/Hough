@@ -16,7 +16,6 @@ public interface MTFitFunction {
 		 */
 		public double val(double[] x, double[] a, double [] b);
 		
-		
 
 		/**
 		 * Evaluate the gradient value of the function, taken with respect to the 

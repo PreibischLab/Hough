@@ -18,13 +18,14 @@ public class GaussianMaskFit {
 	public static enum Endfit {
 		Start, End
 	}
+	
 
 	protected Endfit Endfit;
 
 	public static double[] sumofgaussianMaskFit(final RandomAccessibleInterval<FloatType> signalInterval,
 			final RandomAccessibleInterval<IntType> intimg, final double[] location, final double[] sigma,
 			final int iterations, final double maxintensity, final double dx, final double dy, final double slope, final int numberofgaussians,
-			final Endfit startorend, int label) throws Exception {
+			 final Endfit startorend, int label) throws Exception {
 		final int n = signalInterval.numDimensions();
 		
 		// pre-compute sigma^2
@@ -246,26 +247,20 @@ public class GaussianMaskFit {
 				double y = 0;
 			for (int i = 1; i < numberofgaussians; ++i){	
 				if (d == 0) {
-					if (slope >= 0) {
+					
 						y = x - i*dx;
 						
-					} else {
-						y = x + i*dx;
-						
-					}
-
 				}
 				if (d == 1) {
-					if (slope >= 0) {
 						y = x - i*dy;
 						
-					} else {
-						y = x - i*dy;
-						
-					}
 				}
 					
-				sumofgaussians += Math.exp(-(y * y) / sq_sigma[d]);
+				
+					sumofgaussians += Math.exp(-(y * y) / sq_sigma[d]);
+				
+				
+					
 				}
 			
 			value*=sumofgaussians;
@@ -282,6 +277,7 @@ public class GaussianMaskFit {
 			final double[] sq_sigma, final double maxintensity, final double dx, final double dy, final double slope, int numberofgaussians) {
 		final int numDimensions = image.numDimensions();
 		
+			
 		final Cursor<FloatType> cursor = image.localizingCursor();
 		
 		while (cursor.hasNext()) {
@@ -297,27 +293,21 @@ public class GaussianMaskFit {
 				double y = 0;
 			for (int i = 1; i < numberofgaussians; ++i){			
 				if (d == 0) {
-					if (slope >= 0) {
 						y = x + i*dx;
 						
-					} else {
-						y = x - i*dx;
-						
-					}
-
 				}
 				if (d == 1) {
-					if (slope >= 0) {
 						y = x + i*dy;
 						
-					} else {
-						y = x + i*dy;
-						
-					}
 				}
-					
+				
 				sumofgaussians += Math.exp(-(y * y) / sq_sigma[d]);
+				
+				
 				}
+			
+			
+			
 			
 			value*=sumofgaussians;
 			
