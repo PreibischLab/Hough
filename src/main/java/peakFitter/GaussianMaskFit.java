@@ -306,9 +306,6 @@ public class GaussianMaskFit {
 				
 				}
 			
-			
-			
-			
 			value*=sumofgaussians;
 			
 			}

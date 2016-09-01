@@ -101,7 +101,7 @@ public class HoughpostWater {
 		// Overlay detected lines on the image
 
 
-		double[] final_param = new double[2 * ndims + 2];
+		double[] final_param = new double[2 * ndims + 1];
 
 		
 		
