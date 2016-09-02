@@ -173,9 +173,9 @@ public class Linefitter {
 			
 			final double[] finalparamstart = start_param.clone();
 			// LM solver part
-			int maxiter = 500;
+			int maxiter = 2000;
 			double lambda = 1e-9;
-			double termepsilon = 1e-1;
+			double termepsilon = 1e-8;
 			final double[] inistartpos = { start_param[0], start_param[1] };
 			final double[] iniendpos = { start_param[2], start_param[3] };
 
@@ -185,8 +185,7 @@ public class Linefitter {
 
 				LevenbergMarquardtSolverLine.solve(X, finalparamstart, fixed_param, I, new GaussianLinesimple(), lambda,
 						termepsilon, maxiter);
-			//	LevenbergMarquardtSolverLine.solve(X, finalparamend, fixed_param, I, new GaussianLineend(), lambda,
-			//			termepsilon, maxiter);
+			
 				
 				final double[] startpos = { finalparamstart[0], finalparamstart[1] };
 				final double[] endpos = { finalparamstart[2], finalparamstart[3] };
@@ -211,18 +210,17 @@ public class Linefitter {
 				
 			final double maxintensity = finalparamstart[4];
 				
-				System.out.println("dx: " + dxstart );
-				System.out.println(
-						"LM solver : " + " StartX: " + startpos[0] + " StartY:  " + startpos[1] + " ds: " + ds);
-				System.out.println("LM solver : " + " EndX: " + endpos[0] + " EndY:  " + endpos[1]);
-				System.out.println(" Length:  " + Distance(startpos, endpos));
+			//	System.out.println(
+			//			"LM solver : " + " StartX: " + startpos[0] + " StartY:  " + startpos[1] + " ds: " + ds);
+			//	System.out.println("LM solver : " + " EndX: " + endpos[0] + " EndY:  " + endpos[1]);
+			//	System.out.println(" Length:  " + Distance(startpos, endpos));
 				double[] startfit = new double[ndims];
 				double[] endfit = new double[ndims];
-
+/*
 				final double radius = // 2 * Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]);
 						2 * Math.min(psf[0], psf[1]);
 
-				final int numberofgaussians = (int) Math.round(radius / ds);
+				final int numberofgaussians = (int) (radius / ds);
 				
 
 				startfit = peakFitter.GaussianMaskFit.sumofgaussianMaskFit(inputimg, intimg, startpos, psf, iterations,
@@ -230,12 +228,12 @@ public class Linefitter {
 
 				endfit = peakFitter.GaussianMaskFit.sumofgaussianMaskFit(inputimg, intimg, endpos, psf, iterations,
 						maxintensity, dxstart, dystart, newslope, numberofgaussians , Endfit.End, label);
-
-				if (startfit == null || endfit == null) {
+*/
+			//	if (startfit == null || endfit == null) {
 					startfit = startpos;
 					endfit = endpos;
-				}
-				System.out.println("Number of gaussians for mask fit:" + (1 + numberofgaussians)  );
+			//	}
+			//	System.out.println("Number of gaussians for mask fit:" + (1 + numberofgaussians)  );
 
 				double[] refindedparam = { startfit[0], startfit[1], endfit[0], endfit[1], dxstart, dystart,
 						maxintensity };

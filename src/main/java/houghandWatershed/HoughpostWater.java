@@ -40,7 +40,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/Fake_databignosnp.tif"));
+				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
 		
 		
 		// small_mt.tif image to be used for testing
@@ -61,8 +61,8 @@ public class HoughpostWater {
 		final int ndims = biginputimg.numDimensions();
 		// Define the psf of the microscope
 		double[] psf = new double[ndims];
-		psf[0] = 1.7;
-		psf[1] = 1.8;
+		psf[0] = 1.75;
+		psf[1] = 1.525;
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		// Initialize empty images to be used later
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
@@ -93,7 +93,7 @@ public class HoughpostWater {
 		// Do watershedding and Hough
 
 		// Declare minimum length of the line(in pixels) to be detected
-		double minlength = 5;
+		double minlength = 1;
 
 		System.out.println("Doing Hough transform in labels: ");
 		linepair = PerformWatershedding.DowatersheddingandHough(biginputimg, inputimg, minlength);
@@ -142,7 +142,7 @@ public class HoughpostWater {
 			
 		
 			System.out
-					.println("Final SOG Mask fits :" +
+					.println("Final LM fits :" +
 							 "StartX:" + final_param[0] + " StartY:"
 									+ final_param[1] + " " + "EndX:" + final_param[2] + "EndY: " + final_param[3]) ;
 					System.out.println(  "Length: " + distance);

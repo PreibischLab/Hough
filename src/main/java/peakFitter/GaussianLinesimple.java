@@ -99,11 +99,10 @@ public class GaussianLinesimple implements MTFitFunction {
 
 		double[] steppos = new double[ndims];
 		
-		double dist = Distance(maxVal, minVal);
-		double ds = dist / (int) dist;
+		final double dist = Distance(maxVal, minVal);
+		final double ds = dist / (int) dist;
 		double slope = (maxVal[1] - minVal[1]) / (maxVal[0] - minVal[0]);
-		
-		double dxstart = ds/Math.sqrt(1 + slope * slope);
+		double dxstart = ds / Math.sqrt(1 + slope * slope);
 		double dystart = slope * dxstart;
 		
 		
