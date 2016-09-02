@@ -183,7 +183,7 @@ public class Linefitter {
 
 			if (inicutoffdistance > minlength) {
 
-				LevenbergMarquardtSolverLine.solve(X, finalparamstart, fixed_param, I, new GaussianLinesimple(), lambda,
+				LevenbergMarquardtSolverLine.solve(X, finalparamstart, fixed_param, I, new GaussianLinemid(), lambda,
 						termepsilon, maxiter);
 			
 				

@@ -40,7 +40,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
+				.openAs32Bit(new File("src/main/resources/Fake_databignosnp.tif"));
 		
 		
 		// small_mt.tif image to be used for testing
@@ -61,8 +61,8 @@ public class HoughpostWater {
 		final int ndims = biginputimg.numDimensions();
 		// Define the psf of the microscope
 		double[] psf = new double[ndims];
-		psf[0] = 1.75;
-		psf[1] = 1.525;
+		psf[0] = 1.7;
+		psf[1] = 1.8;
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		// Initialize empty images to be used later
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
