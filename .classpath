@@ -31,5 +31,14 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/imglib2-algorithm"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/imglib2-algorithm-fft"/>
 	<classpathentry kind="src" path="/imglib2-algorithm-gpl"/>
+	<classpathentry kind="lib" path="/Users/varunkapoor/.m2/repository/net/imglib2/imglib2/2.2.1/imglib2-2.2.1.jar" sourcepath="/Users/varunkapoor/.m2/repository/net/imglib2/imglib2/2.2.1/imglib2-2.2.1-sources.jar">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="maven.groupId" value="net.imglib2"/>
+			<attribute name="maven.artifactId" value="imglib2"/>
+			<attribute name="maven.version" value="2.2.1"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
