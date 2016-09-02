@@ -138,7 +138,7 @@ package peakFitter;
 				}
 			}
 			
-			final double ds = distmid;
+			final double ds = distmid/2;
 			double slope = (maxVal[1] - minVal[1]) / (maxVal[0] - minVal[0]);
 			double dxstart = ds / Math.sqrt(1 + slope * slope);
 			double dystart = slope * dxstart;
