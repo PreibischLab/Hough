@@ -142,7 +142,7 @@ public class HoughpostWater {
 			
 		
 			System.out
-					.println("Final LM fits :" +
+					.println("Mask fits :" +
 							 "StartX:" + final_param[0] + " StartY:"
 									+ final_param[1] + " " + "EndX:" + final_param[2] + "EndY: " + final_param[3]) ;
 					System.out.println(  "Length: " + distance);
@@ -152,8 +152,7 @@ public class HoughpostWater {
 					  FileWriter("Cleandata.txt", true); 
 			writer.write("StartX:" + final_param[0] + " StartY:"
 					+ final_param[1] + " " + "EndX:" + final_param[2] + "EndY: " + final_param[3] + " "
-					  
-					+ " ds: " + Math.sqrt(final_param[4]*final_param[4] + final_param[5]*final_param[5])
+					
 					+ "Length: " + " " + distance
 					  ); writer.write("\r\n"); writer.close();
 			

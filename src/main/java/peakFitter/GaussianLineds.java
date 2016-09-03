@@ -1,9 +1,9 @@
 package peakFitter;
 
+public class GaussianLineds implements MTFitFunction {
 
 	
-
-	public class GaussianLinemid implements MTFitFunction {
+	
 		@Override
 		public double val(double[] x, double[] a, double[] b) {
 			final int ndims = x.length;
@@ -33,6 +33,8 @@ package peakFitter;
 			else if (k == 2 * ndims)
 				return Etotal(x, a, b);
 	        
+			else if (k == 2 * ndims + 1)
+				return Esumderiv(x, a, b);
 			else
 				return 0;
 
@@ -101,47 +103,19 @@ package peakFitter;
 			double di;
 
 			double[] steppos = new double[ndims];
+			double[] endpos = new double[ndims];
+			final double dist = Distance(maxVal, minVal);
 			
-			double dist = Distance(maxVal, minVal);
-			
-			double distmid = 0;
-			double distend = 0;
-		
-			
-			
+			//System.out.println(a[2 * ndims + 1]);
 			steppos[0] = minVal[0];
 			steppos[1] = minVal[1];
-
-			double[] endpos = new double[ndims];
-			
 			endpos[0] = maxVal[0];
 			endpos[1] = maxVal[1];
-			final long radius = (long) Math.ceil(Math.sqrt(1/b[0] + 1/ b[1]));
 			
-			double[] midpos = {(endpos[0] + steppos[0]) * 0.5,(endpos[1] + steppos[1]) * 0.5 };
-			double[] newmidpos ={(endpos[0] + steppos[0]) * 0.5,(endpos[1] + steppos[1]) * 0.5 };
-		
-			while (true){
-				
-				for (int d  = 0; d < ndims; ++d){
-					midpos[d] = 0.5*(steppos[d] + midpos[d]);
-					newmidpos[d] = 0.5*(endpos[d] + newmidpos[d]);
-				}
-				
-		
-				distend = Distance(newmidpos,endpos);
-				distmid = Distance(midpos, steppos);
-				
-				
-				if ( Math.abs(distend - distmid) < 1.0e-5 && distend < radius){
-					
-					break;
-				}
-			}
 			
-			final double ds = distend;
+			final double ds = a[2 * ndims + 1];
 			double slope = (maxVal[1] - minVal[1]) / (maxVal[0] - minVal[0]);
-			double dxstart = ds / Math.sqrt(1 + slope * slope);
+			double dxstart = Math.abs(ds) ;
 			double dystart = slope * dxstart;
 			
 			while (true) {
@@ -159,6 +133,63 @@ package peakFitter;
 					break;
 			}
 			
+			
+			
+
+			return sumofgaussians;
+		}
+
+		private static final double Esumderiv(final double[] x, final double[] a, final double[] b) {
+
+			final int ndims = x.length;
+			double[] minVal = new double[ndims];
+			double[] maxVal = new double[ndims];
+
+			
+				for (int i = 0; i < x.length; i++) {
+					minVal[i] = a[i];
+					maxVal[i] = a[ndims + i];
+				}
+
+			
+
+			double sum = 0;
+			double dsum = 0;
+			double sumofgaussians = 0;
+			double di;
+
+			double[] steppos = new double[ndims];
+			
+			
+			
+			
+			double[] midpos = {(maxVal[0] + minVal[0]) * 0.5,(maxVal[1] + minVal[1]) * 0.5 };
+			
+			
+			steppos[0] = minVal[0];
+			steppos[1] = minVal[1];
+
+			final double ds = a[2 * ndims + 1];
+			double slope = (maxVal[1] - minVal[1]) / (maxVal[0] - minVal[0]);
+			double dxstart = Math.abs(ds) ;
+			double dystart = slope * dxstart;
+			
+
+				steppos[0] += dxstart ;
+				steppos[1] += dystart ;
+				sum = 0;
+				dsum = 0;
+				for (int i = 0; i < x.length; i++) {
+					di = x[i] - steppos[i];
+					sum += b[i] * di * di;
+					if (i  == 0)
+					dsum += 2 * di * b[i]  ;
+					else
+					dsum += 2 * di * b[i] * slope  ;	
+				}
+				sumofgaussians += dsum * Math.exp(-sum);
+
+				
 			
 
 			return sumofgaussians;
@@ -181,4 +212,5 @@ package peakFitter;
 		
 	}
 
+	
 
