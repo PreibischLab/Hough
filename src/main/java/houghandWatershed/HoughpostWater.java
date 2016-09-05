@@ -40,7 +40,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/Fake_databignosnp.tif"));
+				.openAs32Bit(new File("src/main/resources/Fake_databigsnp.tif"));
 		
 		
 		// small_mt.tif image to be used for testing
@@ -101,7 +101,7 @@ public class HoughpostWater {
 		// Overlay detected lines on the image
 
 
-		double[] final_param = new double[2 * ndims + 1];
+		double[] final_param = new double[2 * ndims + 3];
 
 		
 		

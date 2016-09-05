@@ -103,7 +103,7 @@ public class Linefitter {
 			}
 		}
 
-		final double[] MinandMax = new double[2 * ndims + 1];
+		final double[] MinandMax = new double[2 * ndims + 3];
 
 		if (slope >= 0) {
 			for (int d = 0; d < ndims; ++d) {
@@ -123,7 +123,9 @@ public class Linefitter {
 
 		}
 		MinandMax[2 * ndims] = maxintensity;
-		//MinandMax[2 * ndims + 1] = 0.8;
+
+		MinandMax[2 * ndims + 1] = 0.45 * Math.min(psf[0], psf[1]);
+		MinandMax[2 * ndims + 2] = 0.1; //Math.min(psf[0], psf[1]);
 		System.out.println("Label: " + label + " " + "Hough Detection: " + " StartX: " + MinandMax[0] + " StartY: "
 				+ MinandMax[1] + " EndX: " + MinandMax[2] + " EndY: " + MinandMax[3]);
 
@@ -174,9 +176,9 @@ public class Linefitter {
 			
 			final double[] finalparamstart = start_param.clone();
 			// LM solver part
-			int maxiter = 500;
+			int maxiter = 2000;
 			double lambda = 1e-9;
-			double termepsilon = 1e-2;
+			double termepsilon = 1e-4;
 			final double[] inistartpos = { start_param[0], start_param[1] };
 			final double[] iniendpos = { start_param[2], start_param[3] };
 
@@ -184,7 +186,7 @@ public class Linefitter {
 
 			if (inicutoffdistance > minlength) {
 
-				LevenbergMarquardtSolverLine.solve(X, finalparamstart, fixed_param, I, new GaussianLinesimple(), lambda,
+				LevenbergMarquardtSolverLine.solve(X, finalparamstart, fixed_param, I, new GaussianLineds(), lambda,
 						termepsilon, maxiter);
 			
 				
@@ -201,7 +203,7 @@ public class Linefitter {
 
 
 				int iterations = 500;
-/*
+
 				double newslope = (endpos[1] - startpos[1]) / (endpos[0] - startpos[0]);
 				double dist = Distance(endpos, startpos);
 				double ds = finalparamstart[5];
@@ -211,7 +213,7 @@ public class Linefitter {
 				
 			final double maxintensity = finalparamstart[4];
 				System.out.println("ds: " + finalparamstart[5] );
-			*/
+			
 				System.out.println(
 						"LM solver : " + " StartX: " + startpos[0] + " StartY:  " + startpos[1] );
 				System.out.println("LM solver : " + " EndX: " + endpos[0] + " EndY:  " + endpos[1]);

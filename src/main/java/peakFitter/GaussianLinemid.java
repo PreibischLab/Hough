@@ -7,7 +7,7 @@ package peakFitter;
 		@Override
 		public double val(double[] x, double[] a, double[] b) {
 			final int ndims = x.length;
-			return a[2 * ndims] * Etotal(x, a, b);
+			return a[2 * ndims] * Etotal(x, a, b) + a[2* ndims + 1];
 		}
 
 		@Override
@@ -32,6 +32,9 @@ package peakFitter;
 
 			else if (k == 2 * ndims)
 				return Etotal(x, a, b);
+			
+			else if (k == 2 * ndims + 1)
+				return 1.0;
 	        
 			else
 				return 0;
@@ -78,7 +81,8 @@ package peakFitter;
 
 		private static final double Etotal(final double[] x, final double[] a, final double[] b) {
 
-			return Estart(x, a, b) + Eend(x, a, b) + Esum(x, a, b);
+			int ndims = x.length;
+			return Estart(x, a, b) + Eend(x, a, b) + Esum(x, a, b) ;
 
 		}
 

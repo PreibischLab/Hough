@@ -64,7 +64,7 @@ public class PerformWatershedding {
 		// Perform the distance transform
 		final Img<FloatType> distimg = new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
 
-		PerformWatershedding.DistanceTransformImage(biginputimg, distimg, InverseType.Straight);
+		DistanceTransformImage(biginputimg, distimg, InverseType.Straight);
 
 		// Do watershedding on the distance transformed image
 
