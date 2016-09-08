@@ -122,10 +122,11 @@ public class Linefitter {
 			MinandMax[3] = minVal[1];
 
 		}
-		MinandMax[2 * ndims] = maxintensity;
+		
 
-		MinandMax[2 * ndims + 1] = 0.45 * Math.min(psf[0], psf[1]);
-		MinandMax[2 * ndims + 2] = 0.1; //Math.min(psf[0], psf[1]);
+		MinandMax[2 * ndims] = 1.0;
+		MinandMax[2 * ndims + 1] =  maxintensity;
+		MinandMax[2 * ndims + 2] = 0;
 		System.out.println("Label: " + label + " " + "Hough Detection: " + " StartX: " + MinandMax[0] + " StartY: "
 				+ MinandMax[1] + " EndX: " + MinandMax[2] + " EndY: " + MinandMax[3]);
 
@@ -167,18 +168,20 @@ public class Linefitter {
 			return null;
 
 		else {
-			final double[] fixed_param = new double[ndims];
+			final double[] fixed_param = new double[ndims + 2];
 
 			for (int d = 0; d < ndims; ++d) {
 
 				fixed_param[d] = 1.0 / Math.pow(psf[d], 2);
 			}
-			
+			final double maxintensity = GetLocalmaxmin.computeMaxIntensityinlabel(inputimg, intimg, label);
+			fixed_param[ndims] = slope;
+			fixed_param[ndims +  1] = maxintensity;
 			final double[] finalparamstart = start_param.clone();
 			// LM solver part
-			int maxiter = 2000;
-			double lambda = 1e-9;
-			double termepsilon = 1e-4;
+			int maxiter = 1500;
+			double lambda = 1e-3;
+			double termepsilon = 1e-1;
 			final double[] inistartpos = { start_param[0], start_param[1] };
 			final double[] iniendpos = { start_param[2], start_param[3] };
 
@@ -205,39 +208,39 @@ public class Linefitter {
 				int iterations = 500;
 
 				double newslope = (endpos[1] - startpos[1]) / (endpos[0] - startpos[0]);
-				double dist = Distance(endpos, startpos);
-				double ds = finalparamstart[5];
-				
-				double dxstart = ds;
-				double dystart = newslope * dxstart;
-				
-			final double maxintensity = finalparamstart[4];
-				System.out.println("ds: " + finalparamstart[5] );
+				double dx = finalparamstart[4]/ Math.sqrt( 1 + newslope * newslope);
+				double dy = newslope * dx;
+				double ds = finalparamstart[4];
+				System.out.println("ds: " + ds + " " + "Const:" + finalparamstart[6]);
 			
 				System.out.println(
 						"LM solver : " + " StartX: " + startpos[0] + " StartY:  " + startpos[1] );
 				System.out.println("LM solver : " + " EndX: " + endpos[0] + " EndY:  " + endpos[1]);
 				System.out.println(" Length:  " + Distance(startpos, endpos));
+		
 				double[] startfit = new double[ndims];
 				double[] endfit = new double[ndims];
-/*
-				final double radius = // 2 * Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]);
-						2 * Math.min(psf[0], psf[1]);
 
-				final int numberofgaussians = (int) (radius / ds);
+				final double radius = 2 * Math.min(psf[0], psf[1]);
+
+				final int numberofgaussians = 2; // (int) (radius / ds);
 				
 
 				startfit = peakFitter.GaussianMaskFit.sumofgaussianMaskFit(inputimg, intimg, startpos, psf, iterations,
-						maxintensity, dxstart, dystart, newslope, numberofgaussians , Endfit.Start, label);
+						maxintensity, dx, dy, newslope, numberofgaussians  , Endfit.Start, label);
 
 				endfit = peakFitter.GaussianMaskFit.sumofgaussianMaskFit(inputimg, intimg, endpos, psf, iterations,
-						maxintensity, dxstart, dystart, newslope, numberofgaussians , Endfit.End, label);
-*/
-	//			if (startfit == null || endfit == null) {
+						maxintensity, dx, dy, newslope, numberofgaussians  , Endfit.End, label);
+            
+			// If mask fits fail, return LM solver results, very crucial for noisy data
+				if (Math.abs(Distance(startfit, endfit) - Distance(startpos, endpos)) > 5    ){
 					startfit = startpos;
 					endfit = endpos;
-		//		}
-			//	System.out.println("Number of gaussians for mask fit:" + (1 + numberofgaussians)  );
+			}
+				
+				
+				
+				System.out.println("Number of gaussians for mask fit:" + (numberofgaussians)  );
 
 				double[] refindedparam = { startfit[0], startfit[1], endfit[0], endfit[1] };
 

@@ -4,7 +4,7 @@ public class GaussianLinesimple implements MTFitFunction {
 	@Override
 	public double val(double[] x, double[] a, double[] b) {
 		final int ndims = x.length;
-		return a[2 * ndims] * Etotal(x, a, b) + a[2* ndims + 1];
+		return a[2 * ndims] * Etotal(x, a, b) + a[2* ndims + 1] + a[2* ndims + 2] ;
 	}
 
 	@Override
@@ -32,7 +32,8 @@ public class GaussianLinesimple implements MTFitFunction {
         
 		else if (k == 2 * ndims + 1)
 			return 1;
-		
+		else if (k == 2 * ndims + 2)
+			return 1;
 		else
 			return 0;
 
@@ -105,7 +106,7 @@ public class GaussianLinesimple implements MTFitFunction {
 		final double dist = Distance(maxVal, minVal);
 		final double distfrac = dist - (int) (dist);
 		
-		double ds = 0; //dist / ((int) Math.round(dist) - distfrac) ;//+ ( distfrac);
+		double ds =  0; //0.5 * Math.min(1.0/Math.sqrt(b[0]),1.0/Math.sqrt(b[1]) ); //dist / ((int) Math.round(dist) - distfrac) ;//+ ( distfrac);
 		
 		if (distfrac > 0.5)
 			ds = dist / (int) dist;
@@ -113,7 +114,7 @@ public class GaussianLinesimple implements MTFitFunction {
 			ds = dist / (-0.5  + (int) dist);
 			
 		double slope = (maxVal[1] - minVal[1]) / (maxVal[0] - minVal[0]);
-		double dxstart = ds / Math.sqrt(1 + slope * slope);
+		double dxstart = ds;// / Math.sqrt(1 + slope * slope);
 		double dystart = slope * dxstart;
 		
 		

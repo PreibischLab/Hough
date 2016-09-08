@@ -1,13 +1,13 @@
 package peakFitter;
 
-public class GaussianLineds implements MTFitFunction {
+import mISC.Tree.Distance;
 
-	
+public class GaussianLineds implements MTFitFunction {
 
 	@Override
 	public double val(double[] x, double[] a, double[] b) {
 		final int ndims = x.length;
-		return a[2 * ndims] * Etotal(x, a, b) + a[2 * ndims + 2];
+		return   a[2 * ndims + 1] * Etotal(x, a, b) + a[2* ndims + 2] ;
 	}
 
 	@Override
@@ -16,29 +16,27 @@ public class GaussianLineds implements MTFitFunction {
 
 		if (k < ndims) {
 
-			return 2 * b[k] * (x[k] - a[k]) *a[2 * ndims] *  (Estart(x, a, b) ) ;
+			return 2 * b[k] * (x[k] - a[k])* a[2 * ndims + 1]  * Estart(x, a, b);
+
+		}
+
+		else if (k >= ndims && k <= ndims + 1) {
+			int dim = k - ndims;
+			return 2 * b[dim] * (x[dim] - a[k])* a[2 * ndims + 1] * Eend(x, a, b);
 
 		}
 
 		
 
-		else if (k >= ndims  && k <=  ndims + 1) {
-			int dim = k - ndims ;
-			return 2 * b[dim] * (x[dim] - a[k]) *a[2 * ndims] *  (Eend(x, a, b) );
+		else if (k == 2 * ndims )
+			return  a[2 * ndims + 1] * ( Estartds(x, a, b));
 
-		}
-		
-        
-
-		else if (k == 2 * ndims)
+		else if (k == 2 * ndims + 1 )
 			return Etotal(x, a, b);
-        
-		else if (k == 2 * ndims + 1)
-			return Esumderiv(x, a, b);
 		
-		else if (k == 2 * ndims + 2)
-			return 1;
-		
+		else if (k == 2 * ndims + 2 )
+			return 1.0 ;
+
 		else
 			return 0;
 
@@ -63,17 +61,86 @@ public class GaussianLineds implements MTFitFunction {
 			sum += b[i] * di * di;
 		}
 
-		return Math.exp(-sum);
+		return  Math.exp(-sum);
+
+	}
+	
+	private static final double Estartds(final double[] x, final double[] a, final double[] b) {
+
+		double sum = 0;
+		double di;
+		final int ndims = x.length;
+		double[] minVal = new double[ndims];
+		double[] maxVal = new double[ndims];
+
+		for (int i = 0; i < x.length; i++) {
+			minVal[i] = a[i];
+			maxVal[i] = a[ndims + i];
+		}
+		double slope = (maxVal[1] - minVal[1]) / (maxVal[0] - minVal[0]); 
+		double dsum = 0;
+		double sumofgaussians = 0;
+	
+		double ds = Math.abs(a[2 * ndims]) ;
+		
+		double[] dxvector = {ds/ Math.sqrt( 1+ slope * slope), slope * ds/ Math.sqrt( 1+ slope * slope)};
+		double[] dxvectorderiv = {1/ Math.sqrt( 1+ slope * slope), slope/ Math.sqrt( 1+ slope * slope)};
+		
+		
+		for (int i = 0; i < x.length; i++) {
+			di = x[i] - (a[i] + dxvector[i]);
+			sum += b[i] * di * di;
+			dsum += 2 * b[i] * di * dxvectorderiv[i]; 
+		}
+		sumofgaussians += dsum * Math.exp(-sum);
+		
+	
+		return sumofgaussians;
 
 	}
 
+	private static final double Eendds(final double[] x, final double[] a, final double[] b) {
+
+		double sum = 0;
+		double di;
+		final int ndims = x.length;
+		double[] minVal = new double[ndims];
+		double[] maxVal = new double[ndims];
+
+		for (int i = 0; i < x.length; i++) {
+			minVal[i] = a[i];
+			maxVal[i] = a[ndims + i];
+		}
+		double slope = (maxVal[1] - minVal[1]) / (maxVal[0] - minVal[0]); 
+		double dsum = 0;
+		double sumofgaussians = 0;
+	
+		double ds = Math.abs(a[2 * ndims]) ;
+		
+		double[] dxvector = {ds/ Math.sqrt( 1+ slope * slope), slope * ds/ Math.sqrt( 1+ slope * slope)};
+		double[] dxvectorderiv = {1/ Math.sqrt( 1+ slope * slope), slope/ Math.sqrt( 1+ slope * slope)};
+		
+		
+		for (int i = 0; i < x.length; i++) {
+			di = x[i] - (a[i + ndims] - dxvector[i]);
+			sum += b[i] * di * di;
+			dsum += -2 * b[i] * di * dxvectorderiv[i]; 
+		}
+		sumofgaussians += dsum * Math.exp(-sum);
+		
+	
+		return sumofgaussians;
+
+	}
+
+	
+	
 	private static final double Eend(final double[] x, final double[] a, final double[] b) {
 
 		double sum = 0;
 		double di;
 		int ndims = x.length;
 		for (int i = 0; i < x.length; i++) {
-
 			di = x[i] - a[i + ndims];
 			sum += b[i] * di * di;
 		}
@@ -94,137 +161,38 @@ public class GaussianLineds implements MTFitFunction {
 		double[] minVal = new double[ndims];
 		double[] maxVal = new double[ndims];
 
-		
-			for (int i = 0; i < x.length; i++) {
-				minVal[i] = a[i];
-				maxVal[i] = a[ndims + i];
-			}
-
-		
-
+		for (int i = 0; i < x.length; i++) {
+			minVal[i] = a[i];
+			maxVal[i] = a[ndims + i];
+		}
+		double slope = (maxVal[1] - minVal[1]) / (maxVal[0] - minVal[0]); 
 		double sum = 0;
 		double sumofgaussians = 0;
 		double di;
-
-		double[] steppos = new double[ndims];
-		double[] endpos = new double[ndims];
-		final double dist = Distance(maxVal, minVal);
 		
-		//System.out.println(a[2 * ndims + 1]);
-		steppos[0] = minVal[0];
-		steppos[1] = minVal[1];
-		endpos[0] = maxVal[0];
-		endpos[1] = maxVal[1];
+		double ds = Math.abs(a[2 * ndims ]) ;
 		
-		
-		final double ds = a[2 * ndims + 1];
-		double slope = (maxVal[1] - minVal[1]) / (maxVal[0] - minVal[0]);
-		double dxstart = Math.abs(ds) ;
-		double dystart = slope * dxstart;
-		
+		double[] dxvector = {ds/ Math.sqrt( 1+ slope * slope), slope * ds/ Math.sqrt( 1+ slope * slope)};
+	
+	
 		while (true) {
 
-			steppos[0] += dxstart ;
-			steppos[1] += dystart ;
 			sum = 0;
 			for (int i = 0; i < x.length; i++) {
-				di = x[i] - steppos[i];
+				minVal[i]+=dxvector[i];
+				di = x[i] - minVal[i];
 				sum += b[i] * di * di;
 			}
 			sumofgaussians += Math.exp(-sum);
 
-			if (steppos[0] >= maxVal[0] || steppos[1] >= maxVal[1] )
+			if (minVal[0] >= maxVal[0] || minVal[1] >= maxVal[1] )
 				break;
 		}
-		
-		
-		
-
-		return sumofgaussians;
-	}
-
-	private static final double Esumderiv(final double[] x, final double[] a, final double[] b) {
-
-		final int ndims = x.length;
-		double[] minVal = new double[ndims];
-		double[] maxVal = new double[ndims];
-
-		
-			for (int i = 0; i < x.length; i++) {
-				minVal[i] = a[i];
-				maxVal[i] = a[ndims + i];
-			}
-
-		
-
-		double sum = 0;
-		double dsum = 0;
-		double sumofgaussians = 0;
-		double di;
-
-		double[] steppos = new double[ndims];
-		
-		
-		
-		
-		
-		
-		steppos[0] = minVal[0];
-		steppos[1] = minVal[1];
-
-		final double ds = a[2 * ndims + 1];
-		double slope = (maxVal[1] - minVal[1]) / (maxVal[0] - minVal[0]);
-		double dxstart = Math.abs(ds) ;
-		double dystart = slope * dxstart;
-		
-       //    while(true){
-			steppos[0] += dxstart ;
-			steppos[1] += dystart ;
-			sum = 0;
-			dsum = 0;
-			for (int i = 0; i < x.length; i++) {
-				di = x[i] - steppos[i];
-				sum += b[i] * di * di;
-				if (i  == 0)
-				dsum += 2 * di * b[i]  ;
-				if (i == 1)
-					dsum += 2 * di * b[i] * slope ;
-			}
-			sumofgaussians += dsum * Math.exp(-sum);
-
-		//	if (steppos[0] <= minVal[0] || steppos[1] <= minVal[1])
-		//		break;
-			
-//}	
-			/*
-			steppos[0] = 0.5*(maxVal[0] + minVal[0]);
-			steppos[1] = 0.5*(maxVal[1] + minVal[1]);
-			*/
-        //   while(true){
-   	/*		steppos[0] += dxstart ;
-   			steppos[1] += dystart ;
-   			sum = 0;
-   			dsum = 0;
-   			for (int i = 0; i < x.length; i++) {
-   				di = x[i] - steppos[i];
-   				sum += b[i] * di * di;
-   				if (i  == 0)
-   				dsum += 2 * di * b[i]  ;
-   				else
-   				dsum += 2 * di * b[i] * slope  ;	
-   			}
-   			sumofgaussians += dsum * Math.exp(-sum);
-*/
-   	//		if (steppos[0] >= maxVal[0] || steppos[1] >= maxVal[1])
-   	//			break;
-   			
-   //}	
-
-		return  sumofgaussians;
-	}
-
 	
-
+	
+		
+	   return sumofgaussians;
+	}
 	public static double Distance(final double[] cordone, final double[] cordtwo) {
 
 		double distance = 0;
@@ -237,8 +205,5 @@ public class GaussianLineds implements MTFitFunction {
 		}
 		return Math.sqrt(distance);
 	}
-	
-	}
 
-	
-
+}

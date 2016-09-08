@@ -40,7 +40,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/Fake_databigsnp.tif"));
+				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
 		
 		
 		// small_mt.tif image to be used for testing
@@ -149,7 +149,7 @@ public class HoughpostWater {
 									
 									
 			try { FileWriter writer = new
-					  FileWriter("Cleandata.txt", true); 
+					  FileWriter("Actualdata.txt", true); 
 			writer.write("StartX:" + final_param[0] + " StartY:"
 					+ final_param[1] + " " + "EndX:" + final_param[2] + "EndY: " + final_param[3] + " "
 					

@@ -122,11 +122,9 @@ public class GaussianMaskFit {
 		
 		
 		// ImageJFunctions.show(gaussianMask);
-		if ((long) location[0] >= minandmax.fst[0] && (long) location[1] >= minandmax.fst[1] 
-				&& (long) location[0] <= minandmax.snd[0] &&  (long) location[1] <= minandmax.snd[1] )
+		
 		return location;
-		else 
-			return null;
+		
 	}
 
 	
