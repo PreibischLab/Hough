@@ -93,7 +93,7 @@ public class PerformWatershedding {
 			int mintheta = 0;
 			// Usually is 180 but to allow for detection of vertical
 			// lines,allowing a few more degrees
-			int maxtheta = 200;
+			int maxtheta = 210;
 			double size = Math
 					.sqrt((outimg.dimension(0) * outimg.dimension(0) + outimg.dimension(1) * outimg.dimension(1)));
 			int minRho = (int) -Math.round(size);
@@ -413,7 +413,7 @@ public class PerformWatershedding {
 
 	public static RandomAccessibleInterval<FloatType> CurrentLabelImage(RandomAccessibleInterval<IntType> Intimg,
 			RandomAccessibleInterval<FloatType> originalimg, int currentLabel) {
-
+	
 		RandomAccess<FloatType> inputRA = originalimg.randomAccess();
 
 		Cursor<IntType> intCursor = Views.iterable(Intimg).cursor();

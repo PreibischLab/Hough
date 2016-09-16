@@ -18,7 +18,6 @@ public class Gaussianlines {
 
 		final int n = outimg.numDimensions();
 
-		// Declare the number of lines to be plotted
 		ArrayList<Fakeline> linearray = new ArrayList<Fakeline>();
 
 		for (int lineindex = 0; lineindex < numlines; ++lineindex) {
@@ -31,35 +30,33 @@ public class Gaussianlines {
 
 			}
 
-			endpos[0] = startpos[0] + 20;
-			endpos[1] = startpos[1] + rnd.nextDouble()*(endpos[0] - startpos[0]);
+			endpos[0] = startpos[0] + rnd.nextDouble()*2 + 20;
+			endpos[1] = startpos[1] + 2*rnd.nextDouble()*(endpos[0] - startpos[0]) + 20;
 			
 			
 			
 			double slope = (endpos[1] - startpos[1]) / (endpos[0] - startpos[0]);
 			double intercept = startpos[1] - slope * startpos[0];
 
-			double computedlength = 0;
-			for (int d = 0; d < n ; ++d){
-				
-				computedlength += Math.pow((endpos[d] - startpos[d]),2);
-				
-			}
+			
 			
 			PushCurves.Drawshortline(outimg, linearray, slope, intercept, startpos, endpos, sigma);
 			
-			try {
-	            FileWriter writer = new FileWriter("initiallengthsbig.txt", true);
-	            writer.write( "StartX: "  + startpos[0]+  " " +
-	           		 "StartY: "+ startpos[1] + " " + "EndposX: " + endpos[0] +  
-	        		 " EndposY :" + endpos[1] + " Slope: " + slope 
-	        				 +" Intercept: " + intercept + " Length " + Math.sqrt(computedlength) );
-	            writer.write("\r\n"); 
-	            writer.close();
-	        } catch (IOException e) {
-	            e.printStackTrace();
-	        }
 
+		}
+		
+		for (int index = 0; index < linearray.size(); ++index){
+		try {
+	        FileWriter writer = new FileWriter("initiallengthsbig_fifth.txt", true);
+	        writer.write( "StartX: "  + linearray.get(index).startpos[0]+  " " +
+	       		 "StartY: "+ linearray.get(index).startpos[1] + " " + "EndposX: " + linearray.get(index).endpos[0] +  
+	    		 " EndposY :" + linearray.get(index).endpos[1]+ "  Length " + linearray.get(index).length );
+	        writer.write("\r\n"); 
+	        writer.write("\r\n");
+	        writer.close();
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
 		}
 		}
 	

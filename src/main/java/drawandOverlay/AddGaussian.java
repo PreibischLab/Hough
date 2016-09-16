@@ -92,7 +92,7 @@ public class AddGaussian {
 	for ( int d = 0; d < numDimensions; ++d )
 	{
 	final double x = location[ d ] - cursor.getIntPosition( d );
-	value *= Math.exp( -(x * x) / (sigma[ d ] *sigma[ d ] ) );
+	value *= Math.exp( -(x * x) / (sigma[ d ] * sigma[ d ] ) );
 	}
 	
 	

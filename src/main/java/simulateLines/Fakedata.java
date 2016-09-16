@@ -24,13 +24,13 @@ public class Fakedata {
 		
 		new ImageJ();
 		
-		final FinalInterval range = new FinalInterval(200, 200);
-		
+		final FinalInterval range = new FinalInterval(512, 512);
+		final FinalInterval smallrange = new FinalInterval(400, 412);
 		
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(range, new FloatType());
 		RandomAccessibleInterval<FloatType> noisyimg = new ArrayImgFactory<FloatType>().create(imgout, new FloatType());
 		final int ndims = imgout.numDimensions();
-		final Random rnd = new Random(150);
+		final Random rnd = new Random(230);
 		final double [] sigma = {1.7,1.8};
 		final double [] Ci = new double[ndims];
 		
@@ -39,17 +39,16 @@ public class Fakedata {
 		
 		Kernels.SaltandPepperNoise(imgout);
 		final int numlines = 10;
-		Gaussianlines.Drawsimulatedlines(imgout, range,rnd,sigma, numlines);
+		Gaussianlines.Drawsimulatedlines(imgout, smallrange,rnd,sigma, numlines);
 		
 		ImageJFunctions.show(imgout);
 		
-		noisyimg = Poissonprocess.poissonProcess(imgout, 25f);
+		noisyimg = Poissonprocess.poissonProcess(imgout, 15f);
 		//noisyimg = imgout;
 		
 		FloatType minval = new FloatType(0);
 		FloatType maxval = new FloatType(1);
 		Normalize.normalize(Views.iterable(noisyimg), minval, maxval);
-		//Kernels.GaussianBlur(noisyimg);
 		
 		ImageJFunctions.show(noisyimg);
 		

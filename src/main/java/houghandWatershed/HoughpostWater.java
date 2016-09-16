@@ -27,7 +27,6 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import peakFitter.LengthDetection;
 import peakFitter.Linefitter;
-import peakFitter.Linefitter.Noise;
 import preProcessing.GetLocalmaxmin;
 import preProcessing.GlobalThresholding;
 import preProcessing.Kernels;
@@ -40,7 +39,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
+				.openAs32Bit(new File("src/main/resources/Fake_databigsnp.tif"));
 		
 		
 		// small_mt.tif image to be used for testing
@@ -48,6 +47,7 @@ public class HoughpostWater {
 		// mt_experiment.tif for big testing
 		// Fake_databigsnp.tif for fake data with noise
 		// small_test.tif for fake test data
+		// Fake_big_file.tif more lines with noise Fake_bigfile_noisy_sec.tif Fake_samesig_first.tif Fake_samesig_sec.tif
 		new ImageJ();
 
 		new Normalize();
@@ -63,6 +63,9 @@ public class HoughpostWater {
 		double[] psf = new double[ndims];
 		psf[0] = 1.7;
 		psf[1] = 1.8;
+		
+		//psf[0] = 1.65;
+		//psf[1] = 1.47;
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		// Initialize empty images to be used later
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
@@ -93,7 +96,7 @@ public class HoughpostWater {
 		// Do watershedding and Hough
 
 		// Declare minimum length of the line(in pixels) to be detected
-		double minlength = 1;
+		double minlength = 5;
 
 		System.out.println("Doing Hough transform in labels: ");
 		linepair = PerformWatershedding.DowatersheddingandHough(biginputimg, inputimg, minlength);
@@ -128,7 +131,7 @@ public class HoughpostWater {
 
 			// Do gradient descent to improve the Hough detected lines
 			final_param = MTline.Getfinallineparam(simpleobject.get(index).Label, simpleobject.get(index).slope,
-					simpleobject.get(index).intercept,psf, minlength);
+					simpleobject.get(index).intercept,psf, minlength, true);
 			if (final_param!=null){
 			final double[] cordone = { final_param[0], final_param[1] };
 			final double[] cordtwo = { final_param[2], final_param[3] };
