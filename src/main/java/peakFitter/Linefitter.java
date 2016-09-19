@@ -58,7 +58,7 @@ public class Linefitter {
 		
 			currentimg = Views.offsetInterval(currentimg, smallinterval);
 			
-			newintercept = intercept - (smallinterval.min(1) - slope * smallinterval.min(0));
+			newintercept = intercept - (smallinterval.realMin(1) - slope * smallinterval.realMin(0));
 			
 		}
 		
@@ -124,15 +124,19 @@ public class Linefitter {
 		if (offsetting){
 			System.out.println("Ofsetting on: " + "Label: " + label + " " + "Hough Detection: " 
 		                                                      + " StartX: "
-					+ (MinandMax[0] + smallinterval.min(0))   + " StartY: "
-					+ (MinandMax[1] + smallinterval.min(1)) + " EndX: " 
-		            + (MinandMax[2] + smallinterval.min(0)) + " EndY: " 
-					+ (MinandMax[3] + +smallinterval.min(1)));
+					+ (MinandMax[0] + smallinterval.realMin(0))   + " StartY: "
+					+ (MinandMax[1] + smallinterval.realMin(1)) + " EndX: " 
+		            + (MinandMax[2] + smallinterval.realMin(0)) + " EndY: " 
+					+ (MinandMax[3] + +smallinterval.realMin(1)));
 			
 		}
 		for (int d = 0; d < ndims; ++d) {
 
 			if (MinandMax[d] == Double.MAX_VALUE || MinandMax[d + ndims] == -Double.MIN_VALUE)
+				return null;
+			if (MinandMax[d] >= inputimg.dimension(d) || MinandMax[d + ndims] >= inputimg.dimension(d))
+				return null;
+			if (MinandMax[d] <= 0 || MinandMax[d + ndims] <= 0)
 				return null;
 
 		}
@@ -218,11 +222,9 @@ public class Linefitter {
 				double dy = newslope * dx;
 				double ds = finalparamstart[4];
 				final double LMdist = sqDistance(startpos, endpos);
+				/*
 				double[] dxvector = {dx, dy};
-				System.out.println("ds: " + ds + " " + "Const:" + finalparamstart[6]);
-				System.out.println("LM solver : " + " StartX: " + startpos[0] + " StartY:  " + startpos[1]);
-				System.out.println("LM solver : " + " EndX: " + endpos[0] + " EndY:  " + endpos[1]);
-				System.out.println(" Length:  " + Math.sqrt(LMdist));
+				
 
 				double[] startfit = new double[ndims];
 				double[] endfit = new double[ndims];
@@ -241,6 +243,8 @@ public class Linefitter {
 				final double Maskdist = sqDistance(startfit, endfit);
 				// If mask fits fail, return LM solver results, very crucial for
 				// noisy data
+				
+				*/
 				double[] returnparam = new double[2 * ndims];
 				double[] LMparam = new double[2 * ndims];
 				
@@ -248,36 +252,39 @@ public class Linefitter {
 					for (int d = 0; d < ndims; ++d) {
 						startpos[d] += smallinterval.realMin(d);
 						endpos[d] += smallinterval.realMin(d);
-						startfit[d] += smallinterval.realMin(d);
-						endfit[d] += smallinterval.realMin(d);
+					//	startfit[d] += smallinterval.realMin(d);
+					//	endfit[d] += smallinterval.realMin(d);
 					}
 					
 					
 				}
-				
+				System.out.println("ds: " + ds + " " + "Const:" + finalparamstart[6]);
+				System.out.println("LM solver : " + " StartX: " + startpos[0] + " StartY:  " + startpos[1]);
+				System.out.println("LM solver : " + " EndX: " + endpos[0] + " EndY:  " + endpos[1]);
+				System.out.println(" Length:  " + Math.sqrt(LMdist));
 				
 				for (int d = 0; d < ndims; ++d) {
 					LMparam[d] = startpos[d];
 					LMparam[ndims + d] = endpos[d];
 				}
-				
+				/*
 				for (int d = 0; d < ndims; ++d) {
 						returnparam[d] = startfit[d];
 						returnparam[ndims + d] = endfit[d];
-				}
-					if (Math.abs(Math.sqrt(Maskdist) - Math.sqrt(LMdist)) > 10) {
-                        System.out.println("Mask fits fail, returning LM solver results!");
+				} */
+			//		if (Math.abs(Math.sqrt(Maskdist) - Math.sqrt(LMdist)) > 10) {
+             //           System.out.println("Mask fits fail, returning LM solver results!");
 						for (int d = 0; d < ndims; ++d) {
 							returnparam[d] = startpos[d];
 							returnparam[ndims + d] = endpos[d];
 						}
 
-					}
+				//	}
 				
-				Testerrorfifth(returnparam, label, Distance(new double[] {returnparam[0], returnparam[1]},
-						new double[] {returnparam[2], returnparam[3]}));
+				Testerroreight(LMparam, label, Distance(new double[] {LMparam[0], LMparam[1]},
+						new double[] {LMparam[2], LMparam[3]}));
 				
-				System.out.println("Number of gaussians for mask fit:" + (numberofgaussians) );
+			//	System.out.println("Number of gaussians for mask fit:" + (numberofgaussians) );
 
 				return returnparam;
 
@@ -293,7 +300,7 @@ public class Linefitter {
 
 		// Errorlist for Fake_big_file.tif
 		try {
-			FileWriter writer = new FileWriter("error-Fake_big_file.txt", true);
+			FileWriter writer = new FileWriter("error-Fake_big_file-offsettingLM.txt", true);
 
 			if (label == 1)
 				writer.write((point[0] - 146.94592464242646) + " " + (point[1] - 55.42312239408533) + " "
@@ -422,86 +429,103 @@ public class Linefitter {
 	}
 	
 	
-	
-	
-	private void Testerror_fourth(final double[] point, int label, double length) {
+	private void Testerroreight(final double[] point, int label, double length) {
 
-		// Errorlist for Fake_big_file_nonoise.tif
+		// Errorlist for Fake_big_file.tif
 		try {
-			FileWriter writer = new FileWriter("error-Fake_fourth.txt", true);
+			FileWriter writer = new FileWriter("error-Fake_eight-offsettingLM.txt", true);
+
 			if (label == 1)
-				writer.write((point[0] - 126.13917012530375 ) + " " + (point[1] - 12.282014898904553 ) + " "
-						+ (point[2] - 146.4988429788055 ) + " " + (point[3] - 68.95271629521329 ) + " "
-						+ (length - 60.21697995956959));
+				writer.write((point[0] - 103.42410325530419) + " " + (point[1] - 20.066334908307294) + " "
+						+ (point[2] - 113.01169863486068) + " " + (point[3] - 20.744421134813877) + " "
+						+ (length - 9.61154441766103));
 			writer.write("\r\n");
-			
 			if (label == 2)
-				writer.write((point[0] - 287.31654200330456 ) + " " + (point[1] - 20.92108632639532) + " "
-						+ (point[2] - 307.95111956031485 ) + " " + (point[3] - 75.76676417688007 ) + " "
-						+ (length - 58.598926353948045));
+				writer.write((point[0] - 385.0149251470887) + " " + (point[1] - 28.8351210942548) + " "
+						+ (point[2] - 395.02257842025983 ) + " " + (point[3] - 30.02979900503253) + " "
+						+ (length - 10.078709210336052));
 			writer.write("\r\n");
 			if (label == 3)
-				writer.write((point[0] - 394.2007664532387) + " " + (point[1] - 137.97105284748943 ) + " "
-						+ (point[2] -  415.8046469116525 ) + " " + (point[3] - 189.30009415452156 ) + " "
-						+ (length - 55.69019781218634));
+				writer.write((point[0] - 223.63088159385103) + " " + (point[1] - 46.662735533349625) + " "
+						+ (point[2] - 233.22065561451288) + " " + (point[3] - 37.39675789813177) + " "
+						+ (length - 13.334995586940344));
 			writer.write("\r\n");
 			if (label == 4)
-				writer.write((point[0] - 275.1381147359073 ) + " " + (point[1] - 155.89094624412152) + " "
-						+ (point[2] - 297.10573559716386) + " " + (point[3] - 178.78885620603052) + " "
-						+ (length - 31.73154025457328));
+				writer.write((point[0] - 265.63155275607386) + " " + (point[1] - 54.06721342595662) + " "
+						+ (point[2] - 276.4634176659475) + " " + (point[3] - 55.14114238921126) + " "
+						+ (length - 10.884972248190095));
 			writer.write("\r\n");
-			if (label == 5)
-				writer.write((point[0] - 205.37868714928 ) + " " + (point[1] - 185.36887450296754) + " "
-						+ (point[2] - 227.36721865263922) + " " + (point[3] - 217.889960909862) + " "
-						+ (length - 39.25705769360353));
-			writer.write("\r\n");
-		
 			if (label == 6)
-				writer.write((point[0] - 8.97046992628082) + " " + (point[1] - 195.19430390839713 ) + " "
-						+ (point[2] - 30.9659156464212) + " " + (point[3] - 255.17083112869545) + " "
-						+ (length - 63.882575479036745));
-			writer.write("\r\n");
-			if (label == 7)
-				writer.write((point[0] - 244.06902561050492) + " " + (point[1] - 203.52782680656154 ) + " "
-						+ (point[2] - 265.1413109809939) + " " + (point[3] - 225.49153544815613) + " "
-						+ (length - 30.437570665678653));
+				writer.write((point[0] - 300.84659082941437) + " " + (point[1] - 139.85962648478687) + " "
+						+ (point[2] - 312.44765714375006) + " " + (point[3] - 154.44886993675695) + " "
+						+ (length - 18.639494739141032));
 			writer.write("\r\n");
 		
+       
+			if (label == 7)
+				writer.write((point[0] - 258.4602639611949) + " " + (point[1] - 161.8029504673369) + " "
+						+ (point[2] - 270.22003738935496) + " " + (point[3] - 151.52609599285373) + " "
+						+ (length - 15.61749048251234));
+			writer.write("\r\n");
 			if (label == 8)
-				writer.write((point[0] - 238.17456437175838) + " " + (point[1] - 208.6526580863463 ) + " "
-						+ (point[2] - 260.0670569370159) + " " + (point[3] -232.47820601925793) + " "
-						+ (length - 32.35642076966061));
-			writer.write("\r\n");
-			if (label == 9)
-				writer.write((point[0] - 121.5270998588878) + " " + (point[1] - 227.24035512396716) + " "
-						+ (point[2] - 142.38930026876164) + " " + (point[3] - 270.4584672047092 ) + " "
-						+ (length - 47.9899637191499));
-			writer.write("\r\n");
-			if (label == 10)
-				writer.write((point[0] - 378.7094459942433) + " " + (point[1] - 247.47968535047744 ) + " "
-						+ (point[2] - 400.48070583177883) + " " + (point[3] - 283.2215972116334) + " "
-						+ (length - 41.85059161354987));
-			writer.write("\r\n");
-			if (label == 11)
-				writer.write((point[0] - 37.50123447451864) + " " + (point[1] - 268.58583489768574) + " "
-						+ (point[2] - 58.751283778454095  ) + " " + (point[3] - 291.7906179032095 ) + " "
-						+ (length - 31.464687345548707));
+				writer.write((point[0] - 10.782326104595313) + " " + (point[1] - 215.40174428753127) + " "
+						+ (point[2] - 20.269038650282194) + " " + (point[3] - 202.82555475178765) + " "
+						+ (length - 15.753039648380254));
 			writer.write("\r\n");
 			
+			if (label == 10)
+				writer.write((point[0] - 183.13644015784087) + " " + (point[1] - 258.1201972778982) + " "
+						+ (point[2] - 194.29386588004672) + " " + (point[3] - 250.758719045703) + " "
+						+ (length - 13.367105539705484));
+			writer.write("\r\n");
+			if (label == 11)
+				writer.write((point[0] - 43.16752082802935) + " " + (point[1] - 266.8965342235055) + " "
+						+ (point[2] - 55.11228730824559) + " " + (point[3] - 285.7189935156261) + " "
+						+ (length - 22.292653948564176));
+			writer.write("\r\n");
+			if (label == 12)
+				writer.write((point[0] - 89.19182304526953) + " " + (point[1] - 349.37985704768585) + " "
+						+ (point[2] - 99.23449433610313) + " " + (point[3] - 334.4341802148607) + " "
+						+ (length - 18.00634617702824));
+			writer.write("\r\n");
 			if (label == 13)
-				writer.write((point[0] -  235.68677055246886) + " " + (point[1] - 308.8947489269762) + " "
-						+ (point[2] - 257.4405146014473) + " " + (point[3] - 358.0060188035331) + " "
-						+ (length - 53.713519797500425));
+				writer.write((point[0] - 226.4867575369383) + " " + (point[1] - 336.7196803069454) + " "
+						+ (point[2] - 236.9539633568867) + " " + (point[3] - 358.40376907956824) + " "
+						+ (length - 24.078249595353665));
 			writer.write("\r\n");
         
 			if (label == 14)
-				writer.write((point[0] - 272.5598307624026) + " " + (point[1] - 356.28483553440674) + " "
-						+ (point[2] - 292.72642239534883) + " " + (point[3] - 412.85868538226975) + " "
-						+ (length - 60.060735132851704));
+				writer.write((point[0] - 36.854532534707985) + " " + (point[1] - 355.11968257966225) + " "
+						+ (point[2] - 46.97940312410058) + " " + (point[3] - 371.014896388969) + " "
+						+ (length - 18.845976400694227));
 			writer.write("\r\n");
 
+			if (label == 15)
+				writer.write((point[0] - 319.91703640799966) + " " + (point[1] - 374.6571062489546) + " "
+						+ (point[2] - 330.20918012825047) + " " + (point[3] - 382.22653982045375) + " "
+						+ (length - 12.775936245600017));
+			writer.write("\r\n");
 			
-			
+			if (label == 16)
+				writer.write((point[0] - 184.6352590369916) + " " + (point[1] - 381.94535949289735) + " "
+						+ (point[2] - 193.745540933255) + " " + (point[3] - 386.7172540902593) + " "
+						+ (length - 10.284367470958854));
+			writer.write("\r\n");
+			if (label == 17)
+				writer.write((point[0] - 257.00195165698847) + " " + (point[1] - 393.0422893229684) + " "
+						+ (point[2] - 267.69268843741247) + " " + (point[3] - 402.5256330267631) + " "
+						+ (length - 14.290754378709815));
+			writer.write("\r\n");
+			if (label == 18)
+				writer.write((point[0] - 279.74010616792725) + " " + (point[1] - 409.52143870609723) + " "
+						+ (point[2] - 289.02938093556145) + " " + (point[3] - 395.9148965060625) + " "
+						+ (length - 16.47509078426977));
+			writer.write("\r\n");
+			if (label == 19)
+				writer.write((point[0] - 307.24157464889754) + " " + (point[1] - 425.6772245139631 ) + " "
+						+ (point[2] - 318.90660598829754) + " " + (point[3] - 405.7625301506339) + " "
+						+ (length - 23.079601550590034));
+			writer.write("\r\n");
 			
 			
 			writer.close();
@@ -512,11 +536,210 @@ public class Linefitter {
 	}
 	
 	
+	
+	private void Testerrorfourth(final double[] point, int label, double length) {
+
+		// Errorlist for Fake_big_file_nonoise.tif
+		try {
+			FileWriter writer = new FileWriter("error-Fake_fourth-offsettingLM.txt", true);
+			
+			
+			if (label == 2)
+				writer.write((point[0] - 92.9218278288335 ) + " " + (point[1] - 27.17362370877159) + " "
+						+ (point[2] - 102.61190201305033  ) + " " + (point[3] - 8.259538706043248 ) + " "
+						+ (length - 21.2518269611358));
+			writer.write("\r\n");
+			if (label == 3)
+				writer.write((point[0] - 92.86686704851863) + " " + (point[1] - 64.90960165022722 ) + " "
+						+ (point[2] -  104.48587735237139 ) + " " + (point[3] - 50.86749014591775 ) + " "
+						+ (length - 18.22586886654507));
+			writer.write("\r\n");
+			if (label == 4)
+				writer.write((point[0] - 280.4959354329863 ) + " " + (point[1] - 72.78270243124555) + " "
+						+ (point[2] - 291.87059998038154) + " " + (point[3] - 91.7639867470957) + " "
+						+ (length - 22.128536956719685));
+			writer.write("\r\n");
+			if (label == 5)
+				writer.write((point[0] - 140.78720832889556 ) + " " + (point[1] - 132.0595306364064) + " "
+						+ (point[2] - 150.13633156292963) + " " + (point[3] - 121.58435770257674) + " "
+						+ (length - 14.04048977916345));
+			writer.write("\r\n");
+		
+			if (label == 6)
+				writer.write((point[0] - 177.83448360189217) + " " + (point[1] - 120.34554541214051 ) + " "
+						+ (point[2] - 189.51595497473548) + " " + (point[3] - 144.65370360371278) + " "
+						+ (length - 26.969303441154352));
+			writer.write("\r\n");
+			if (label == 7)
+				writer.write((point[0] - 297.81778952607874) + " " + (point[1] - 174.6084120361677 ) + " "
+						+ (point[2] - 308.05934208691633) + " " + (point[3] - 179.0082922914368) + " "
+						+ (length - 11.146674172913903));
+			writer.write("\r\n");
+		
+			if (label == 8)
+				writer.write((point[0] - 293.94451588690464) + " " + (point[1] - 212.63092313007522) + " "
+						+ (point[2] - 305.3832535507701) + " " + (point[3] -238.07718582965657) + " "
+						+ (length - 27.89905024761309));
+			writer.write("\r\n");
+			if (label == 9)
+				writer.write((point[0] - 177.5428835958507) + " " + (point[1] - 383.039314046178) + " "
+						+ (point[2] - 187.97215142327738) + " " + (point[3] -397.12932856571365 ) + " "
+						+ (length - 17.529921179997444));
+			writer.write("\r\n");
+			if (label == 10)
+				writer.write((point[0] - 250.34852210673256) + " " + (point[1] - 383.14378596776106 ) + " "
+						+ (point[2] - 262.3361618230495) + " " + (point[3] - 397.1830771085031) + " "
+						+ (length - 18.460910099524806));
+			writer.write("\r\n");
+			
+			
+			
+			writer.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	private void Testerrorsixth(final double[] point, int label, double length) {
+
+		// Errorlist for Fake_big_file_nonoise.tif
+		try {
+			FileWriter writer = new FileWriter("error-Fake_sixth-offsettingLM.txt", true);
+			
+			if (label == 1)
+				writer.write((point[0] - 169.64118749921616 ) + " " + (point[1] - 11.613782570008082) + " "
+						+ (point[2] - 178.99307294259404  ) + " " + (point[3] - 15.89183603164018 ) + " "
+						+ (length - 10.283943930547535));
+			writer.write("\r\n");
+			if (label == 2)
+				writer.write((point[0] - 115.75116431067165 ) + " " + (point[1] - 55.6534204178164) + " "
+						+ (point[2] - 125.81034889143847  ) + " " + (point[3] - 43.11496689247307 ) + " "
+						+ (length - 16.074825387453867));
+			writer.write("\r\n");
+			if (label == 3)
+				writer.write((point[0] - 28.220334047159405) + " " + (point[1] - 164.38434979659942 ) + " "
+						+ (point[2] -  37.75929834994512 ) + " " + (point[3] - 180.07960823571474 ) + " "
+						+ (length - 18.36662673003513));
+			writer.write("\r\n");
+			if (label == 4)
+				writer.write((point[0] - 323.19957370820015 ) + " " + (point[1] - 279.68244187607655) + " "
+						+ (point[2] - 333.76306541825585) + " " + (point[3] - 276.2791536595286) + " "
+						+ (length - 11.098185788375933));
+			writer.write("\r\n");
+			if (label == 5)
+				writer.write((point[0] - 121.79572577173442 ) + " " + (point[1] - 277.45720726092713) + " "
+						+ (point[2] - 132.65834127497192) + " " + (point[3] - 287.29659315550555) + " "
+						+ (length - 14.656395544389628));
+			writer.write("\r\n");
+		
+			if (label == 6)
+				writer.write((point[0] - 357.145870455239) + " " + (point[1] - 298.0757780155999 ) + " "
+						+ (point[2] - 367.93878216586546) + " " + (point[3] - 315.5802625070824) + " "
+						+ (length - 20.5643847587505));
+			writer.write("\r\n");
+			if (label == 7)
+				writer.write((point[0] - 106.82706188254228 ) + " " + (point[1] - 317.70439690048266 ) + " "
+						+ (point[2] - 117.1764204276652) + " " + (point[3] - 330.37225736794363) + " "
+						+ (length - 16.357992270403155));
+			writer.write("\r\n");
+		
+			if (label == 8)
+				writer.write((point[0] - 36.1891360034064 ) + " " + (point[1] - 366.20177329461654) + " "
+						+ (point[2] - 45.56449579796356) + " " + (point[3] - 382.0693576075372) + " "
+						+ (length - 18.43034463066398));
+			writer.write("\r\n");
+			if (label == 9)
+				writer.write((point[0] - 351.81427886479867) + " " + (point[1] - 371.74904382151175) + " "
+						+ (point[2] - 363.0083416140858) + " " + (point[3] - 368.5496057444498 ) + " "
+						+ (length - 11.642312693100601));
+			writer.write("\r\n");
+			if (label == 10)
+				writer.write((point[0] - 341.2930905442583) + " " + (point[1] - 401.7183995097824 ) + " "
+						+ (point[2] - 350.87179672046943) + " " + (point[3] - 392.6299117487737) + " "
+						+ (length - 13.204250141230684));
+			writer.write("\r\n");
+			
+			
+			
+			writer.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void Testerrorseventh(final double[] point, int label, double length) {
+
+		// Errorlist for Fake_big_file_nonoise.tif
+		try {
+			FileWriter writer = new FileWriter("error-Fake_seventh-offsettingLM.txt", true);
+			
+			if (label == 1)
+				writer.write((point[0] - 271.4643571467613 ) + " " + (point[1] - 28.812548804883015) + " "
+						+ (point[2] - 282.8951675969565  ) + " " + (point[3] - 51.710164559856814 ) + " "
+						+ (length - 25.59226904380924));
+			writer.write("\r\n");
+			if (label == 2)
+				writer.write((point[0] - 110.5306885004662 ) + " " + (point[1] - 65.44525892453427) + " "
+						+ (point[2] - 121.62549571709461  ) + " " + (point[3] - 57.18401955845997 ) + " "
+						+ (length - 13.83267230283887));
+			writer.write("\r\n");
+			if (label == 3)
+				writer.write((point[0] - 68.05868325990714) + " " + (point[1] - 75.63455282822034 ) + " "
+						+ (point[2] -  79.452538063318 ) + " " + (point[3] - 79.01775339391983 ) + " "
+						+ (length - 11.88553630884859));
+			writer.write("\r\n");
+			if (label == 4)
+				writer.write((point[0] - 206.6437991298365 ) + " " + (point[1] - 145.39791689745067) + " "
+						+ (point[2] - 218.42214304937968) + " " + (point[3] - 144.92232783566837) + " "
+						+ (length - 11.787941739028346));
+			writer.write("\r\n");
+			if (label == 5)
+				writer.write((point[0] - 279.74510883639203 ) + " " + (point[1] - 185.48363393201532) + " "
+						+ (point[2] - 288.9107332880293) + " " + (point[3] - 169.20120267841733) + " "
+						+ (length - 18.68492009928315));
+			writer.write("\r\n");
+		
+			if (label == 6)
+				writer.write((point[0] - 88.40052110271773 ) + " " + (point[1] - 188.59400638940423 ) + " "
+						+ (point[2] - 99.07470738911562) + " " + (point[3] - 207.37813796257564) + " "
+						+ (length - 21.605134848802486));
+			writer.write("\r\n");
+			if (label == 7)
+				writer.write((point[0] - 65.47844457154001 ) + " " + (point[1] - 252.69063416414554 ) + " "
+						+ (point[2] - 76.51766577799131) + " " + (point[3] - 261.1045084130139) + " "
+						+ (length - 13.880118325170509));
+			writer.write("\r\n");
+		
+			if (label == 8)
+				writer.write((point[0] - 0.48962832499659115 ) + " " + (point[1] - 321.2109153438377) + " "
+						+ (point[2] - 11.288741744009124) + " " + (point[3] - 305.6177616973579) + " "
+						+ (length - 18.96753255643506));
+			writer.write("\r\n");
+			if (label == 9)
+				writer.write((point[0] - 292.58579113897326) + " " + (point[1] -378.7141000644622) + " "
+						+ (point[2] - 302.9865792236662) + " " + (point[3] - 398.4700948971722 ) + " "
+						+ (length - 22.326569924929256));
+			writer.write("\r\n");
+			if (label == 10)
+				writer.write((point[0] - 172.44371203632338) + " " + (point[1] - 394.49432687477173 ) + " "
+						+ (point[2] - 182.66983302824718) + " " + (point[3] - 399.9071680381849) + " "
+						+ (length - 11.570324109626533));
+			writer.write("\r\n");
+			
+			
+			
+			writer.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 	private void Testerrorfirst(final double[] point, int label, double length) {
 
 		// Errorlist for Fake_big_file_nonoise.tif
 		try {
-			FileWriter writer = new FileWriter("error-Fake_databigsnp.txt", true);
+			FileWriter writer = new FileWriter("error-Fake_databigsnp-offsettingLM.txt", true);
 
 			if (label == 1)
 				writer.write((point[0] - 92.8676372377067) + " " + (point[1] - 5.499718994655133) + " "
@@ -576,7 +799,7 @@ public class Linefitter {
 
 		// Errorlist for Fake_big_file_nonoise.tif
 		try {
-			FileWriter writer = new FileWriter("testerror-Fake_fifth.txt", true);
+			FileWriter writer = new FileWriter("testerror-Fake_fifth-offsettingLM.txt", true);
 
 			if (label == 1)
 				writer.write((point[0] - 334.685446700782) + " " + (point[1] - 27.232991759972254) + " "
@@ -641,7 +864,7 @@ public class Linefitter {
 
 		// Errorlist for Fake_big_file_nonoise.tif
 		try {
-			FileWriter writer = new FileWriter("error-Fake_bigfile_noisy_sec.txt", true);
+			FileWriter writer = new FileWriter("error-Fake_bigfile_noisy_sec-offsettingLM.txt", true);
 			
 			if (label == 1)
 				writer.write((point[0] - 305.9925929042284) + " " + (point[1] - 6.386481793148133) + " "
@@ -769,7 +992,7 @@ public class Linefitter {
 
 		// Errorlist for Fake_big_file_nonoise.tif
 		try {
-			FileWriter writer = new FileWriter("error-Fake_bigfile_noisy_third.txt", true);
+			FileWriter writer = new FileWriter("error-Fake_bigfile_noisy_third-offsettingLM.txt", true);
 			
 			if (label == 1)
 				writer.write((point[0] - 159.70876069055475) + " " + (point[1] - 14.145735424295653) + " "
@@ -880,20 +1103,13 @@ public class Linefitter {
 						+ (point[2] - 198.92909691454048 ) + " " + (point[3] - 359.8836219091283) + " "
 						+ (length - 12.263957355504797));
 			writer.write("\r\n");
-			if (label == 23)
-				writer.write((point[0] - 363.18051478279176 ) + " " + (point[1] - 395.6581626679954 ) + " "
-						+ (point[2] - 371.2717339920776  ) + " " + (point[3] - 387.40066285914924 ) + " "
-						+ (length - 11.560888001611742));
-			writer.write("\r\n");
+			
 			if (label == 24)
 				writer.write((point[0] - 335.4158263232457 ) + " " + (point[1] - 384.3346481250782 ) + " "
 						+ (point[2] - 340.80011140941934 ) + " " + (point[3] - 376.6039312635851  ) + " "
 						+ (length - 9.420961154880434));
 			writer.write("\r\n");
-			if (label == 25)
-				writer.write((point[0] - 242.17648532439642 ) + " " + (point[1] - 401.6586191271966 ) + " "
-						+ (point[2] - 255.71765961466426   ) + " " + (point[3] - 399.89316172057016 ) + " "
-						+ (length - 13.655776836709897));
+			
 			writer.close();
 
 		} catch (IOException e) {

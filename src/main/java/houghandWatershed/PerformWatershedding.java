@@ -88,7 +88,14 @@ public class PerformWatershedding {
 					new FloatType());
 
 			outimg = CurrentLabelImage(outputLabeling.getStorageImg(), processedimg, label);
+			
+			long[] minCorner = GetMincorners(outputLabeling.getStorageImg(), label);
+			long[] maxCorner = GetMaxcorners(outputLabeling.getStorageImg(), label);
+			
 
+			FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
+
+			RandomAccessibleInterval<FloatType> outimgview = Views.interval(outimg, intervalsmall);
 			// Set size of pixels in Hough space
 			int mintheta = 0;
 			// Usually is 180 but to allow for detection of vertical
@@ -107,19 +114,14 @@ public class PerformWatershedding {
 
 			double ratio = (max[0] - min[0]) / (max[1] - min[1]);
 			FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (long) (pixelsRho * ratio) });
-			final Img<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
-			long[] minCorner = new long[biginputimg.numDimensions()];
-			long[] maxCorner = new long[biginputimg.numDimensions()];
-			minCorner = GetMincorners(outputLabeling.getStorageImg(), label);
-			maxCorner = GetMaxcorners(outputLabeling.getStorageImg(), label);
-
-			FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
-
-			RandomAccessibleInterval<FloatType> outimgview = Views.interval(outimg, intervalsmall);
+			final RandomAccessibleInterval<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval, new FloatType());
+			
 			HoughPushCurves.Houghspace(outimgview, houghimage, min, max, val);
 
 			for (int d = 0; d < houghimage.numDimensions(); ++d)
 				sizes[d] = houghimage.dimension(d);
+			
+			// Define Arraylist to get the slope and the intercept of the Hough detected lines
 			ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(
 					biginputimg.numDimensions());
 			SubpixelMinlist = GetLocalmaxmin.HoughspaceMaxima(houghimage, interval, sizes, thetaPerPixel, rhoPerPixel);

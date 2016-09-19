@@ -30,7 +30,7 @@ public class Fakedata {
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(range, new FloatType());
 		RandomAccessibleInterval<FloatType> noisyimg = new ArrayImgFactory<FloatType>().create(imgout, new FloatType());
 		final int ndims = imgout.numDimensions();
-		final Random rnd = new Random(230);
+		final Random rnd = new Random(16430);
 		final double [] sigma = {1.7,1.8};
 		final double [] Ci = new double[ndims];
 		
@@ -38,12 +38,12 @@ public class Fakedata {
 			Ci[d] = 1.0 / Math.pow(sigma[d],2);
 		
 		Kernels.SaltandPepperNoise(imgout);
-		final int numlines = 10;
+		final int numlines = 20;
 		Gaussianlines.Drawsimulatedlines(imgout, smallrange,rnd,sigma, numlines);
 		
 		ImageJFunctions.show(imgout);
 		
-		noisyimg = Poissonprocess.poissonProcess(imgout, 15f);
+		noisyimg = Poissonprocess.poissonProcess(imgout, 25f);
 		//noisyimg = imgout;
 		
 		FloatType minval = new FloatType(0);

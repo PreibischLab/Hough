@@ -39,7 +39,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/Fake_databigsnp.tif"));
+				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
 		
 		
 		// small_mt.tif image to be used for testing
@@ -47,7 +47,7 @@ public class HoughpostWater {
 		// mt_experiment.tif for big testing
 		// Fake_databigsnp.tif for fake data with noise
 		// small_test.tif for fake test data
-		// Fake_big_file.tif more lines with noise Fake_bigfile_noisy_sec.tif Fake_samesig_first.tif Fake_samesig_sec.tif
+		// Fake_big_file.tif more lines with noise Fake_bigfile_noisy_sec.tif
 		new ImageJ();
 
 		new Normalize();
@@ -61,11 +61,11 @@ public class HoughpostWater {
 		final int ndims = biginputimg.numDimensions();
 		// Define the psf of the microscope
 		double[] psf = new double[ndims];
-		psf[0] = 1.7;
-		psf[1] = 1.8;
+		//psf[0] = 1.6998;
+		//psf[1] = 1.7998;
 		
-		//psf[0] = 1.65;
-		//psf[1] = 1.47;
+		psf[0] = 1.65;
+		psf[1] = 1.47;
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		// Initialize empty images to be used later
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
@@ -150,7 +150,7 @@ public class HoughpostWater {
 									+ final_param[1] + " " + "EndX:" + final_param[2] + "EndY: " + final_param[3]) ;
 					System.out.println(  "Length: " + distance);
 									
-									
+		/*							
 			try { FileWriter writer = new
 					  FileWriter("Actualdata.txt", true); 
 			writer.write("StartX:" + final_param[0] + " StartY:"
@@ -160,7 +160,7 @@ public class HoughpostWater {
 					  ); writer.write("\r\n"); writer.close();
 			
 
-		}catch (IOException e) { e.printStackTrace(); }
+		}catch (IOException e) { e.printStackTrace(); }*/
 		}
 		
 		}

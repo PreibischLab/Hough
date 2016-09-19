@@ -30,8 +30,8 @@ public class Gaussianlines {
 
 			}
 
-			endpos[0] = startpos[0] + rnd.nextDouble()*2 + 20;
-			endpos[1] = startpos[1] + 2*rnd.nextDouble()*(endpos[0] - startpos[0]) + 20;
+			endpos[0] = startpos[0] + rnd.nextDouble()*2.9 - 12;
+			endpos[1] = startpos[1] + 4*rnd.nextDouble()*(endpos[0] - startpos[0]) + 20;
 			
 			
 			
@@ -47,7 +47,7 @@ public class Gaussianlines {
 		
 		for (int index = 0; index < linearray.size(); ++index){
 		try {
-	        FileWriter writer = new FileWriter("initiallengthsbig_fifth.txt", true);
+	        FileWriter writer = new FileWriter("initiallengthsbig_eight.txt", true);
 	        writer.write( "StartX: "  + linearray.get(index).startpos[0]+  " " +
 	       		 "StartY: "+ linearray.get(index).startpos[1] + " " + "EndposX: " + linearray.get(index).endpos[0] +  
 	    		 " EndposY :" + linearray.get(index).endpos[1]+ "  Length " + linearray.get(index).length );
