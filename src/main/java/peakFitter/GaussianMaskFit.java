@@ -23,8 +23,8 @@ public class GaussianMaskFit {
 
 	public static double[] sumofgaussianMaskFit(final RandomAccessibleInterval<FloatType> signalInterval,
 			final RandomAccessibleInterval<IntType> intimg, final double[] location, final double[] sigma,
-			final int iterations, final double maxintensity, final double[] dxvector, final double slope,
-			final double intercept, final int numberofgaussians, final Endfit startorend, int label) throws Exception {
+			final int iterations,  final double[] dxvector, final double slope,
+			final double intercept,final double maxintensityline, final int numberofgaussians, final Endfit startorend, int label) throws Exception {
 		final int n = signalInterval.numDimensions();
 
 		// pre-compute sigma^2
@@ -57,12 +57,12 @@ public class GaussianMaskFit {
 			switch (startorend) {
 
 			case Start:
-				beststartfitsumofGaussian(translatedIterableMask, location, sq_sigma, maxintensity, dxvector, slope,
+				beststartfitsumofGaussian(translatedIterableMask, location, sq_sigma, dxvector, slope,
 						intercept, numberofgaussians);
 				break;
 
 			case End:
-				bestendfitsumofGaussian(translatedIterableMask, location, sq_sigma, maxintensity, dxvector, slope,
+				bestendfitsumofGaussian(translatedIterableMask, location, sq_sigma, dxvector, slope,
 						intercept, numberofgaussians);
 				break;
 
@@ -88,7 +88,7 @@ public class GaussianMaskFit {
 				cImg.fwd();
 				final double signal = cImg.get().getRealDouble();
 				final double mask = cMask.get().getRealDouble();
-				final double weight = 8;
+				final double weight = maxintensityline;
 
 				final double signalmask = signal * mask * weight;
 
@@ -150,7 +150,7 @@ public class GaussianMaskFit {
 		int i = 0;
 		do {
 
-			setsingleGaussian(translatedIterableMask, location, sq_sigma, maxintensity);
+			setsingleGaussian(translatedIterableMask, location, sq_sigma);
 
 			// ImageJFunctions.show(gaussianMask);
 			// compute the sums
@@ -168,7 +168,7 @@ public class GaussianMaskFit {
 
 				final double signal = cImg.get().getRealDouble();
 				final double mask = cMask.get().getRealDouble();
-				final double weight = 16;
+				final double weight = maxintensity;
 
 				final double signalmask = signal * mask * weight;
 
@@ -215,17 +215,16 @@ public class GaussianMaskFit {
 	}
 
 	final public static void beststartfitsumofGaussian(final IterableInterval<FloatType> image, final double[] location,
-			final double[] sq_sigma, final double maxintensity, final double[] dxvector, final double slope,
+			final double[] sq_sigma,  final double[] dxvector, final double slope,
 			final double intercept, int numberofgaussians) {
 		final int ndims = image.numDimensions();
-		final double[] halfgauss = new double[ndims];
 		final Cursor<FloatType> cursor = image.localizingCursor();
 
 		double sumofgaussians = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
 
-			double value = maxintensity;
+			double value = 1.0;
 
 			for (int d = 0; d < ndims; ++d) {
 				final double x =  cursor.getDoublePosition(d) - location[d] ;
@@ -250,16 +249,15 @@ public class GaussianMaskFit {
 	}
 
 	final public static void bestendfitsumofGaussian(final IterableInterval<FloatType> image, final double[] location,
-			final double[] sq_sigma, final double maxintensity, final double[] dxvector, final double slope,
+			final double[] sq_sigma,  final double[] dxvector, final double slope,
 			final double intercept, int numberofgaussians) {
 		final int ndims = image.numDimensions();
-		final double[] halfgauss = new double[ndims];
 		final Cursor<FloatType> cursor = image.localizingCursor();
 		double sumofgaussians = 0;
 		while (cursor.hasNext()) {
 			cursor.fwd();
 
-			double value = maxintensity;
+			double value = 1.0;
 
 			for (int d = 0; d < ndims; ++d) {
 				final double x = cursor.getDoublePosition(d) - location[d] ;
@@ -287,7 +285,7 @@ public class GaussianMaskFit {
 
 	
 	final public static void setsingleGaussian(final IterableInterval<FloatType> image, final double[] location,
-			final double[] sq_sigma, final double maxintensity) {
+			final double[] sq_sigma) {
 		final int numDimensions = image.numDimensions();
 
 		final Cursor<FloatType> cursor = image.localizingCursor();
@@ -295,7 +293,7 @@ public class GaussianMaskFit {
 		while (cursor.hasNext()) {
 			cursor.fwd();
 
-			double value = maxintensity;
+			double value = 1.0;
 
 			for (int d = 0; d < numDimensions; ++d) {
 				final double x = location[d] - cursor.getIntPosition(d);

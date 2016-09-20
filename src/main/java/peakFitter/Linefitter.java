@@ -54,6 +54,7 @@ public class Linefitter {
 		final long[] minCorner = PerformWatershedding.GetMincorners(intimg, label);
 		final long[] maxCorner = PerformWatershedding.GetMaxcorners(intimg, label);
 		FinalInterval smallinterval = new FinalInterval(minCorner, maxCorner);
+		currentimg = Views.interval(currentimg, smallinterval);
 		if(offsetting){
 		
 			currentimg = Views.offsetInterval(currentimg, smallinterval);
@@ -64,14 +65,13 @@ public class Linefitter {
 		
 		final Cursor<FloatType> outcursor = Views.iterable(currentimg).localizingCursor();
 		
-		final double maxintensityline = GetLocalmaxmin.computeMaxIntensityinlabel(inputimg, intimg, label);
-		
+		final double maxintensityline = GetLocalmaxmin.computeMaxIntensity(currentimg);
 		
 		while (outcursor.hasNext()) {
 
 			outcursor.fwd();
 			
-				if (outcursor.get().get() / maxintensityline >= 0.5) {
+				if (outcursor.get().get()/maxintensityline  > 0.5) {
 					outcursor.localize(newposition);
 
 					long pointonline = (long) (newposition[1] - slope * newposition[0] - newintercept);
@@ -94,7 +94,7 @@ public class Linefitter {
 			}
 		}
 
-		final double[] MinandMax = new double[2 * ndims + 3];
+		final double[] MinandMax = new double[2 * ndims + 2];
 
 		if (slope >= 0) {
 			for (int d = 0; d < ndims; ++d) {
@@ -114,9 +114,8 @@ public class Linefitter {
 
 		}
 
-		MinandMax[2 * ndims] = 1.0;
-		MinandMax[2 * ndims + 1] = 1.0;
-		MinandMax[2 * ndims + 2] = 0;
+		MinandMax[2 * ndims] = Math.min(psf[0], psf[1]);
+		MinandMax[2 * ndims + 1] = 0.01;
 		
 		System.out.println("Label: " + label + " " + "Hough Detection: " + " StartX: " + MinandMax[0]  + " StartY: "
 				+ MinandMax[1] + " EndX: " + MinandMax[2] + " EndY: " + MinandMax[3]);
@@ -145,6 +144,9 @@ public class Linefitter {
 
 	}
 	
+	
+	
+	
 	// Get line parameters for fitting line to a line in a label
 
 	public double[] Getfinallineparam(final int label, final double slope, final double intercept, final double[] psf,
@@ -172,12 +174,7 @@ public class Linefitter {
 			return null;
 
 		else {
-			final double[] fixed_param = new double[ndims + 1];
-
-			for (int d = 0; d < ndims; ++d) {
-
-				fixed_param[d] = 1.0 / Math.pow(psf[d], 2);
-			}
+			
 			final double[] finalparamstart = start_param.clone();
 			// LM solver part
 			int maxiter = 1500;
@@ -189,12 +186,20 @@ public class Linefitter {
 				final long[] minCorner = PerformWatershedding.GetMincorners(intimg, label);
 				final long[] maxCorner = PerformWatershedding.GetMaxcorners(intimg, label);
 				FinalInterval smallinterval = new FinalInterval(minCorner, maxCorner);
-				
+				currentimg = Views.interval(currentimg, smallinterval);
 				if(offsetting){
 				
 					currentimg = Views.offsetInterval(currentimg, smallinterval);
 					
 				}
+				
+				final double[] fixed_param = new double[ndims + 1];
+
+				for (int d = 0; d < ndims; ++d) {
+
+					fixed_param[d] = 1.0 / Math.pow(psf[d], 2);
+				}
+				fixed_param[ndims] = GetLocalmaxmin.computeMaxIntensity(currentimg);
 
 			final double[] inistartpos = { start_param[0], start_param[1] };
 			final double[] iniendpos = { start_param[2], start_param[3] };
@@ -214,51 +219,51 @@ public class Linefitter {
 						finalparamstart[j] = start_param[j];
 				}
 
-				int iterations = 800;
+				int iterations = 1800;
 
 				double newslope = (endpos[1] - startpos[1]) / (endpos[0] - startpos[0]);
-				double newintercept = (endpos[1] +(1/ newslope) *endpos[0]);
-				double dx = finalparamstart[4] / Math.sqrt(1 + newslope * newslope);
+				double newintercept = (endpos[1]  -newslope *endpos[0]);
+				double dx = finalparamstart[4] / Math.sqrt( 1 + newslope * newslope);
 				double dy = newslope * dx;
 				double ds = finalparamstart[4];
 				final double LMdist = sqDistance(startpos, endpos);
-				/*
+				
 				double[] dxvector = {dx, dy};
 				
 
 				double[] startfit = new double[ndims];
 				double[] endfit = new double[ndims];
-
+				final double maxintensityline = GetLocalmaxmin.computeMaxIntensity(currentimg);
 
 				final int numberofgaussians = 2; 
-                final double lineintensity = finalparamstart[5];
+                
                 
                 
 				startfit = peakFitter.GaussianMaskFit.sumofgaussianMaskFit(currentimg, intimg, startpos.clone(), psf, iterations,
-						lineintensity, dxvector, newslope,newintercept, numberofgaussians, Endfit.Start, label);
+						 dxvector, newslope,newintercept, maxintensityline, numberofgaussians, Endfit.Start, label);
 
 				endfit = peakFitter.GaussianMaskFit.sumofgaussianMaskFit(currentimg, intimg, endpos.clone(), psf, iterations,
-						lineintensity, dxvector, newslope,newintercept, numberofgaussians, Endfit.End, label);
+						 dxvector, newslope,newintercept, maxintensityline, numberofgaussians, Endfit.End, label);
 
 				final double Maskdist = sqDistance(startfit, endfit);
 				// If mask fits fail, return LM solver results, very crucial for
 				// noisy data
 				
-				*/
-				double[] returnparam = new double[2 * ndims];
+				
+				double[] returnparam = new double[2 * ndims + 2];
 				double[] LMparam = new double[2 * ndims];
 				
 				if (offsetting){
 					for (int d = 0; d < ndims; ++d) {
 						startpos[d] += smallinterval.realMin(d);
 						endpos[d] += smallinterval.realMin(d);
-					//	startfit[d] += smallinterval.realMin(d);
-					//	endfit[d] += smallinterval.realMin(d);
+						startfit[d] += smallinterval.realMin(d);
+						endfit[d] += smallinterval.realMin(d);
 					}
 					
 					
 				}
-				System.out.println("ds: " + ds + " " + "Const:" + finalparamstart[6]);
+				System.out.println("ds: " + ds );
 				System.out.println("LM solver : " + " StartX: " + startpos[0] + " StartY:  " + startpos[1]);
 				System.out.println("LM solver : " + " EndX: " + endpos[0] + " EndY:  " + endpos[1]);
 				System.out.println(" Length:  " + Math.sqrt(LMdist));
@@ -267,25 +272,31 @@ public class Linefitter {
 					LMparam[d] = startpos[d];
 					LMparam[ndims + d] = endpos[d];
 				}
-				/*
+				
 				for (int d = 0; d < ndims; ++d) {
 						returnparam[d] = startfit[d];
 						returnparam[ndims + d] = endfit[d];
-				} */
-			//		if (Math.abs(Math.sqrt(Maskdist) - Math.sqrt(LMdist)) > 10) {
-             //           System.out.println("Mask fits fail, returning LM solver results!");
+				} 
+				if (Math.abs(Math.sqrt(Maskdist) - Math.sqrt(LMdist)) > 10) {
+                        System.out.println("Mask fits fail, returning LM solver results!");
 						for (int d = 0; d < ndims; ++d) {
 							returnparam[d] = startpos[d];
 							returnparam[ndims + d] = endpos[d];
 						}
 
-				//	}
+					}
 				
-				Testerroreight(LMparam, label, Distance(new double[] {LMparam[0], LMparam[1]},
-						new double[] {LMparam[2], LMparam[3]}));
+			//	Testmovingline(returnparam, label, Distance(new double[] {returnparam[0], returnparam[1]},
+			//			new double[] {returnparam[2], returnparam[3]}), 0);
+				Testerroreight(returnparam, label, Distance(new double[] {returnparam[0], returnparam[1]},
+						new double[] {returnparam[2], returnparam[3]}));
+				
 				
 			//	System.out.println("Number of gaussians for mask fit:" + (numberofgaussians) );
 
+				
+				returnparam[2* ndims] = finalparamstart[4];
+				returnparam[2* ndims + 1] = finalparamstart[5];
 				return returnparam;
 
 			}
@@ -295,12 +306,185 @@ public class Linefitter {
 
 		}
 	}
+	public double[] Getfinaltrackparam(final double[] iniparam,
+			final int label, final double[] psf, final int rate, boolean offsetting) throws Exception {
 
+		
+		if (iniparam == null)
+			return null;
+
+		else {
+			
+			
+			PointSampleList<FloatType> datalist = gatherfullData(label, offsetting);
+			final Cursor<FloatType> listcursor = datalist.localizingCursor();
+			double[][] X = new double[(int) datalist.size()][ndims];
+			double[] I = new double[(int) datalist.size()];
+			int index = 0;
+			while (listcursor.hasNext()) {
+				listcursor.fwd();
+
+				for (int d = 0; d < ndims; d++) {
+					X[index][d] = listcursor.getDoublePosition(d);
+				}
+
+				I[index] = listcursor.get().getRealDouble();
+
+				index++;
+			}
+			
+			final double[] fixed_param = new double[ndims + 1];
+
+			for (int d = 0; d < ndims; ++d) {
+
+				fixed_param[d] = 1.0 / Math.pow(psf[d], 2);
+			}
+			final double[] finalparamstart = iniparam.clone();
+			
+			 RandomAccessibleInterval<FloatType> currentimg =  PerformWatershedding.CurrentLabelImage(intimg, inputimg, label);
+			 
+				final long[] minCorner = PerformWatershedding.GetMincorners(intimg, label);
+				final long[] maxCorner = PerformWatershedding.GetMaxcorners(intimg, label);
+				FinalInterval smallinterval = new FinalInterval(minCorner, maxCorner);
+				currentimg = Views.interval(currentimg, smallinterval);
+				if(offsetting){
+				
+					currentimg = Views.offsetInterval(currentimg, smallinterval);
+					
+					for (int d = 0; d < ndims; ++d){
+						
+						finalparamstart[d] -=smallinterval.realMin(d);
+						finalparamstart[d + ndims] -= smallinterval.realMin(d);
+						
+					}
+					
+				}
+
+				
+			
+			// LM solver part
+						int maxiter = 15000;
+						double lambda = 1e-3;
+						double termepsilon = 1e-3;
+			//	LevenbergMarquardtSolverLine.solve(X, finalparamstart, fixed_param, I, new GaussianLineds(), lambda,
+			//			termepsilon, maxiter);
+
+				final double[] startpos = { finalparamstart[0], finalparamstart[1] };
+				final double[] endpos = { finalparamstart[2], finalparamstart[3] };
+				// NaN protection: we prefer returning the crude estimate than
+				// NaN
+				for (int j = 0; j < finalparamstart.length; j++) {
+					if (Double.isNaN(finalparamstart[j]))
+						finalparamstart[j] = iniparam[j];
+				}
+
+				
+				double ds = finalparamstart[4];
+				final double LMdist = sqDistance(startpos, endpos);
+				
+				double[] returnparam = new double[2 * ndims + 2];
+				
+				final double maxintensityline = GetLocalmaxmin.computeMaxIntensity(currentimg);
+				
+				System.out.println("Label: " +label);
+				System.out.println("ds: " + ds );
+				System.out.println("Initial solver : " + " StartX: " + startpos[0] + " StartY:  " + startpos[1]);
+				System.out.println("Initial solver : " + " EndX: " + endpos[0] + " EndY:  " + endpos[1]);
+				System.out.println(" Length:  " + Math.sqrt(LMdist));
+			
+				int iterations = 1800;
+
+				double newslope = (endpos[1] - startpos[1]) / (endpos[0] - startpos[0]);
+				double newintercept = (endpos[1] - newslope *endpos[0]);
+				double dx = finalparamstart[4] / Math.sqrt( 1 + newslope * newslope);
+				double dy = newslope * dx;
+				
+				double[] dxvector = {dx, dy};
+				
+
+				double[] startfit = new double[ndims];
+				double[] endfit = new double[ndims];
+
+
+				final int numberofgaussians = 2; 
+                
+                
+                
+				startfit = peakFitter.GaussianMaskFit.sumofgaussianMaskFit(currentimg, intimg, startpos.clone(), psf, iterations,
+						 dxvector, newslope,newintercept, maxintensityline, numberofgaussians, Endfit.Start, label);
+
+				endfit = peakFitter.GaussianMaskFit.sumofgaussianMaskFit(currentimg, intimg, endpos.clone(), psf, iterations,
+						 dxvector, newslope,newintercept, maxintensityline, numberofgaussians, Endfit.End, label);
+
+				final double Maskdist = sqDistance(startfit, endfit);
+				// If mask fits fail, return LM solver results, very crucial for
+				// noisy data
+				
+				
+				
+				
+				if (offsetting){
+					for (int d = 0; d < ndims; ++d) {
+						startpos[d] += smallinterval.realMin(d);
+						endpos[d] += smallinterval.realMin(d);
+						startfit[d] += smallinterval.realMin(d);
+						endfit[d] += smallinterval.realMin(d);
+					}
+					
+					
+				}
+				
+				for (int d = 0; d < ndims; ++d) {
+					returnparam[d] = startfit[d];
+					returnparam[ndims + d] = endfit[d];
+				}
+				
+				if (Math.abs(Math.sqrt(Maskdist) - Math.sqrt(LMdist)) > 20) {
+                    System.out.println("Mask fits fail, returning LM solver results!");
+					for (int d = 0; d < ndims; ++d) {
+						returnparam[d] = startpos[d];
+						returnparam[ndims + d] = endpos[d];
+					}
+
+				}
+			Testmovingline(returnparam, label, Distance(new double[] {returnparam[0], returnparam[1]},
+								new double[] {returnparam[2], returnparam[3]}), rate);
+				
+				
+				returnparam[2* ndims] = finalparamstart[4];
+				returnparam[2* ndims + 1] = finalparamstart[5];
+			//	returnparam[2* ndims + 2] = finalparamstart[6];
+				
+				
+				return returnparam;
+
+			}
+
+			
+
+		
+	}
+	
+	
+	
+	public int Getlabel(final Point linepoint ){
+		
+		
+		RandomAccess<IntType> intranac = intimg.randomAccess();
+		
+		intranac.setPosition(linepoint);
+		int currentlabel = intranac.get().get();
+		
+		return currentlabel;
+	}
+
+	
+	
 	private void Testerror(final double[] point, int label, double length) {
 
 		// Errorlist for Fake_big_file.tif
 		try {
-			FileWriter writer = new FileWriter("error-Fake_big_file-offsettingLM.txt", true);
+			FileWriter writer = new FileWriter("error-Fake_big_file.txt", true);
 
 			if (label == 1)
 				writer.write((point[0] - 146.94592464242646) + " " + (point[1] - 55.42312239408533) + " "
@@ -433,7 +617,7 @@ public class Linefitter {
 
 		// Errorlist for Fake_big_file.tif
 		try {
-			FileWriter writer = new FileWriter("error-Fake_eight-offsettingLM.txt", true);
+			FileWriter writer = new FileWriter("error-Fake_eight.txt", true);
 
 			if (label == 1)
 				writer.write((point[0] - 103.42410325530419) + " " + (point[1] - 20.066334908307294) + " "
@@ -541,7 +725,7 @@ public class Linefitter {
 
 		// Errorlist for Fake_big_file_nonoise.tif
 		try {
-			FileWriter writer = new FileWriter("error-Fake_fourth-offsettingLM.txt", true);
+			FileWriter writer = new FileWriter("error-Fake_fourth.txt", true);
 			
 			
 			if (label == 2)
@@ -604,7 +788,7 @@ public class Linefitter {
 
 		// Errorlist for Fake_big_file_nonoise.tif
 		try {
-			FileWriter writer = new FileWriter("error-Fake_sixth-offsettingLM.txt", true);
+			FileWriter writer = new FileWriter("error-Fake_sixth.txt", true);
 			
 			if (label == 1)
 				writer.write((point[0] - 169.64118749921616 ) + " " + (point[1] - 11.613782570008082) + " "
@@ -672,7 +856,7 @@ public class Linefitter {
 
 		// Errorlist for Fake_big_file_nonoise.tif
 		try {
-			FileWriter writer = new FileWriter("error-Fake_seventh-offsettingLM.txt", true);
+			FileWriter writer = new FileWriter("error-Fake_seventh.txt", true);
 			
 			if (label == 1)
 				writer.write((point[0] - 271.4643571467613 ) + " " + (point[1] - 28.812548804883015) + " "
@@ -739,7 +923,7 @@ public class Linefitter {
 
 		// Errorlist for Fake_big_file_nonoise.tif
 		try {
-			FileWriter writer = new FileWriter("error-Fake_databigsnp-offsettingLM.txt", true);
+			FileWriter writer = new FileWriter("error-Fake_databigsnp.txt", true);
 
 			if (label == 1)
 				writer.write((point[0] - 92.8676372377067) + " " + (point[1] - 5.499718994655133) + " "
@@ -799,7 +983,7 @@ public class Linefitter {
 
 		// Errorlist for Fake_big_file_nonoise.tif
 		try {
-			FileWriter writer = new FileWriter("testerror-Fake_fifth-offsettingLM.txt", true);
+			FileWriter writer = new FileWriter("error-Fake_fifth.txt", true);
 
 			if (label == 1)
 				writer.write((point[0] - 334.685446700782) + " " + (point[1] - 27.232991759972254) + " "
@@ -864,7 +1048,7 @@ public class Linefitter {
 
 		// Errorlist for Fake_big_file_nonoise.tif
 		try {
-			FileWriter writer = new FileWriter("error-Fake_bigfile_noisy_sec-offsettingLM.txt", true);
+			FileWriter writer = new FileWriter("error-Fake_bigfile_noisy_sec.txt", true);
 			
 			if (label == 1)
 				writer.write((point[0] - 305.9925929042284) + " " + (point[1] - 6.386481793148133) + " "
@@ -992,7 +1176,7 @@ public class Linefitter {
 
 		// Errorlist for Fake_big_file_nonoise.tif
 		try {
-			FileWriter writer = new FileWriter("error-Fake_bigfile_noisy_third-offsettingLM.txt", true);
+			FileWriter writer = new FileWriter("error-Fake_bigfile_noisy_third.txt", true);
 			
 			if (label == 1)
 				writer.write((point[0] - 159.70876069055475) + " " + (point[1] - 14.145735424295653) + " "
@@ -1184,4 +1368,192 @@ public class Linefitter {
 		}
 		return (distance);
 	}
+	
+	private void Testmovingline (final double[] point, int label, double length, int rate){
+		try {
+			FileWriter writer = new FileWriter("error-Fake_movingline.txt", true);
+
+		if (rate == 0){
+			
+			
+			if (label == 1)
+				writer.write((point[0] - 169.73720446120004) + " " + (point[1] - 104.95635903304128 ) + " "
+						+ (point[2] - 181.43458804585626) + " " + (point[3] - 60.78333591544249) + " "
+						+ (length - 45.69556602203874));
+			writer.write("\r\n");
+			if (label == 2)
+				writer.write((point[0] - 294.6604728889232) + " " + (point[1] - 109.07711973280686) + " "
+						+ (point[2] - 305.2140902032087 ) + " " + (point[3] - 82.10337364262949) + " "
+						+ (length - 28.964837588941272));
+			writer.write("\r\n");
+			if (label == 3)
+				writer.write((point[0] - 391.2990529717664) + " " + (point[1] - 124.0347325138523) + " "
+						+ (point[2] - 401.71221291284917) + " " + (point[3] - 82.7441754252086) + " "
+						+ (length - 42.58337709305259));
+			writer.write("\r\n");
+			if (label == 4)
+				writer.write((point[0] - 203.44041398569848) + " " + (point[1] -130.38479493829118) + " "
+						+ (point[2] - 214.9881816669676) + " " + (point[3] - 99.63148998257181) + " "
+						+ (length - 32.84991178253051));
+			writer.write("\r\n");
+			if (label == 5)
+				writer.write((point[0] - 132.08290714831938) + " " + (point[1] - 221.96874365412077) + " "
+						+ (point[2] - 143.00136725366892) + " " + (point[3] - 177.4220897013742) + " "
+						+ (length - 45.86520630562846));
+			writer.write("\r\n");
+			if (label == 6)
+				writer.write((point[0] - 4.561985449277813) + " " + (point[1] - 228.0886059139005) + " "
+						+ (point[2] - 15.44169613220083) + " " + (point[3] - 198.4982244474968) + " "
+						+ (length - 31.52711182254722));
+			writer.write("\r\n");
+       
+			if (label == 7)
+				writer.write((point[0] - 360.6948730664424 ) + " " + (point[1] - 246.8371168164922) + " "
+						+ (point[2] - 370.8155639541149) + " " + (point[3] - 212.5197210031867) + " "
+						+ (length - 35.778653404661476));
+			writer.write("\r\n");
+			if (label == 8)
+				writer.write((point[0] - 303.8536184864458) + " " + (point[1] - 341.40556128106505) + " "
+						+ (point[2] - 315.5894071390266) + " " + (point[3] - 303.15203819534213) + " "
+						+ (length - 40.0132573501331));
+			writer.write("\r\n");
+			if (label == 9)
+				writer.write((point[0] - 104.56770264695977) + " " + (point[1] - 377.49548375649414) + " "
+						+ (point[2] - 115.11670119664012) + " " + (point[3] - 339.5842911894899) + " "
+						+ (length -39.35149161408799));
+			writer.write("\r\n");
+			if (label == 10)
+				writer.write((point[0] - 181.75417277692245) + " " + (point[1] - 377.86831136750124) + " "
+						+ (point[2] -193.23751455228975) + " " + (point[3] - 351.97062628010985) + " "
+						+ (length - 28.329441067828885));
+			writer.write("\r\n");
+		}
+		
+         if (rate == 1){
+			
+			
+			if (label == 1)
+				writer.write((point[0] - 171.1859449967859) + " " + (point[1] - 99.48545618483672) + " "
+						+ (point[2] - 181.43458804585626) + " " + (point[3] - 60.78333591544249) + " "
+						+ (length - 40.036093686746135));
+			writer.write("\r\n");
+			if (label == 2)
+				writer.write((point[0] - 298.63632549289247) + " " + (point[1] - 98.91533013614685) + " "
+						+ (point[2] - 305.2140902032087 ) + " " + (point[3] - 82.10337364262949) + " "
+						+ (length - 18.05294628929588));
+			writer.write("\r\n");
+			if (label == 3)
+				writer.write((point[0] -392.2658523406384) + " " + (point[1] - 120.20115224047345) + " "
+						+ (point[2] - 401.71221291284917) + " " + (point[3] - 82.7441754252086) + " "
+						+ (length - 38.62976624572697));
+			writer.write("\r\n");
+			if (label == 4)
+				writer.write((point[0] - 206.0628373691796) + " " + (point[1] - 123.40091820460714) + " "
+						+ (point[2] - 214.9881816669676) + " " + (point[3] - 99.63148998257181 ) + " "
+						+ (length - 25.38990919315283));
+			writer.write("\r\n");
+			if (label == 5)
+				writer.write((point[0] -135.10455586538396 ) + " " + (point[1] - 209.6406004482957) + " "
+						+ (point[2] - 143.00136725366892) + " " + (point[3] - 177.4220897013742) + " "
+						+ (length - 33.17215797700901));
+			writer.write("\r\n");
+			if (label == 6)
+				writer.write((point[0] - 4.798655006524217 ) + " " + (point[1] - 227.44491761331008) + " "
+						+ (point[2] - 15.44169613220083) + " " + (point[3] - 198.4982244474968) + " "
+						+ (length - 30.841293254962338));
+			writer.write("\r\n");
+       
+			if (label == 7)
+				writer.write((point[0] - 363.616204272503) + " " + (point[1] - 236.93142160133107) + " "
+						+ (point[2] - 370.8155639541149) + " " + (point[3] - 212.5197210031867) + " "
+						+ (length - 25.45116708362626));
+			writer.write("\r\n");
+			if (label == 8)
+				writer.write((point[0] - 307.02690788497586) + " " + (point[1] - 331.06202981011825) + " "
+						+ (point[2] - 315.5894071390266) + " " + (point[3] - 303.15203819534213) + " "
+						+ (length - 29.19390390839315));
+			writer.write("\r\n");
+			if (label == 9)
+				writer.write((point[0] - 105.70099297153607) + " " + (point[1] - 373.42264333216434) + " "
+						+ (point[2] - 115.11670119664012) + " " + (point[3] - 339.5842911894899) + " "
+						+ (length - 35.123918305222354));
+			writer.write("\r\n");
+			if (label == 10)
+				writer.write((point[0] - 182.7739990645031) + " " + (point[1] - 375.56835891844486) + " "
+						+ (point[2] - 193.23751455228975) + " " + (point[3] - 351.97062628010985) + " "
+						+ (length - 25.813526338597992));
+			writer.write("\r\n");
+		}
+		
+		
+         if (rate == 2){
+ 			
+ 			
+ 			if (label == 1)
+ 				writer.write((point[0] -172.43796447094846) + " " + (point[1] - 94.75743433485547) + " "
+ 						+ (point[2] - 181.43458804585626) + " " + (point[3] - 60.78333591544249) + " "
+ 						+ (length - 35.14510775571112));
+ 			writer.write("\r\n");
+ 			if (label == 2)
+ 				writer.write((point[0] - 298.63632549289247) + " " + (point[1] - 98.91533013614685) + " "
+ 						+ (point[2] - 305.2140902032087 ) + " " + (point[3] - 82.10337364262949) + " "
+ 						+ (length - 18.05294628929588));
+ 			writer.write("\r\n");
+ 			if (label == 3)
+ 				writer.write((point[0] -393.1753225631553) + " " + (point[1] - 116.59489512392793) + " "
+ 						+ (point[2] - 401.71221291284917) + " " + (point[3] - 82.7441754252086) + " "
+ 						+ (length -34.91059611298497));
+ 			writer.write("\r\n");
+ 			if (label == 4)
+ 				writer.write((point[0] - 207.40081502209952) + " " + (point[1] - 119.83769837546845) + " "
+ 						+ (point[2] - 214.9881816669676) + " " + (point[3] - 99.63148998257181 ) + " "
+ 						+ (length - 21.583766821869236));
+ 			writer.write("\r\n");
+ 			if (label == 5)
+ 				writer.write((point[0] - 136.04277722443922) + " " + (point[1] - 205.81271429863318) + " "
+ 						+ (point[2] - 143.00136725366892) + " " + (point[3] - 177.4220897013742) + " "
+ 						+ (length - 29.23096885526344));
+ 			writer.write("\r\n");
+ 			if (label == 6)
+ 				writer.write((point[0] - 5.034495309332331 ) + " " + (point[1] - 226.8034846994553) + " "
+ 						+ (point[2] - 15.44169613220083) + " " + (point[3] - 198.4982244474968) + " "
+ 						+ (length - 30.157877692215305));
+ 			writer.write("\r\n");
+        
+ 			if (label == 7)
+ 				writer.write((point[0] - 364.68594610462594) + " " + (point[1] - 233.3041243863031 ) + " "
+ 						+ (point[2] - 370.8155639541149) + " " + (point[3] - 212.5197210031867) + " "
+ 						+ (length - 21.669417135051745));
+ 			writer.write("\r\n");
+ 			if (label == 8)
+ 				writer.write((point[0] - 307.7174271751884) + " " + (point[1] -328.81123982137103) + " "
+ 						+ (point[2] - 315.5894071390266) + " " + (point[3] - 303.15203819534213) + " "
+ 						+ (length - 26.839573331859704));
+ 			writer.write("\r\n");
+ 			if (label == 9)
+ 				writer.write((point[0] - 106.74140940290457) + " " + (point[1] - 369.6835748799574) + " "
+ 						+ (point[2] - 115.11670119664012) + " " + (point[3] - 339.5842911894899) + " "
+ 						+ (length - 31.24279743091932));
+ 			writer.write("\r\n");
+ 			if (label == 10)
+ 				writer.write((point[0] - 184.54848516438193) + " " + (point[1] - 371.56646790922724) + " "
+ 						+ (point[2] - 193.23751455228975) + " " + (point[3] - 351.97062628010985) + " "
+ 						+ (length - 21.435863426915553));
+ 			writer.write("\r\n");
+ 		}
+ 		
+ 		
+			
+		writer.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+			
+		
+		
+		
+	}
+	
 }

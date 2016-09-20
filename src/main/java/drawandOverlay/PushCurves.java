@@ -7,17 +7,22 @@ import houghandWatershed.Finalfunction;
 import houghandWatershed.TransformCordinates;
 import lut.SinCosinelut;
 import net.imglib2.Cursor;
+import net.imglib2.FinalInterval;
 import net.imglib2.Point;
 import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccess;
+import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPointSampleList;
 import net.imglib2.RealRandomAccess;
+import net.imglib2.algorithm.gauss3.Gauss3;
+import net.imglib2.exception.IncompatibleTypeException;
 import net.imglib2.img.Img;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 import peakFitter.LengthDetection;
 import preProcessing.GetLocalmaxmin;
@@ -335,6 +340,9 @@ public class PushCurves {
 
 	}
 
+	
+
+	
 	// Draw a line between starting and end point
 	public static void DrawfinalLine(RandomAccessibleInterval<FloatType> imgout, final double[] final_param,
 			final double[] sigma) {

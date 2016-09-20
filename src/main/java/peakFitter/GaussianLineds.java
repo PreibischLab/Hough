@@ -7,7 +7,7 @@ public class GaussianLineds implements MTFitFunction {
 	@Override
 	public double val(double[] x, double[] a, double[] b) {
 		final int ndims = x.length;
-		return a[2 * ndims + 1] * Etotal(x, a, b) + a[2 * ndims + 2];
+		return  b[ndims] * Etotal(x, a, b) + a[2 * ndims + 1] ;
 	}
 
 	@Override
@@ -16,24 +16,23 @@ public class GaussianLineds implements MTFitFunction {
 
 		if (k < ndims) {
 
-			return 2 * b[k] * (x[k] - a[k]) * a[2 * ndims + 1] * Estart(x, a, b);
+			return 2 * b[k] * (x[k] - a[k])  * b[ndims] * Estart(x, a, b);
 
 		}
 
 		else if (k >= ndims && k <= ndims + 1) {
 			int dim = k - ndims;
-			return 2 * b[dim] * (x[dim] - a[k]) * a[2 * ndims + 1] * Eend(x, a, b);
+			return 2 * b[dim] * (x[dim] - a[k])  * b[ndims] * Eend(x, a, b);
 
 		}
 
 		else if (k == 2 * ndims)
-			return a[2 * ndims + 1] * (Estartds(x, a, b));
+			return  b[ndims] *(Estartds(x, a, b));
 
 		else if (k == 2 * ndims + 1)
-			return Etotal(x, a, b);
-
-		else if (k == 2 * ndims + 2)
 			return 1.0;
+
+	
 
 		else
 			return 0;

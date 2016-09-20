@@ -43,10 +43,30 @@ public class PerformWatershedding {
 	public static enum InverseType {
 		Straight, Inverse
 	}
-
-	public static Pair<Img<IntType>, ArrayList<Lineobjects>> DowatersheddingandHough(
-			final RandomAccessibleInterval<FloatType> biginputimg,
-			final RandomAccessibleInterval<FloatType> processedimg, final double minlength) {
+	
+	private final RandomAccessibleInterval<FloatType> biginputimg;
+	private final RandomAccessibleInterval<FloatType> preprocessedimg;
+	private final double minlength;
+	
+	public  PerformWatershedding(final RandomAccessibleInterval<FloatType> biginputimg,
+			final RandomAccessibleInterval<FloatType> preprocessedimg, final double minlength ){
+		
+		this.biginputimg = biginputimg;
+		this.preprocessedimg = preprocessedimg;
+		this.minlength = minlength;
+		
+	}
+	
+	public  PerformWatershedding(final RandomAccessibleInterval<FloatType> biginputimg,
+			final double minlength ){
+		
+		this.biginputimg = biginputimg;
+		this.minlength = minlength;
+		this.preprocessedimg = null;
+	}
+	
+	
+	public  Pair<Img<IntType>, ArrayList<Lineobjects>> DowatersheddingandHough() {
 
 		// Prepare seed image for watershedding
 		NativeImgLabeling<Integer, IntType> oldseedLabeling = new NativeImgLabeling<Integer, IntType>(
@@ -76,7 +96,7 @@ public class PerformWatershedding {
 		final double[] sizes = new double[biginputimg.numDimensions()];
 
 		// Automatic threshold determination for doing the Hough transform
-		final Float val = GlobalThresholding.AutomaticThresholding(processedimg);
+		final Float val = GlobalThresholding.AutomaticThresholding(preprocessedimg);
 
 		ArrayList<Lineobjects> linelist = new ArrayList<Lineobjects>(biginputimg.numDimensions());
 
@@ -87,7 +107,7 @@ public class PerformWatershedding {
 			RandomAccessibleInterval<FloatType> outimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 					new FloatType());
 
-			outimg = CurrentLabelImage(outputLabeling.getStorageImg(), processedimg, label);
+			outimg = CurrentLabelImage(outputLabeling.getStorageImg(), preprocessedimg, label);
 			
 			long[] minCorner = GetMincorners(outputLabeling.getStorageImg(), label);
 			long[] maxCorner = GetMaxcorners(outputLabeling.getStorageImg(), label);
@@ -148,8 +168,7 @@ public class PerformWatershedding {
 		return linepair;
 	}
 
-	public static RandomAccessibleInterval<IntType> Labelobjects(
-			final RandomAccessibleInterval<FloatType> biginputimg) {
+	public  RandomAccessibleInterval<IntType> Labelobjects() {
 
 		// Prepare seed image for watershedding
 		NativeImgLabeling<Integer, IntType> oldseedLabeling = new NativeImgLabeling<Integer, IntType>(
@@ -160,8 +179,7 @@ public class PerformWatershedding {
 		return oldseedLabeling.getStorageImg();
 	}
 
-	public static RandomAccessibleInterval<IntType> Dowatersheddingonly(
-			final RandomAccessibleInterval<FloatType> biginputimg) {
+	public  RandomAccessibleInterval<IntType> Dowatersheddingonly() {
 
 		// Prepare seed image for watershedding
 		NativeImgLabeling<Integer, IntType> oldseedLabeling = new NativeImgLabeling<Integer, IntType>(
@@ -184,6 +202,8 @@ public class PerformWatershedding {
 		return outputLabeling.getStorageImg();
 	}
 
+	
+	
 	public static void DistanceTransformImage(RandomAccessibleInterval<FloatType> inputimg,
 			RandomAccessibleInterval<FloatType> outimg, final InverseType invtype) {
 		int n = inputimg.numDimensions();

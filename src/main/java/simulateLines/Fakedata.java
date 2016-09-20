@@ -8,6 +8,7 @@ import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.stats.Normalize;
+import net.imglib2.exception.IncompatibleTypeException;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.real.FloatType;
@@ -20,7 +21,7 @@ import util.ImgLib2Util;
 public class Fakedata {
 
 	
-	public static void main (String[] args){
+	public static void main (String[] args) throws IncompatibleTypeException{
 		
 		new ImageJ();
 		
@@ -37,13 +38,13 @@ public class Fakedata {
 		for (int d = 0; d < ndims; ++d)
 			Ci[d] = 1.0 / Math.pow(sigma[d],2);
 		
-		Kernels.SaltandPepperNoise(imgout);
+		//Kernels.SaltandPepperNoise(imgout);
 		final int numlines = 20;
 		Gaussianlines.Drawsimulatedlines(imgout, smallrange,rnd,sigma, numlines);
 		
 		ImageJFunctions.show(imgout);
 		
-		noisyimg = Poissonprocess.poissonProcess(imgout, 25f);
+		noisyimg = Poissonprocess.poissonProcess(imgout, 25);
 		//noisyimg = imgout;
 		
 		FloatType minval = new FloatType(0);

@@ -39,7 +39,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
+				.openAs32Bit(new File("src/main/resources/Fake_eight.tif"));
 		
 		
 		// small_mt.tif image to be used for testing
@@ -60,38 +60,29 @@ public class HoughpostWater {
 		ImageJFunctions.show(biginputimg);
 		final int ndims = biginputimg.numDimensions();
 		// Define the psf of the microscope
-		double[] psf = new double[ndims];
-		//psf[0] = 1.6998;
-		//psf[1] = 1.7998;
+		double[] psf = {1.7, 1.8};
 		
-		psf[0] = 1.65;
-		psf[1] = 1.47;
+		//psf[0] = 1.65;
+		//psf[1] = 1.47;
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		// Initialize empty images to be used later
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
-		RandomAccessibleInterval<FloatType> preinputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
-				new FloatType());
+		
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
 		RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
 		// Compute the Sin Cosine lookup table
-		SinCosinelut.getTable();
+	//	SinCosinelut.getTable();
 		// Preprocess image
 		
 		//preinputimg = Kernels.Preprocess(biginputimg, ProcessingType.CannyEdge);
 		inputimg = Kernels.Meanfilterandsupress(biginputimg, radius);
-		
-		
-	    
-		
 
 		ImageJFunctions.show(inputimg).setTitle("Preprocessed image");
-		ArrayList<Lineobjects> linelist = new ArrayList<Lineobjects>(biginputimg.numDimensions());
-		Img<IntType> Intimg = new ArrayImgFactory<IntType>().create(biginputimg, new IntType());
-		Pair<Img<IntType>, ArrayList<Lineobjects>> linepair = new Pair<Img<IntType>, ArrayList<Lineobjects>>(Intimg,
-				linelist);
+		
+		
 
 		// Do watershedding and Hough
 
@@ -99,12 +90,15 @@ public class HoughpostWater {
 		double minlength = 5;
 
 		System.out.println("Doing Hough transform in labels: ");
-		linepair = PerformWatershedding.DowatersheddingandHough(biginputimg, inputimg, minlength);
+		
+		PerformWatershedding Houghobject = new PerformWatershedding(biginputimg, inputimg, minlength);
+		
+		Pair<Img<IntType>, ArrayList<Lineobjects>> linepair  = Houghobject.DowatersheddingandHough();
 
 		// Overlay detected lines on the image
 
 
-		double[] final_param = new double[2 * ndims + 3];
+		double[] final_param = new double[2 * ndims + 2];
 
 		
 		
@@ -131,7 +125,7 @@ public class HoughpostWater {
 
 			// Do gradient descent to improve the Hough detected lines
 			final_param = MTline.Getfinallineparam(simpleobject.get(index).Label, simpleobject.get(index).slope,
-					simpleobject.get(index).intercept,psf, minlength, true);
+					simpleobject.get(index).intercept,psf, minlength, false);
 			if (final_param!=null){
 			final double[] cordone = { final_param[0], final_param[1] };
 			final double[] cordtwo = { final_param[2], final_param[3] };
@@ -145,7 +139,7 @@ public class HoughpostWater {
 			
 		
 			System.out
-					.println("Mask fits :" +
+					.println("Fits :" +
 							 "StartX:" + final_param[0] + " StartY:"
 									+ final_param[1] + " " + "EndX:" + final_param[2] + "EndY: " + final_param[3]) ;
 					System.out.println(  "Length: " + distance);

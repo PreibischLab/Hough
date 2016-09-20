@@ -29,7 +29,9 @@ public class Extractpsfinfo {
 	
 	public void Extractparams(ArrayList<double[]> totalgausslist, final long radius,final boolean ignorebrightpeaks) throws Exception{
 	
-		RandomAccessibleInterval<IntType> intimg = PerformWatershedding.Dowatersheddingonly(inputimg);
+		PerformWatershedding Watershedobject = new PerformWatershedding(inputimg, 0);
+		
+		RandomAccessibleInterval<IntType> intimg = Watershedobject.Dowatersheddingonly();
 		
 		final int maxlabel = PerformWatershedding.GetMaxlabelsseeded(intimg); 
 		PointSampleList<FloatType> centroidlist = new PointSampleList<FloatType>(ndims);
