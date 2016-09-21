@@ -27,12 +27,12 @@ public class GaussianLineds implements MTFitFunction {
 		}
 
 		else if (k == 2 * ndims)
-			return  b[ndims] *(Estartds(x, a, b));
-
+			return  b[ndims] *Estartds(x, a, b);
+		
+		
+		
 		else if (k == 2 * ndims + 1)
 			return 1.0;
-
-	
 
 		else
 			return 0;
@@ -80,8 +80,8 @@ public class GaussianLineds implements MTFitFunction {
 
 		double ds = Math.abs(a[2 * ndims]);
 
-		double[] dxvector = { ds / Math.sqrt(1 + slope * slope), slope * ds / Math.sqrt(1 + slope * slope) };
-		double[] dxvectorderiv = { 1 / Math.sqrt(1 + slope * slope), slope / Math.sqrt(1 + slope * slope) };
+		double[] dxvector = { ds / Math.sqrt( 1 + slope * slope) , slope * ds/ Math.sqrt( 1 + slope * slope)  };
+		double[] dxvectorderiv = { 1/ Math.sqrt( 1 + slope * slope) , slope/ Math.sqrt( 1 + slope * slope)  };
 
 		for (int i = 0; i < x.length; i++) {
 			di = x[i] - (a[i] + dxvector[i]);
@@ -112,8 +112,8 @@ public class GaussianLineds implements MTFitFunction {
 
 		double ds = Math.abs(a[2 * ndims]);
 
-		double[] dxvector = { ds / Math.sqrt(1 + slope * slope), slope * ds / Math.sqrt(1 + slope * slope) };
-		double[] dxvectorderiv = { 1 / Math.sqrt(1 + slope * slope), slope / Math.sqrt(1 + slope * slope) };
+		double[] dxvector = { ds/ Math.sqrt( 1 + slope * slope) , slope * ds / Math.sqrt( 1 + slope * slope) };
+		double[] dxvectorderiv = { 1/ Math.sqrt( 1 + slope * slope) , slope/ Math.sqrt( 1 + slope * slope)  };
 		
 		
 			sum = 0;
@@ -169,7 +169,7 @@ public class GaussianLineds implements MTFitFunction {
 
 		double ds = Math.abs(a[2 * ndims]);
 
-		double[] dxvector = { ds / Math.sqrt(1 + slope * slope), slope * ds / Math.sqrt(1 + slope * slope) };
+		double[] dxvector = { ds/ Math.sqrt( 1 + slope * slope) , slope * ds/ Math.sqrt( 1 + slope * slope)  };
 
 		while (true) {
 

@@ -320,16 +320,17 @@ public class PushCurves {
 		final double stepsize = 1;
        double steppos[] = {startline[0], startline[1]};
 		while (true) {
-
+			AddGaussian.addGaussian(imgout, steppos, sigma);
+			
 			steppos[0] += stepsize / Math.sqrt(1 + slope * slope);
 			steppos[1] += stepsize * slope / Math.sqrt(1 + slope * slope);
 
-			AddGaussian.addGaussian(imgout, steppos, sigma);
+			
 
-			if (steppos[0] >= endline[0] || steppos[1] >= endline[1] && slope > 0)
+			if (steppos[0] > endline[0] || steppos[1] > endline[1] && slope > 0)
 				break;
 
-			if (steppos[0] >= endline[0] || steppos[1] <= endline[1] && slope < 0)
+			if (steppos[0] > endline[0] || steppos[1] < endline[1] && slope < 0)
 				break;
 
 		}

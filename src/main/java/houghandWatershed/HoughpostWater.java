@@ -117,15 +117,12 @@ public class HoughpostWater {
 
 		Linefitter MTline = new Linefitter(biginputimg, linepair.fst);
 
-		double[] sigma = new double[ndims];
-		sigma[0] = psf[0];
-		sigma[1] = psf[1];
 		double distance = 0;
 		for (int index = 0; index < simpleobject.size(); ++index) {
 
 			// Do gradient descent to improve the Hough detected lines
 			final_param = MTline.Getfinallineparam(simpleobject.get(index).Label, simpleobject.get(index).slope,
-					simpleobject.get(index).intercept,psf, minlength, false);
+					simpleobject.get(index).intercept,psf, minlength, true);
 			if (final_param!=null){
 			final double[] cordone = { final_param[0], final_param[1] };
 			final double[] cordtwo = { final_param[2], final_param[3] };

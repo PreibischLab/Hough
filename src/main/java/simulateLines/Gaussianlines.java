@@ -51,7 +51,7 @@ public class Gaussianlines {
 		
 		for (int index = 0; index < linearray.size(); ++index){
 		try {
-	        FileWriter writer = new FileWriter("initiallengthsbig_eight.txt", true);
+	        FileWriter writer = new FileWriter("initial_length_one.txt", true);
 	        writer.write( "StartX: "  + linearray.get(index).startpos[0]+  " " +
 	       		 "StartY: "+ linearray.get(index).startpos[1] + " " + "EndposX: " + linearray.get(index).endpos[0] +  
 	    		 " EndposY :" + linearray.get(index).endpos[1]+ "  Length " + linearray.get(index).length );

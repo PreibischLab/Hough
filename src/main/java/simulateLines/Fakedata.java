@@ -38,7 +38,7 @@ public class Fakedata {
 		for (int d = 0; d < ndims; ++d)
 			Ci[d] = 1.0 / Math.pow(sigma[d],2);
 		
-		//Kernels.SaltandPepperNoise(imgout);
+		Kernels.SaltandPepperNoise(imgout);
 		final int numlines = 20;
 		Gaussianlines.Drawsimulatedlines(imgout, smallrange,rnd,sigma, numlines);
 		

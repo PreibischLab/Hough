@@ -114,8 +114,8 @@ public class Linefitter {
 
 		}
 
-		MinandMax[2 * ndims] = Math.min(psf[0], psf[1]);
-		MinandMax[2 * ndims + 1] = 0.01;
+		MinandMax[2 * ndims] =   Math.min(psf[0], psf[1]);
+		MinandMax[2 * ndims + 1] = 0.01 * maxintensityline;
 		
 		System.out.println("Label: " + label + " " + "Hough Detection: " + " StartX: " + MinandMax[0]  + " StartY: "
 				+ MinandMax[1] + " EndX: " + MinandMax[2] + " EndY: " + MinandMax[3]);
@@ -126,7 +126,7 @@ public class Linefitter {
 					+ (MinandMax[0] + smallinterval.realMin(0))   + " StartY: "
 					+ (MinandMax[1] + smallinterval.realMin(1)) + " EndX: " 
 		            + (MinandMax[2] + smallinterval.realMin(0)) + " EndY: " 
-					+ (MinandMax[3] + +smallinterval.realMin(1)));
+					+ (MinandMax[3] + smallinterval.realMin(1)));
 			
 		}
 		for (int d = 0; d < ndims; ++d) {
@@ -177,9 +177,9 @@ public class Linefitter {
 			
 			final double[] finalparamstart = start_param.clone();
 			// LM solver part
-			int maxiter = 1500;
+			int maxiter = 2500;
 			double lambda = 1e-3;
-			double termepsilon = 1e-2;
+			double termepsilon = 1e-3;
 			
 			 RandomAccessibleInterval<FloatType> currentimg =  PerformWatershedding.CurrentLabelImage(intimg, inputimg, label);
 			 
@@ -199,7 +199,8 @@ public class Linefitter {
 
 					fixed_param[d] = 1.0 / Math.pow(psf[d], 2);
 				}
-				fixed_param[ndims] = GetLocalmaxmin.computeMaxIntensity(currentimg);
+				
+				fixed_param[ndims] =  GetLocalmaxmin.computeMaxIntensity(currentimg);
 
 			final double[] inistartpos = { start_param[0], start_param[1] };
 			final double[] iniendpos = { start_param[2], start_param[3] };
@@ -223,7 +224,7 @@ public class Linefitter {
 
 				double newslope = (endpos[1] - startpos[1]) / (endpos[0] - startpos[0]);
 				double newintercept = (endpos[1]  -newslope *endpos[0]);
-				double dx = finalparamstart[4] / Math.sqrt( 1 + newslope * newslope);
+				double dx = finalparamstart[4]/ Math.sqrt( 1 + slope * slope) ;
 				double dy = newslope * dx;
 				double ds = finalparamstart[4];
 				final double LMdist = sqDistance(startpos, endpos);
@@ -233,7 +234,7 @@ public class Linefitter {
 
 				double[] startfit = new double[ndims];
 				double[] endfit = new double[ndims];
-				final double maxintensityline = GetLocalmaxmin.computeMaxIntensity(currentimg);
+				final double maxintensityline = fixed_param[ndims];
 
 				final int numberofgaussians = 2; 
                 
@@ -286,8 +287,8 @@ public class Linefitter {
 
 					}
 				
-			//	Testmovingline(returnparam, label, Distance(new double[] {returnparam[0], returnparam[1]},
-			//			new double[] {returnparam[2], returnparam[3]}), 0);
+				//Testmovingline(returnparam, label, Distance(new double[] {returnparam[0], returnparam[1]},
+				//		new double[] {returnparam[2], returnparam[3]}), 0);
 				Testerroreight(returnparam, label, Distance(new double[] {returnparam[0], returnparam[1]},
 						new double[] {returnparam[2], returnparam[3]}));
 				
@@ -333,12 +334,7 @@ public class Linefitter {
 				index++;
 			}
 			
-			final double[] fixed_param = new double[ndims + 1];
-
-			for (int d = 0; d < ndims; ++d) {
-
-				fixed_param[d] = 1.0 / Math.pow(psf[d], 2);
-			}
+			
 			final double[] finalparamstart = iniparam.clone();
 			
 			 RandomAccessibleInterval<FloatType> currentimg =  PerformWatershedding.CurrentLabelImage(intimg, inputimg, label);
@@ -360,14 +356,19 @@ public class Linefitter {
 					
 				}
 
-				
-			
+				final double[] fixed_param = new double[ndims];
+
+				for (int d = 0; d < ndims; ++d) {
+
+					fixed_param[d] = 1.0 / Math.pow(psf[d], 2);
+				}
+				fixed_param[ndims] =  GetLocalmaxmin.computeMaxIntensity(currentimg);
 			// LM solver part
-						int maxiter = 15000;
+						int maxiter = 2500;
 						double lambda = 1e-3;
 						double termepsilon = 1e-3;
-			//	LevenbergMarquardtSolverLine.solve(X, finalparamstart, fixed_param, I, new GaussianLineds(), lambda,
-			//			termepsilon, maxiter);
+				LevenbergMarquardtSolverLine.solve(X, finalparamstart, fixed_param, I, new GaussianLineds(), lambda,
+						termepsilon, maxiter);
 
 				final double[] startpos = { finalparamstart[0], finalparamstart[1] };
 				final double[] endpos = { finalparamstart[2], finalparamstart[3] };
@@ -379,28 +380,28 @@ public class Linefitter {
 				}
 
 				
-				double ds = finalparamstart[4];
+				
 				final double LMdist = sqDistance(startpos, endpos);
 				
 				double[] returnparam = new double[2 * ndims + 2];
 				
-				final double maxintensityline = GetLocalmaxmin.computeMaxIntensity(currentimg);
+				final double maxintensityline = fixed_param[ndims];
 				
-				System.out.println("Label: " +label);
-				System.out.println("ds: " + ds );
-				System.out.println("Initial solver : " + " StartX: " + startpos[0] + " StartY:  " + startpos[1]);
-				System.out.println("Initial solver : " + " EndX: " + endpos[0] + " EndY:  " + endpos[1]);
-				System.out.println(" Length:  " + Math.sqrt(LMdist));
+				
 			
 				int iterations = 1800;
 
 				double newslope = (endpos[1] - startpos[1]) / (endpos[0] - startpos[0]);
 				double newintercept = (endpos[1] - newslope *endpos[0]);
-				double dx = finalparamstart[4] / Math.sqrt( 1 + newslope * newslope);
+				double dx = finalparamstart[4]/ Math.sqrt( 1 + newslope * newslope);
 				double dy = newslope * dx;
-				
+				double ds = finalparamstart[4];
 				double[] dxvector = {dx, dy};
-				
+				System.out.println("Label: " +label);
+				System.out.println("ds: " + ds );
+				System.out.println("Initial solver : " + " StartX: " + startpos[0] + " StartY:  " + startpos[1]);
+				System.out.println("Initial solver : " + " EndX: " + endpos[0] + " EndY:  " + endpos[1]);
+				System.out.println(" Length:  " + Math.sqrt(LMdist));
 
 				double[] startfit = new double[ndims];
 				double[] endfit = new double[ndims];
@@ -439,7 +440,7 @@ public class Linefitter {
 					returnparam[ndims + d] = endfit[d];
 				}
 				
-				if (Math.abs(Math.sqrt(Maskdist) - Math.sqrt(LMdist)) > 20) {
+				if (Math.abs(Math.sqrt(Maskdist) - Math.sqrt(LMdist)) > 10) {
                     System.out.println("Mask fits fail, returning LM solver results!");
 					for (int d = 0; d < ndims; ++d) {
 						returnparam[d] = startpos[d];
@@ -453,7 +454,6 @@ public class Linefitter {
 				
 				returnparam[2* ndims] = finalparamstart[4];
 				returnparam[2* ndims + 1] = finalparamstart[5];
-			//	returnparam[2* ndims + 2] = finalparamstart[6];
 				
 				
 				return returnparam;
@@ -617,7 +617,7 @@ public class Linefitter {
 
 		// Errorlist for Fake_big_file.tif
 		try {
-			FileWriter writer = new FileWriter("error-Fake_eight.txt", true);
+			FileWriter writer = new FileWriter("error-Fake_eight_new.txt", true);
 
 			if (label == 1)
 				writer.write((point[0] - 103.42410325530419) + " " + (point[1] - 20.066334908307294) + " "
