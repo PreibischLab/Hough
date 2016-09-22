@@ -23,8 +23,9 @@ public class GaussianMaskFit {
 
 	public static double[] sumofgaussianMaskFit(final RandomAccessibleInterval<FloatType> signalInterval,
 			final RandomAccessibleInterval<IntType> intimg, final double[] location, final double[] sigma,
-			final int iterations,  final double[] dxvector, final double slope,
-			final double intercept,final double maxintensityline, final int numberofgaussians, final Endfit startorend, int label) throws Exception {
+			final int iterations, final double[] dxvector, final double slope, final double intercept,
+			final double maxintensityline, final int numberofgaussians, final Endfit startorend, int label)
+			throws Exception {
 		final int n = signalInterval.numDimensions();
 
 		// pre-compute sigma^2
@@ -57,13 +58,13 @@ public class GaussianMaskFit {
 			switch (startorend) {
 
 			case Start:
-				beststartfitsumofGaussian(translatedIterableMask, location, sq_sigma, dxvector, slope,
-						intercept, numberofgaussians);
+				beststartfitsumofGaussian(translatedIterableMask, location, sq_sigma, dxvector, slope, intercept,
+						numberofgaussians);
 				break;
 
 			case End:
-				bestendfitsumofGaussian(translatedIterableMask, location, sq_sigma, dxvector, slope,
-						intercept, numberofgaussians);
+				bestendfitsumofGaussian(translatedIterableMask, location, sq_sigma, dxvector, slope, intercept,
+						numberofgaussians);
 				break;
 
 			}
@@ -215,8 +216,8 @@ public class GaussianMaskFit {
 	}
 
 	final public static void beststartfitsumofGaussian(final IterableInterval<FloatType> image, final double[] location,
-			final double[] sq_sigma,  final double[] dxvector, final double slope,
-			final double intercept, int numberofgaussians) {
+			final double[] sq_sigma, final double[] dxvector, final double slope, final double intercept,
+			int numberofgaussians) {
 		final int ndims = image.numDimensions();
 		final Cursor<FloatType> cursor = image.localizingCursor();
 
@@ -227,7 +228,7 @@ public class GaussianMaskFit {
 			double value = 1.0;
 
 			for (int d = 0; d < ndims; ++d) {
-				final double x =  cursor.getDoublePosition(d) - location[d] ;
+				final double x = cursor.getDoublePosition(d) - location[d];
 				sumofgaussians = Math.exp(-(x * x) / sq_sigma[d]);
 				double y = 0;
 				for (int i = 1; i < numberofgaussians; ++i) {
@@ -241,16 +242,15 @@ public class GaussianMaskFit {
 				value *= sumofgaussians;
 
 			}
-			
-			 
+
 			cursor.get().setReal(value);
 
 		}
 	}
 
 	final public static void bestendfitsumofGaussian(final IterableInterval<FloatType> image, final double[] location,
-			final double[] sq_sigma,  final double[] dxvector, final double slope,
-			final double intercept, int numberofgaussians) {
+			final double[] sq_sigma, final double[] dxvector, final double slope, final double intercept,
+			int numberofgaussians) {
 		final int ndims = image.numDimensions();
 		final Cursor<FloatType> cursor = image.localizingCursor();
 		double sumofgaussians = 0;
@@ -260,7 +260,7 @@ public class GaussianMaskFit {
 			double value = 1.0;
 
 			for (int d = 0; d < ndims; ++d) {
-				final double x = cursor.getDoublePosition(d) - location[d] ;
+				final double x = cursor.getDoublePosition(d) - location[d];
 				sumofgaussians = Math.exp(-(x * x) / sq_sigma[d]);
 				double y = 0;
 				for (int i = 1; i < numberofgaussians; ++i) {
@@ -274,16 +274,13 @@ public class GaussianMaskFit {
 				value *= sumofgaussians;
 
 			}
-			
-			  
-			 
+
 			cursor.get().setReal(value);
 
 		}
 
 	}
 
-	
 	final public static void setsingleGaussian(final IterableInterval<FloatType> image, final double[] location,
 			final double[] sq_sigma) {
 		final int numDimensions = image.numDimensions();

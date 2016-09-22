@@ -27,7 +27,9 @@ public class Linefitter {
 	private final RandomAccessibleInterval<FloatType> inputimg;
 	private final RandomAccessibleInterval<IntType> intimg;
 	private final int ndims;
-
+	final int maxiter = 2500;
+	final double lambda = 1e-4;
+	final double termepsilon = 1e-3;
 	public Linefitter(RandomAccessibleInterval<FloatType> inputimg, RandomAccessibleInterval<IntType> intimg) {
 
 		this.inputimg = inputimg;
@@ -177,9 +179,7 @@ public class Linefitter {
 			
 			final double[] finalparamstart = start_param.clone();
 			// LM solver part
-			int maxiter = 2500;
-			double lambda = 1e-3;
-			double termepsilon = 1e-3;
+			
 			
 			 RandomAccessibleInterval<FloatType> currentimg =  PerformWatershedding.CurrentLabelImage(intimg, inputimg, label);
 			 
@@ -289,7 +289,7 @@ public class Linefitter {
 				
 				//Testmovingline(returnparam, label, Distance(new double[] {returnparam[0], returnparam[1]},
 				//		new double[] {returnparam[2], returnparam[3]}), 0);
-				Testerroreight(returnparam, label, Distance(new double[] {returnparam[0], returnparam[1]},
+				Testerrorfive(returnparam, label, Distance(new double[] {returnparam[0], returnparam[1]},
 						new double[] {returnparam[2], returnparam[3]}));
 				
 				
@@ -364,9 +364,7 @@ public class Linefitter {
 				}
 				fixed_param[ndims] =  GetLocalmaxmin.computeMaxIntensity(currentimg);
 			// LM solver part
-						int maxiter = 2500;
-						double lambda = 1e-3;
-						double termepsilon = 1e-3;
+						
 				LevenbergMarquardtSolverLine.solve(X, finalparamstart, fixed_param, I, new GaussianLineds(), lambda,
 						termepsilon, maxiter);
 
@@ -480,691 +478,471 @@ public class Linefitter {
 
 	
 	
-	private void Testerror(final double[] point, int label, double length) {
+	private void Testerrorone(final double[] point, int label, double length) {
 
 		// Errorlist for Fake_big_file.tif
 		try {
-			FileWriter writer = new FileWriter("error-Fake_big_file.txt", true);
+			FileWriter writer = new FileWriter("error-Fake_one.txt", true);
 
 			if (label == 1)
-				writer.write((point[0] - 146.94592464242646) + " " + (point[1] - 55.42312239408533) + " "
-						+ (point[2] - 153.54928295839164) + " " + (point[3] - 49.42739020885564) + " "
-						+ (length - 8.919257003025853));
-			writer.write("\r\n");
-			if (label == 2)
-				writer.write((point[0] - 229.8239785496787) + " " + (point[1] - 64.27520704680428) + " "
-						+ (point[2] - 234.1218573487757 ) + " " + (point[3] - 54.69958671952257) + " "
-						+ (length - 10.495916673829786));
-			writer.write("\r\n");
-			if (label == 3)
-				writer.write((point[0] - 302.9465004497457) + " " + (point[1] - 58.47639954792287) + " "
-						+ (point[2] - 313.16619975599116) + " " + (point[3] - 73.52451716171643) + " "
-						+ (length - 18.19032978339419));
-			writer.write("\r\n");
-			if (label == 4)
-				writer.write((point[0] - 240.1193313521409) + " " + (point[1] - 116.67602295228242) + " "
-						+ (point[2] - 245.5693164385891) + " " + (point[3] - 107.23807809464897) + " "
-						+ (length - 10.898492582840879));
-			writer.write("\r\n");
-			if (label == 5)
-				writer.write((point[0] - 133.35913522709873) + " " + (point[1] - 140.7563693740396) + " "
-						+ (point[2] - 136.5441108511015) + " " + (point[3] - 155.84081987255448) + " "
-						+ (length - 15.417026839427818));
-			writer.write("\r\n");
-		
-       
-			if (label == 7)
-				writer.write((point[0] - 215.28576496031062) + " " + (point[1] - 196.00276945260316) + " "
-						+ (point[2] - 218.68751554101746) + " " + (point[3] - 211.05663130841134) + " "
-						+ (length - 15.433426832272081));
-			writer.write("\r\n");
-			if (label == 8)
-				writer.write((point[0] - 121.13389234638807) + " " + (point[1] - 196.582277391324) + " "
-						+ (point[2] - 130.5276503416368) + " " + (point[3] - 214.46479753020282) + " "
-						+ (length - 20.19968355669726));
-			writer.write("\r\n");
-			if (label == 9)
-				writer.write((point[0] - 340.37580237095966) + " " + (point[1] - 219.09631742654946) + " "
-						+ (point[2] - 351.0314266781306) + " " + (point[3] - 234.43943863070862) + " "
-						+ (length - 18.68030239747446));
-			writer.write("\r\n");
-			if (label == 10)
-				writer.write((point[0] - 385.5135453587466) + " " + (point[1] - 230.40541983841212) + " "
-						+ (point[2] - 392.6022931853405) + " " + (point[3] - 245.46467445749235) + " "
-						+ (length - 16.64426313873128));
-			writer.write("\r\n");
-			if (label == 11)
-				writer.write((point[0] - 5.556310385317046) + " " + (point[1] - 272.71517939626614) + " "
-						+ (point[2] - 12.726024523817513) + " " + (point[3] - 263.9600050091784) + " "
-						+ (length - 11.316266141096644));
-			writer.write("\r\n");
-			if (label == 12)
-				writer.write((point[0] - 308.05785927861723) + " " + (point[1] - 275.08437728781024) + " "
-						+ (point[2] - 314.6860883859905) + " " + (point[3] - 292.793305456796) + " "
-						+ (length - 18.908716455490264));
-			writer.write("\r\n");
-			if (label == 13)
-				writer.write((point[0] - 60.969008493931426) + " " + (point[1] - 282.3347616677545) + " "
-						+ (point[2] - 62.4978725178862) + " " + (point[3] - 294.59885719136463) + " "
-						+ (length - 12.359023594765786));
-			writer.write("\r\n");
-        
-			if (label == 14)
-				writer.write((point[0] - 79.27699219076632) + " " + (point[1] - 294.24744896193636) + " "
-						+ (point[2] - 85.54813185659465) + " " + (point[3] - 283.7722508049237) + " "
-						+ (length - 12.208888939498404));
-			writer.write("\r\n");
-
-			
-			
-			if (label == 16)
-				writer.write((point[0] - 174.4791492931807) + " " + (point[1] - 300.8682377344869) + " "
-						+ (point[2] - 184.98436572151002) + " " + (point[3] - 322.86506735085936) + " "
-						+ (length - 24.376629901972915));
-			writer.write("\r\n");
-			if (label == 17)
-				writer.write((point[0] - 387.5044473398028) + " " + (point[1] - 353.3233494741606) + " "
-						+ (point[2] - 392.26957599273436) + " " + (point[3] - 345.6137121862541) + " "
-						+ (length - 9.063385581010413));
-			writer.write("\r\n");
-			if (label == 18)
-				writer.write((point[0] - 147.68645636726484) + " " + (point[1] - 355.0991002838538) + " "
-						+ (point[2] - 154.95312760941732) + " " + (point[3] - 368.27466301377046) + " "
-						+ (length - 15.0465931091226));
-			writer.write("\r\n");
-			if (label == 19)
-				writer.write((point[0] - 31.239230737346844) + " " + (point[1] - 362.97213316931663 ) + " "
-						+ (point[2] - 34.14047219898989) + " " + (point[3] - 377.24877146243585) + " "
-						+ (length - 14.568445454862875));
-			writer.write("\r\n");
-			if (label == 20)
-				writer.write((point[0] - 97.97120006079818) + " " + (point[1] - 369.5266828584096 ) + " "
-						+ (point[2] - 105.10103519287271) + " " + (point[3] - 387.0954284840828) + " "
-						+ (length - 18.960363178752036));
-			writer.write("\r\n");
-			if (label == 21)
-				writer.write((point[0] - 284.6932383894) + " " + (point[1] - 375.30728038281813 ) + " "
-						+ (point[2] - 291.6624758784747 ) + " " + (point[3] - 394.13153147321896) + " "
-						+ (length - 20.07293452122985));
-			if (label == 22)
-				writer.write((point[0] - 304.75019499065377 ) + " " + (point[1] - 387.85799639315786 ) + " "
-						+ (point[2] - 306.99650103631984) + " " + (point[3] - 377.82242936768705) + " "
-						+ (length - 10.283895000120967));
-			writer.write("\r\n");
-			if (label == 23)
-				writer.write((point[0] - 110.8275331566493 ) + " " + (point[1] - 376.97411872343633 ) + " "
-						+ (point[2] - 116.2795632060759  ) + " " + (point[3] - 391.63032118810133 ) + " "
-						+ (length - 15.637419938887078));
-			writer.write("\r\n");
-			if (label == 24)
-				writer.write((point[0] - 39.57235449465267 ) + " " + (point[1] - 383.13064284394886 ) + " "
-						+ (point[2] - 50.77250286652348 ) + " " + (point[3] - 404.26314211550664  ) + " "
-						+ (length - 23.917061880889765));
-			writer.write("\r\n");
-			if (label == 25)
-				writer.write((point[0] - 56.282438519576644 ) + " " + (point[1] - 395.16307287277664 ) + " "
-						+ (point[2] - 62.250265839645685   ) + " " + (point[3] - 411.8090857339708 ) + " "
-						+ (length - 17.683458572835903));
-			writer.close();
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	
-	private void Testerroreight(final double[] point, int label, double length) {
-
-		// Errorlist for Fake_big_file.tif
-		try {
-			FileWriter writer = new FileWriter("error-Fake_eight_new.txt", true);
-
-			if (label == 1)
-				writer.write((point[0] - 103.42410325530419) + " " + (point[1] - 20.066334908307294) + " "
+				writer.write((point[0] - 101.84356229708258) + " " + (point[1] - 34.72269000621467) + " "
 						+ (point[2] - 113.01169863486068) + " " + (point[3] - 20.744421134813877) + " "
-						+ (length - 9.61154441766103));
+						+ (length - 17.891877204485056));
 			writer.write("\r\n");
 			if (label == 2)
-				writer.write((point[0] - 385.0149251470887) + " " + (point[1] - 28.8351210942548) + " "
+				writer.write((point[0] - 383.70959453295944) + " " + (point[1] - 44.04000691401485) + " "
 						+ (point[2] - 395.02257842025983 ) + " " + (point[3] - 30.02979900503253) + " "
-						+ (length - 10.078709210336052));
+						+ (length - 18.00748539044886));
 			writer.write("\r\n");
 			if (label == 3)
-				writer.write((point[0] - 223.63088159385103) + " " + (point[1] - 46.662735533349625) + " "
+				writer.write((point[0] - 222.0517680211812) + " " + (point[1] - 54.27136909965083) + " "
 						+ (point[2] - 233.22065561451288) + " " + (point[3] - 37.39675789813177) + " "
-						+ (length - 13.334995586940344));
+						+ (length - 20.23602118191496));
 			writer.write("\r\n");
 			if (label == 4)
-				writer.write((point[0] - 265.63155275607386) + " " + (point[1] - 54.06721342595662) + " "
+				writer.write((point[0] - 264.86622286943935) + " " + (point[1] - 69.50041336082712) + " "
 						+ (point[2] - 276.4634176659475) + " " + (point[3] - 55.14114238921126) + " "
-						+ (length - 10.884972248190095));
+						+ (length - 18.457616042827553));
+			writer.write("\r\n");
+			if (label == 5)
+				writer.write((point[0] - 91.88527561650841) + " " + (point[1] - 89.36916692652001) + " "
+						+ (point[2] - 103.54241296505866) + " " + (point[3] - 72.66055721968836) + " "
+						+ (length - 20.37318064265357));
 			writer.write("\r\n");
 			if (label == 6)
-				writer.write((point[0] - 300.84659082941437) + " " + (point[1] - 139.85962648478687) + " "
-						+ (point[2] - 312.44765714375006) + " " + (point[3] - 154.44886993675695) + " "
-						+ (length - 18.639494739141032));
+				writer.write((point[0] - 78.72868102476444) + " " + (point[1] - 92.35128849766473) + " "
+						+ (point[2] - 90.53310270073669) + " " + (point[3] - 77.39996918842077) + " "
+						+ (length - 19.04957532836716));
 			writer.write("\r\n");
-		
        
 			if (label == 7)
-				writer.write((point[0] - 258.4602639611949) + " " + (point[1] - 161.8029504673369) + " "
-						+ (point[2] - 270.22003738935496) + " " + (point[3] - 151.52609599285373) + " "
-						+ (length - 15.61749048251234));
+				writer.write((point[0] - 258.3028741382653) + " " + (point[1] - 169.0627765834802) + " "
+						+ (point[2] - 270.22003738935496) + " " + (point[3] - 151.52609599285373 ) + " "
+						+ (length - 21.20268723748897));
 			writer.write("\r\n");
 			if (label == 8)
-				writer.write((point[0] - 10.782326104595313) + " " + (point[1] - 215.40174428753127) + " "
-						+ (point[2] - 20.269038650282194) + " " + (point[3] - 202.82555475178765) + " "
-						+ (length - 15.753039648380254));
+				writer.write((point[0] - 300.5852204836343) + " " + (point[1] - 165.6067364109946) + " "
+						+ (point[2] - 312.44765714375006) + " " + (point[3] - 154.44886993675695) + " "
+						+ (length - 16.28543483521932));
 			writer.write("\r\n");
-			
+			if (label == 9)
+				writer.write((point[0] - 9.135689496597063) + " " + (point[1] - 220.6474589796404) + " "
+						+ (point[2] - 20.269038650282194) + " " + (point[3] - 202.82555475178765) + " "
+						+ (length - 21.01360829759175));
+			writer.write("\r\n");
 			if (label == 10)
-				writer.write((point[0] - 183.13644015784087) + " " + (point[1] - 258.1201972778982) + " "
-						+ (point[2] - 194.29386588004672) + " " + (point[3] - 250.758719045703) + " "
-						+ (length - 13.367105539705484));
+				writer.write((point[0] - 322.347195774028) + " " + (point[1] - 251.36431346661595) + " "
+						+ (point[2] - 334.23841952254406) + " " + (point[3] - 236.13478121016215) + " "
+						+ (length - 19.322004424687385));
 			writer.write("\r\n");
 			if (label == 11)
-				writer.write((point[0] - 43.16752082802935) + " " + (point[1] - 266.8965342235055) + " "
-						+ (point[2] - 55.11228730824559) + " " + (point[3] - 285.7189935156261) + " "
-						+ (length - 22.292653948564176));
+				writer.write((point[0] - 182.5844087344585) + " " + (point[1] - 267.4427608509476) + " "
+						+ (point[2] - 194.29386588004672) + " " + (point[3] - 250.758719045703) + " "
+						+ (length - 20.383047799667164));
 			writer.write("\r\n");
 			if (label == 12)
-				writer.write((point[0] - 89.19182304526953) + " " + (point[1] - 349.37985704768585) + " "
-						+ (point[2] - 99.23449433610313) + " " + (point[3] - 334.4341802148607) + " "
-						+ (length - 18.00634617702824));
+				writer.write((point[0] - 43.13133334955034) + " " + (point[1] - 295.9839748756092) + " "
+						+ (point[2] - 55.11228730824559) + " " + (point[3] -285.7189935156261) + " "
+						+ (length - 15.776980068478753));
 			writer.write("\r\n");
 			if (label == 13)
-				writer.write((point[0] - 226.4867575369383) + " " + (point[1] - 336.7196803069454) + " "
-						+ (point[2] - 236.9539633568867) + " " + (point[3] - 358.40376907956824) + " "
-						+ (length - 24.078249595353665));
+				writer.write((point[0] - 87.90943527029843) + " " + (point[1] - 353.00924787494216) + " "
+						+ (point[2] - 99.23449433610313) + " " + (point[3] - 334.4341802148607) + " "
+						+ (length - 21.75523158738075));
 			writer.write("\r\n");
         
 			if (label == 14)
-				writer.write((point[0] - 36.854532534707985) + " " + (point[1] - 355.11968257966225) + " "
+				writer.write((point[0] - 225.48251307414588) + " " + (point[1] - 366.9829333722683) + " "
+						+ (point[2] - 236.9539633568867) + " " + (point[3] - 358.40376907956824) + " "
+						+ (length - 14.32467212715649));
+			writer.write("\r\n");
+
+			if (label == 15)
+				writer.write((point[0] - 35.62599947258589) + " " + (point[1] - 380.9522282309819) + " "
 						+ (point[2] - 46.97940312410058) + " " + (point[3] - 371.014896388969) + " "
-						+ (length - 18.845976400694227));
+						+ (length - 15.08808598240713));
 			writer.write("\r\n");
-
-			if (label == 15)
-				writer.write((point[0] - 319.91703640799966) + " " + (point[1] - 374.6571062489546) + " "
+			
+			if (label == 16)
+				writer.write((point[0] - 318.79809608678465) + " " + (point[1] - 394.58485865054877) + " "
 						+ (point[2] - 330.20918012825047) + " " + (point[3] - 382.22653982045375) + " "
-						+ (length - 12.775936245600017));
+						+ (length - 16.820846688192503));
 			writer.write("\r\n");
-			
-			if (label == 16)
-				writer.write((point[0] - 184.6352590369916) + " " + (point[1] - 381.94535949289735) + " "
+			if (label == 17)
+				writer.write((point[0] - 182.74199545178487) + " " + (point[1] - 399.2372805842788) + " "
 						+ (point[2] - 193.745540933255) + " " + (point[3] - 386.7172540902593) + " "
-						+ (length - 10.284367470958854));
-			writer.write("\r\n");
-			if (label == 17)
-				writer.write((point[0] - 257.00195165698847) + " " + (point[1] - 393.0422893229684) + " "
-						+ (point[2] - 267.69268843741247) + " " + (point[3] - 402.5256330267631) + " "
-						+ (length - 14.290754378709815));
+						+ (length - 16.668205559499537));
 			writer.write("\r\n");
 			if (label == 18)
-				writer.write((point[0] - 279.74010616792725) + " " + (point[1] - 409.52143870609723) + " "
+				writer.write((point[0] - 277.96411377430826) + " " + (point[1] - 414.01094489491777) + " "
 						+ (point[2] - 289.02938093556145) + " " + (point[3] - 395.9148965060625) + " "
-						+ (length - 16.47509078426977));
+						+ (length - 21.211013757991367));
 			writer.write("\r\n");
 			if (label == 19)
-				writer.write((point[0] - 307.24157464889754) + " " + (point[1] - 425.6772245139631 ) + " "
-						+ (point[2] - 318.90660598829754) + " " + (point[3] - 405.7625301506339) + " "
-						+ (length - 23.079601550590034));
-			writer.write("\r\n");
-			
-			
-			writer.close();
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	
-	
-	private void Testerrorfourth(final double[] point, int label, double length) {
-
-		// Errorlist for Fake_big_file_nonoise.tif
-		try {
-			FileWriter writer = new FileWriter("error-Fake_fourth.txt", true);
-			
-			
-			if (label == 2)
-				writer.write((point[0] - 92.9218278288335 ) + " " + (point[1] - 27.17362370877159) + " "
-						+ (point[2] - 102.61190201305033  ) + " " + (point[3] - 8.259538706043248 ) + " "
-						+ (length - 21.2518269611358));
-			writer.write("\r\n");
-			if (label == 3)
-				writer.write((point[0] - 92.86686704851863) + " " + (point[1] - 64.90960165022722 ) + " "
-						+ (point[2] -  104.48587735237139 ) + " " + (point[3] - 50.86749014591775 ) + " "
-						+ (length - 18.22586886654507));
-			writer.write("\r\n");
-			if (label == 4)
-				writer.write((point[0] - 280.4959354329863 ) + " " + (point[1] - 72.78270243124555) + " "
-						+ (point[2] - 291.87059998038154) + " " + (point[3] - 91.7639867470957) + " "
-						+ (length - 22.128536956719685));
-			writer.write("\r\n");
-			if (label == 5)
-				writer.write((point[0] - 140.78720832889556 ) + " " + (point[1] - 132.0595306364064) + " "
-						+ (point[2] - 150.13633156292963) + " " + (point[3] - 121.58435770257674) + " "
-						+ (length - 14.04048977916345));
-			writer.write("\r\n");
-		
-			if (label == 6)
-				writer.write((point[0] - 177.83448360189217) + " " + (point[1] - 120.34554541214051 ) + " "
-						+ (point[2] - 189.51595497473548) + " " + (point[3] - 144.65370360371278) + " "
-						+ (length - 26.969303441154352));
-			writer.write("\r\n");
-			if (label == 7)
-				writer.write((point[0] - 297.81778952607874) + " " + (point[1] - 174.6084120361677 ) + " "
-						+ (point[2] - 308.05934208691633) + " " + (point[3] - 179.0082922914368) + " "
-						+ (length - 11.146674172913903));
-			writer.write("\r\n");
-		
-			if (label == 8)
-				writer.write((point[0] - 293.94451588690464) + " " + (point[1] - 212.63092313007522) + " "
-						+ (point[2] - 305.3832535507701) + " " + (point[3] -238.07718582965657) + " "
-						+ (length - 27.89905024761309));
-			writer.write("\r\n");
-			if (label == 9)
-				writer.write((point[0] - 177.5428835958507) + " " + (point[1] - 383.039314046178) + " "
-						+ (point[2] - 187.97215142327738) + " " + (point[3] -397.12932856571365 ) + " "
-						+ (length - 17.529921179997444));
-			writer.write("\r\n");
-			if (label == 10)
-				writer.write((point[0] - 250.34852210673256) + " " + (point[1] - 383.14378596776106 ) + " "
-						+ (point[2] - 262.3361618230495) + " " + (point[3] - 397.1830771085031) + " "
-						+ (length - 18.460910099524806));
-			writer.write("\r\n");
-			
-			
-			
-			writer.close();
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	private void Testerrorsixth(final double[] point, int label, double length) {
-
-		// Errorlist for Fake_big_file_nonoise.tif
-		try {
-			FileWriter writer = new FileWriter("error-Fake_sixth.txt", true);
-			
-			if (label == 1)
-				writer.write((point[0] - 169.64118749921616 ) + " " + (point[1] - 11.613782570008082) + " "
-						+ (point[2] - 178.99307294259404  ) + " " + (point[3] - 15.89183603164018 ) + " "
-						+ (length - 10.283943930547535));
-			writer.write("\r\n");
-			if (label == 2)
-				writer.write((point[0] - 115.75116431067165 ) + " " + (point[1] - 55.6534204178164) + " "
-						+ (point[2] - 125.81034889143847  ) + " " + (point[3] - 43.11496689247307 ) + " "
-						+ (length - 16.074825387453867));
-			writer.write("\r\n");
-			if (label == 3)
-				writer.write((point[0] - 28.220334047159405) + " " + (point[1] - 164.38434979659942 ) + " "
-						+ (point[2] -  37.75929834994512 ) + " " + (point[3] - 180.07960823571474 ) + " "
-						+ (length - 18.36662673003513));
-			writer.write("\r\n");
-			if (label == 4)
-				writer.write((point[0] - 323.19957370820015 ) + " " + (point[1] - 279.68244187607655) + " "
-						+ (point[2] - 333.76306541825585) + " " + (point[3] - 276.2791536595286) + " "
-						+ (length - 11.098185788375933));
-			writer.write("\r\n");
-			if (label == 5)
-				writer.write((point[0] - 121.79572577173442 ) + " " + (point[1] - 277.45720726092713) + " "
-						+ (point[2] - 132.65834127497192) + " " + (point[3] - 287.29659315550555) + " "
-						+ (length - 14.656395544389628));
-			writer.write("\r\n");
-		
-			if (label == 6)
-				writer.write((point[0] - 357.145870455239) + " " + (point[1] - 298.0757780155999 ) + " "
-						+ (point[2] - 367.93878216586546) + " " + (point[3] - 315.5802625070824) + " "
-						+ (length - 20.5643847587505));
-			writer.write("\r\n");
-			if (label == 7)
-				writer.write((point[0] - 106.82706188254228 ) + " " + (point[1] - 317.70439690048266 ) + " "
-						+ (point[2] - 117.1764204276652) + " " + (point[3] - 330.37225736794363) + " "
-						+ (length - 16.357992270403155));
-			writer.write("\r\n");
-		
-			if (label == 8)
-				writer.write((point[0] - 36.1891360034064 ) + " " + (point[1] - 366.20177329461654) + " "
-						+ (point[2] - 45.56449579796356) + " " + (point[3] - 382.0693576075372) + " "
-						+ (length - 18.43034463066398));
-			writer.write("\r\n");
-			if (label == 9)
-				writer.write((point[0] - 351.81427886479867) + " " + (point[1] - 371.74904382151175) + " "
-						+ (point[2] - 363.0083416140858) + " " + (point[3] - 368.5496057444498 ) + " "
-						+ (length - 11.642312693100601));
-			writer.write("\r\n");
-			if (label == 10)
-				writer.write((point[0] - 341.2930905442583) + " " + (point[1] - 401.7183995097824 ) + " "
-						+ (point[2] - 350.87179672046943) + " " + (point[3] - 392.6299117487737) + " "
-						+ (length - 13.204250141230684));
-			writer.write("\r\n");
-			
-			
-			
-			writer.close();
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	private void Testerrorseventh(final double[] point, int label, double length) {
-
-		// Errorlist for Fake_big_file_nonoise.tif
-		try {
-			FileWriter writer = new FileWriter("error-Fake_seventh.txt", true);
-			
-			if (label == 1)
-				writer.write((point[0] - 271.4643571467613 ) + " " + (point[1] - 28.812548804883015) + " "
-						+ (point[2] - 282.8951675969565  ) + " " + (point[3] - 51.710164559856814 ) + " "
-						+ (length - 25.59226904380924));
-			writer.write("\r\n");
-			if (label == 2)
-				writer.write((point[0] - 110.5306885004662 ) + " " + (point[1] - 65.44525892453427) + " "
-						+ (point[2] - 121.62549571709461  ) + " " + (point[3] - 57.18401955845997 ) + " "
-						+ (length - 13.83267230283887));
-			writer.write("\r\n");
-			if (label == 3)
-				writer.write((point[0] - 68.05868325990714) + " " + (point[1] - 75.63455282822034 ) + " "
-						+ (point[2] -  79.452538063318 ) + " " + (point[3] - 79.01775339391983 ) + " "
-						+ (length - 11.88553630884859));
-			writer.write("\r\n");
-			if (label == 4)
-				writer.write((point[0] - 206.6437991298365 ) + " " + (point[1] - 145.39791689745067) + " "
-						+ (point[2] - 218.42214304937968) + " " + (point[3] - 144.92232783566837) + " "
-						+ (length - 11.787941739028346));
-			writer.write("\r\n");
-			if (label == 5)
-				writer.write((point[0] - 279.74510883639203 ) + " " + (point[1] - 185.48363393201532) + " "
-						+ (point[2] - 288.9107332880293) + " " + (point[3] - 169.20120267841733) + " "
-						+ (length - 18.68492009928315));
-			writer.write("\r\n");
-		
-			if (label == 6)
-				writer.write((point[0] - 88.40052110271773 ) + " " + (point[1] - 188.59400638940423 ) + " "
-						+ (point[2] - 99.07470738911562) + " " + (point[3] - 207.37813796257564) + " "
-						+ (length - 21.605134848802486));
-			writer.write("\r\n");
-			if (label == 7)
-				writer.write((point[0] - 65.47844457154001 ) + " " + (point[1] - 252.69063416414554 ) + " "
-						+ (point[2] - 76.51766577799131) + " " + (point[3] - 261.1045084130139) + " "
-						+ (length - 13.880118325170509));
-			writer.write("\r\n");
-		
-			if (label == 8)
-				writer.write((point[0] - 0.48962832499659115 ) + " " + (point[1] - 321.2109153438377) + " "
-						+ (point[2] - 11.288741744009124) + " " + (point[3] - 305.6177616973579) + " "
-						+ (length - 18.96753255643506));
-			writer.write("\r\n");
-			if (label == 9)
-				writer.write((point[0] - 292.58579113897326) + " " + (point[1] -378.7141000644622) + " "
-						+ (point[2] - 302.9865792236662) + " " + (point[3] - 398.4700948971722 ) + " "
-						+ (length - 22.326569924929256));
-			writer.write("\r\n");
-			if (label == 10)
-				writer.write((point[0] - 172.44371203632338) + " " + (point[1] - 394.49432687477173 ) + " "
-						+ (point[2] - 182.66983302824718) + " " + (point[3] - 399.9071680381849) + " "
-						+ (length - 11.570324109626533));
-			writer.write("\r\n");
-			
-			
-			
-			writer.close();
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	private void Testerrorfirst(final double[] point, int label, double length) {
-
-		// Errorlist for Fake_big_file_nonoise.tif
-		try {
-			FileWriter writer = new FileWriter("error-Fake_databigsnp.txt", true);
-
-			if (label == 1)
-				writer.write((point[0] - 92.8676372377067) + " " + (point[1] - 5.499718994655133) + " "
-						+ (point[2] - 112.8676372377067) + " " + (point[3] - 21.131534922414605) + " "
-						+ (length - 25.384122383871276));
-			writer.write("\r\n");
-			if (label == 2)
-				writer.write((point[0] - 147.99397954559853) + " " + (point[1] - 32.88119775551587) + " "
-						+ (point[2] - 167.99397954559853) + " " + (point[3] - 45.984869141998246) + " "
-						+ (length - 23.91037857928889));
-			writer.write("\r\n");
-			if (label == 3)
-				writer.write((point[0] - 7.794350587783296) + " " + (point[1] - 33.10481325801554) + " "
-						+ (point[2] - 27.794350587783295) + " " + (point[3] - 52.91969866168526) + " "
-						+ (length - 28.153679751687225));
-			writer.write("\r\n");
-			if (label == 4)
-				writer.write((point[0] - 55.346451860313366) + " " + (point[1] - 40.826958488144356) + " "
-						+ (point[2] - 75.34645186031337) + " " + (point[3] - 56.4309289796462) + " "
-						+ (length - 25.366984351705273));
-			writer.write("\r\n");
-			if (label == 5)
-				writer.write((point[0] - 100.59945184657138) + " " + (point[1] - 47.24326969725762) + " "
-						+ (point[2] - 120.59945184657138) + " " + (point[3] - 50.00073903143623) + " "
-						+ (length - 20.18919604959384));
-			writer.write("\r\n");
-			if (label == 6)
-				writer.write((point[0] - 46.95812894108671) + " " + (point[1] - 73.9193397629198) + " "
-						+ (point[2] - 66.95812894108671) + " " + (point[3] - 78.3477854435783) + " "
-						+ (length - 20.484411906289694));
-			writer.write("\r\n");
-			if (label == 7)
-				writer.write((point[0] - 41.379541842397856) + " " + (point[1] - 80.073242656372) + " "
-						+ (point[2] - 61.379541842397856 ) + " " + (point[3] - 94.4024072043764) + " "
-						+ (length - 24.6033525488659));
-			writer.write("\r\n");
-			if (label == 8)
-				writer.write((point[0] - 45.30959973137538) + " " + (point[1] - 158.02503112977763) + " "
-						+ (point[2] - 65.30959973137539) + " " + (point[3] - 176.27699530569882) + " "
-						+ (length - 27.07645095427225));
-			writer.write("\r\n");
-			if (label == 9)
-				writer.write((point[0] - 106.06073273206955) + " " + (point[1] - 183.01279696011633 ) + " "
-						+ (point[2] - 126.06073273206955) + " " + (point[3] - 184.70741244170682 ) + " "
-						+ (length - 20.071664645226768));
-			writer.write("\r\n");
-			
-			
-			writer.close();
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private void Testerrorfifth(final double[] point, int label, double length) {
-
-		// Errorlist for Fake_big_file_nonoise.tif
-		try {
-			FileWriter writer = new FileWriter("error-Fake_fifth.txt", true);
-
-			if (label == 1)
-				writer.write((point[0] - 334.685446700782) + " " + (point[1] - 27.232991759972254) + " "
-						+ (point[2] - 355.90213277915547) + " " + (point[3] - 71.43149034561719) + " "
-						+ (length - 49.0270848141464));
-			writer.write("\r\n");
-			if (label == 2)
-				writer.write((point[0] - 195.99940634144068) + " " + (point[1] - 60.110733648894104) + " "
-						+ (point[2] - 216.0588472289147) + " " + (point[3] - 93.51548949286881) + " "
-						+ (length - 38.96484161027254));
-			writer.write("\r\n");
-			if (label == 3)
-				writer.write((point[0] - 292.7284350310164) + " " + (point[1] - 63.37806024717833) + " "
-						+ (point[2] - 313.7854245963145) + " " + (point[3] - 86.83291705025314) + " "
-						+ (length - 31.520265182986943));
-			writer.write("\r\n");
-			if (label == 4)
-				writer.write((point[0] - 334.81180118812387) + " " + (point[1] - 175.71391696367218) + " "
-						+ (point[2] - 356.0815811923552) + " " + (point[3] - 231.95156505253038) + " "
-						+ (length - 60.12550709968821));
-			writer.write("\r\n");
-			if (label == 5)
-				writer.write((point[0] - 0.5695104580630475) + " " + (point[1] - 180.11255226252794) + " "
-						+ (point[2] - 21.90197486784737) + " " + (point[3] - 204.89056777814363) + " "
-						+ (length - 32.69593385555468));
-			writer.write("\r\n");
-			if (label == 6)
-				writer.write((point[0] - 288.45313521245055) + " " + (point[1] - 216.133940619811) + " "
-						+ (point[2] - 309.3929746383774) + " " + (point[3] - 268.92640029469726) + " "
-						+ (length - 56.79366754936761));
-			writer.write("\r\n");
-			if (label == 7)
-				writer.write((point[0] - 337.326204913675) + " " + (point[1] - 250.106819309965) + " "
-						+ (point[2] - 357.34629942387886 ) + " " + (point[3] - 307.2297384542443) + " "
-						+ (length - 60.52959669253847));
-			writer.write("\r\n");
-			if (label == 8)
-				writer.write((point[0] - 176.52956328690408) + " " + (point[1] - 278.30082154667275) + " "
-						+ (point[2] - 197.30680558215627) + " " + (point[3] - 334.56959080632765) + " "
-						+ (length - 59.982232297505405));
-			writer.write("\r\n");
-			if (label == 9)
-				writer.write((point[0] - 6.653366259279758) + " " + (point[1] - 306.16197030167274 ) + " "
-						+ (point[2] - 28.40503221617591) + " " + (point[3] - 349.77300714455924 ) + " "
-						+ (length - 48.73456172381157));
-			writer.write("\r\n");
-			if (label == 10)
-				writer.write((point[0] - 344.7227374264369) + " " + (point[1] - 389.3751531282371 ) + " "
-						+ (point[2] - 366.6881936690487) + " " + (point[3] - 410.85382417972704 ) + " "
-						+ (length - 30.721565358623998));
-			writer.write("\r\n");
-			
-			writer.close();
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	
-	private void Testerrorsec(final double[] point, int label, double length) {
-
-		// Errorlist for Fake_big_file_nonoise.tif
-		try {
-			FileWriter writer = new FileWriter("error-Fake_bigfile_noisy_sec.txt", true);
-			
-			if (label == 1)
-				writer.write((point[0] - 305.9925929042284) + " " + (point[1] - 6.386481793148133) + " "
-						+ (point[2] - 322.0288782573045) + " " + (point[3] - 6.026247216588337) + " "
-						+ (length - 16.040330946568158));
-			writer.write("\r\n");
-			
-			if (label == 3)
-				writer.write((point[0] - 353.15723234722964) + " " + (point[1] - 49.99143903881524) + " "
-						+ (point[2] - 359.4669599689136) + " " + (point[3] - 43.039872569086285) + " "
-						+ (length - 9.388127557873378));
-			writer.write("\r\n");
-			
-			if (label == 5)
-				writer.write((point[0] - 282.92829236420187) + " " + (point[1] - 51.861712067783714) + " "
-						+ (point[2] - 294.6268069947843) + " " + (point[3] - 47.98838229640566) + " "
-						+ (length - 12.323064881748989));
-			writer.write("\r\n");
-			if (label == 6)
-				writer.write((point[0] - 150.17254613234996) + " " + (point[1] - 56.09908721936941) + " "
-						+ (point[2] - 165.71900210752256) + " " + (point[3] - 52.70967491949685) + " "
-						+ (length - 15.911643822261324));
-			writer.write("\r\n");
-			if (label == 7)
-				writer.write((point[0] - 126.39749395604314) + " " + (point[1] - 91.10615287483455) + " "
-						+ (point[2] - 144.3712600366361) + " " + (point[3] - 82.1183621577551 ) + " "
-						+ (length - 20.095687325739664));
-			writer.write("\r\n");
-			if (label == 8)
-				writer.write((point[0] - 185.06081941183263) + " " + (point[1] - 100.42682277520953) + " "
-						+ (point[2] - 190.71523125712804) + " " + (point[3] - 90.4882958233705) + " "
-						+ (length - 11.4344519452682));
-			writer.write("\r\n");
-			if (label == 9)
-				writer.write((point[0] - 298.2248630132484) + " " + (point[1] - 124.5154128690997) + " "
-						+ (point[2] - 311.81988528482725) + " " + (point[3] - 119.4678472985486) + " "
-						+ (length - 14.50181191278309));
-			writer.write("\r\n");
-			if (label == 10)
-				writer.write((point[0] - 207.15405474164575) + " " + (point[1] - 150.6899404519233) + " "
-						+ (point[2] - 208.44789551107206) + " " + (point[3] - 139.5953917951248) + " "
-						+ (length - 11.169737411179309));
-			writer.write("\r\n");
-			if (label == 11)
-				writer.write((point[0] - 112.7552499916626) + " " + (point[1] - 166.99368119375615) + " "
-						+ (point[2] - 119.33291011030018) + " " + (point[3] - 158.25754114246612) + " "
-						+ (length - 10.935527222409945));
-			writer.write("\r\n");
-			if (label == 12)
-				writer.write((point[0] - 236.22859339630475) + " " + (point[1] - 184.74586622212533) + " "
-						+ (point[2] - 253.52499503650682) + " " + (point[3] - 174.24640098382434) + " "
-						+ (length - 20.233741126877053));
-			writer.write("\r\n");
-			if (label == 13)
-				writer.write((point[0] -118.41559571666849) + " " + (point[1] - 211.7010231662632) + " "
-						+ (point[2] - 129.451058044193) + " " + (point[3] - 207.22262862709798) + " "
-						+ (length - 11.909552738480041));
-			writer.write("\r\n");
-			if (label == 14)
-				writer.write((point[0] - 239.43550593841613) + " " + (point[1] - 217.8967196461199) + " "
-						+ (point[2] - 251.85701790196183) + " " + (point[3] - 209.36985573134737) + " "
-						+ (length - 15.066564561357664));
-			writer.write("\r\n");
-			if (label == 15)
-				writer.write((point[0] - 372.5730494703797 ) + " " + (point[1] -  219.2225283527957) + " "
-						+ (point[2] - 387.07871048759705 ) + " " + (point[3] - 213.57221893243945) + " "
-						+ (length - 15.567279726791872));
-			writer.write("\r\n");
-			if (label == 16)
-				writer.write((point[0] - 144.8838518365699) + " " + (point[1] - 241.74727194739705) + " "
-						+ (point[2] - 149.82141674236192) + " " + (point[3] - 232.2334431268912) + " "
-						+ (length - 10.718791257637072));
-			writer.write("\r\n");
-			if (label == 17)
-				writer.write((point[0] - 62.933723402780544) + " " + (point[1] - 257.46201405936245) + " "
-						+ (point[2] - 73.24523552296085) + " " + (point[3] - 248.03191210113425) + " "
-						+ (length - 13.973335505426206));
-			writer.write("\r\n");
-			if (label == 18)
-				writer.write((point[0] - 51.588632388998214) + " " + (point[1] - 267.74624335786905) + " "
-						+ (point[2] - 69.53297671887874) + " " + (point[3] - 270.33575591613373) + " "
-						+ (length - 18.1302252804185));
-			writer.write("\r\n");
-			if (label == 19)
-				writer.write((point[0] - 371.5598843638897) + " " + (point[1] - 302.3070640302173 ) + " "
-						+ (point[2] - 382.3437183288822) + " " + (point[3] - 291.4978977236864) + " "
-						+ (length - 15.268567425491131));
+				writer.write((point[0] - 256.14415851312833) + " " + (point[1] - 414.56338299609394 ) + " "
+						+ (point[2] - 267.69268843741247) + " " + (point[3] - 402.5256330267631) + " "
+						+ (length - 16.681605670204853));
 			writer.write("\r\n");
 			if (label == 20)
-				writer.write((point[0] - 300.6076952914607) + " " + (point[1] - 360.193761994309 ) + " "
-						+ (point[2] - 312.80245594393347) + " " + (point[3] - 350.7875453664556) + " "
-						+ (length - 15.400944731450855));
+				writer.write((point[0] - 307.0221124229872) + " " + (point[1] - 425.74080251312057 ) + " "
+						+ (point[2] - 318.90660598829754) + " " + (point[3] - 405.76253015063395 ) + " "
+						+ (length - 23.2459147785928));
 			writer.write("\r\n");
-			if (label == 21)
-				writer.write((point[0] - 325.8279550275642) + " " + (point[1] - 396.94385867009623 ) + " "
-						+ (point[2] - 330.78480705510646 ) + " " + (point[3] - 385.9961289446052) + " "
-						+ (length - 12.01761907223516));
-			if (label == 22)
-				writer.write((point[0] - 193.05380388784238 ) + " " + (point[1] - 394.24805388470986 ) + " "
-						+ (point[2] - 209.00212892787482 ) + " " + (point[3] - 387.0908873699319) + " "
-						+ (length - 17.48067802182697));
+			
+			writer.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void Testerrortwo(final double[] point, int label, double length) {
+
+		// Errorlist for Fake_big_file.tif
+		try {
+			FileWriter writer = new FileWriter("error-Fake_two.txt", true);
+
+			if (label == 1)
+				writer.write((point[0] - 338.3140365464876) + " " + (point[1] - 34.6062682241022) + " "
+						+ (point[2] - 351.2873412307025) + " " + (point[3] - 64.56050672718627) + " "
+						+ (length - 32.642963081330656));
 			writer.write("\r\n");
-			if (label == 23)
-				writer.write((point[0] - 363.18051478279176 ) + " " + (point[1] - 395.6581626679954 ) + " "
-						+ (point[2] - 371.2717339920776  ) + " " + (point[3] - 387.40066285914924 ) + " "
-						+ (length - 11.560888001611742));
+			if (label == 2)
+				writer.write((point[0] - 50.20240148337895) + " " + (point[1] - 74.70738084651842) + " "
+						+ (point[2] - 62.899870601047446) + " " + (point[3] - 103.90557393663119 ) + " "
+						+ (length - 31.83960115519122));
 			writer.write("\r\n");
-			if (label == 24)
-				writer.write((point[0] - 257.56853558741227 ) + " " + (point[1] - 392.1317053778325 ) + " "
-						+ (point[2] - 273.208024381375 ) + " " + (point[3] - 395.6612398320712  ) + " "
-						+ (length - 16.03281707000192));
+			if (label == 3)
+				writer.write((point[0] - 3.328776397632022) + " " + (point[1] - 98.4960584135745) + " "
+						+ (point[2] - 16.215625484255337) + " " + (point[3] - 125.7216261047921) + " "
+						+ (length - 30.121461045083375));
 			writer.write("\r\n");
-			if (label == 25)
-				writer.write((point[0] - 242.17648532439642 ) + " " + (point[1] - 401.6586191271966 ) + " "
-						+ (point[2] - 255.71765961466426   ) + " " + (point[3] - 399.89316172057016 ) + " "
-						+ (length - 13.655776836709897));
+			if (label == 4)
+				writer.write((point[0] - 100.0364535301454) + " " + (point[1] - 112.27002417021258) + " "
+						+ (point[2] - 112.66355873407907) + " " + (point[3] - 133.2351369102248) + " "
+						+ (length - 24.474062556768793));
+			writer.write("\r\n");
+			if (label == 5)
+				writer.write((point[0] - 316.8291502433898) + " " + (point[1] - 123.45464493609717) + " "
+						+ (point[2] - 328.94284213631136) + " " + (point[3] - 149.3305924501906) + " "
+						+ (length - 28.571072626500253));
+			writer.write("\r\n");
+			if (label == 6)
+				writer.write((point[0] - 181.52203055786154) + " " + (point[1] - 136.73303593280056) + " "
+						+ (point[2] - 194.30693230431007) + " " + (point[3] - 169.33350692240825) + " "
+						+ (length - 35.01777293619049));
+			writer.write("\r\n");
+       
+			if (label == 7)
+				writer.write((point[0] - 220.3920284710936) + " " + (point[1] - 148.73466196724948) + " "
+						+ (point[2] - 233.00881614719128) + " " + (point[3] - 170.67066765449704 ) + " "
+						+ (length - 25.305566122390697));
+			writer.write("\r\n");
+			if (label == 8)
+				writer.write((point[0] - 269.28105661270115) + " " + (point[1] - 154.26000633281953) + " "
+						+ (point[2] - 281.92465988583575) + " " + (point[3] - 177.51878290536143) + " "
+						+ (length - 26.4732202684117));
+			writer.write("\r\n");
+			if (label == 9)
+				writer.write((point[0] - 313.6767573400796) + " " + (point[1] - 167.3048565453715) + " "
+						+ (point[2] - 325.68360640963596) + " " + (point[3] - 190.86201905757824) + " "
+						+ (length - 26.440581124582437));
+			writer.write("\r\n");
+			if (label == 10)
+				writer.write((point[0] - 142.4113061517725) + " " + (point[1] - 197.12919949402738) + " "
+						+ (point[2] - 155.26615799558937) + " " + (point[3] - 219.90907353258663) + " "
+						+ (length - 26.156641166998263));
+			writer.write("\r\n");
+			if (label == 11)
+				writer.write((point[0] - 181.0146684838801) + " " + (point[1] - 219.85082013938518) + " "
+						+ (point[2] - 193.8977198168756) + " " + (point[3] - 246.95167976994097) + " "
+						+ (length - 30.00715921848794));
+			writer.write("\r\n");
+			if (label == 12)
+				writer.write((point[0] - 333.4436700399002) + " " + (point[1] - 226.89744562705945) + " "
+						+ (point[2] - 346.18855535668945) + " " + (point[3] -250.2439212453266) + " "
+						+ (length - 26.598684657938477));
+			writer.write("\r\n");
+			if (label == 13)
+				writer.write((point[0] - 2.683434785065986) + " " + (point[1] - 227.39808836230733) + " "
+						+ (point[2] - 14.895082826291112 ) + " " + (point[3] - 256.4683615614573) + " "
+						+ (length - 31.531018565152223));
+			writer.write("\r\n");
+        
+			if (label == 14)
+				writer.write((point[0] - 139.40878293040046) + " " + (point[1] - 233.38981153080937) + " "
+						+ (point[2] - 151.94475303337396) + " " + (point[3] - 263.7918526538246) + " "
+						+ (length - 32.88517372415957));
+			writer.write("\r\n");
+
+			if (label == 15)
+				writer.write((point[0] - 368.51992893964234) + " " + (point[1] - 246.49559242908282) + " "
+						+ (point[2] - 380.8947083962499) + " " + (point[3] - 276.48119906526307) + " "
+						+ (length - 32.43873875383279));
+			writer.write("\r\n");
+			
+			if (label == 16)
+				writer.write((point[0] - 322.6084356045666) + " " + (point[1] - 321.9972718564485) + " "
+						+ (point[2] - 335.17857634720383) + " " + (point[3] - 353.9862176619938) + " "
+						+ (length - 34.37006098394101));
+			writer.write("\r\n");
+			if (label == 17)
+				writer.write((point[0] - 87.553951066869) + " " + (point[1] - 355.2475055449888) + " "
+						+ (point[2] - 99.7736370435026) + " " + (point[3] - 376.7766785020526) + " "
+						+ (length - 24.755322934324706));
+			writer.write("\r\n");
+			if (label == 18)
+				writer.write((point[0] - 372.52471316888864) + " " + (point[1] - 359.3735279729181) + " "
+						+ (point[2] - 384.7637643372141) + " " + (point[3] - 380.8555137213732) + " "
+						+ (length - 24.723876823785485));
+			writer.write("\r\n");
+			if (label == 19)
+				writer.write((point[0] - 345.9443907957086) + " " + (point[1] - 362.44175401675085 ) + " "
+						+ (point[2] - 358.67385324684767) + " " + (point[3] - 387.1525254286868) + " "
+						+ (length - 27.796788268933316));
+			writer.write("\r\n");
+			if (label == 20)
+				writer.write((point[0] - 46.073101992551415) + " " + (point[1] - 406.08466530896965 ) + " "
+						+ (point[2] - 58.58157266303186) + " " + (point[3] - 433.89196099959645 ) + " "
+						+ (length - 30.491105787429575));
+			writer.write("\r\n");
+			
+			writer.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void Testerrorthree(final double[] point, int label, double length) {
+
+		// Errorlist for Fake_big_file.tif
+		try {
+			FileWriter writer = new FileWriter("error-Fake_three.txt", true);
+
+			if (label == 1)
+				writer.write((point[0] - 102.61190201305033) + " " + (point[1] - 8.259538706043248) + " "
+						+ (point[2] - 116.20495429979734) + " " + (point[3] - 47.49788822451655) + " "
+						+ (length - 41.52612603415002));
+			writer.write("\r\n");
+			if (label == 2)
+				writer.write((point[0] - 375.50314179291905) + " " + (point[1] - 14.912231448330996) + " "
+						+ (point[2] - 387.8478932401985 ) + " " + (point[3] - 35.43179969630119) + " "
+						+ (length - 23.94672356248794));
+			writer.write("\r\n");
+			if (label == 3)
+				writer.write((point[0] - 166.2656617870702) + " " + (point[1] - 20.445405423494307) + " "
+						+ (point[2] - 178.8210673581664) + " " + (point[3] - 57.85779380052519) + " "
+						+ (length - 39.462957480763));
+			writer.write("\r\n");
+			if (label == 4)
+				writer.write((point[0] - 386.5182277115242) + " " + (point[1] -20.701455890397558) + " "
+						+ (point[2] - 399.21558816608757) + " " + (point[3] - 37.05412446917972) + " "
+						+ (length - 20.703447349670988));
+			writer.write("\r\n");
+			if (label == 5)
+				writer.write((point[0] - 104.48587735237139) + " " + (point[1] - 50.86749014591775) + " "
+						+ (point[2] - 116.7486288669557) + " " + (point[3] - 87.72350007001484) + " "
+						+ (length - 38.842509473945974));
+			writer.write("\r\n");
+			if (label == 6)
+				writer.write((point[0] - 332.37937496471335) + " " + (point[1] - 81.67518017637789) + " "
+						+ (point[2] - 345.7315293833449) + " " + (point[3] - 116.86750733938015) + " "
+						+ (length - 37.640137071572525));
+			writer.write("\r\n");
+       
+			if (label == 7)
+				writer.write((point[0] - 64.54917058081423) + " " + (point[1] - 91.03967657791708) + " "
+						+ (point[2] - 77.4242600784504) + " " + (point[3] - 108.99030738377144 ) + " "
+						+ (length - 22.090565314183987));
+			writer.write("\r\n");
+			if (label == 8)
+				writer.write((point[0] - 291.87059998038154) + " " + (point[1] - 91.7639867470957) + " "
+						+ (point[2] - 304.30186580976414) + " " + (point[3] - 110.46284394495282) + " "
+						+ (length - 22.45403372729783));
+			writer.write("\r\n");
+			if (label == 9)
+				writer.write((point[0] - 150.13633156292963) + " " + (point[1] - 121.58435770257674) + " "
+						+ (point[2] - 163.9645224360096) + " " + (point[3] - 154.54032141131216) + " "
+						+ (length - 35.73953562644342));
+			writer.write("\r\n");
+			if (label == 10)
+				writer.write((point[0] - 189.51595497473548) + " " + (point[1] - 144.65370360371278) + " "
+						+ (point[2] - 201.73562989001596) + " " + (point[3] - 161.47891372002843) + " "
+						+ (length - 20.79442594767418));
+			writer.write("\r\n");
+			if (label == 11)
+				writer.write((point[0] - 40.7412533021802) + " " + (point[1] - 145.5782263378174) + " "
+						+ (point[2] - 53.803573917493964) + " " + (point[3] - 160.40210181361812) + " "
+						+ (length - 19.757821336860424));
+			writer.write("\r\n");
+			if (label == 12)
+				writer.write((point[0] - 308.05934208691633) + " " + (point[1] - 179.0082922914368) + " "
+						+ (point[2] - 321.2720644587525) + " " + (point[3] -203.26903587480268 ) + " "
+						+ (length - 27.625345458347645));
+			writer.write("\r\n");
+			if (label == 13)
+				writer.write((point[0] - 245.65286113426797) + " " + (point[1] - 180.99605440460334) + " "
+						+ (point[2] - 259.12208398328875) + " " + (point[3] - 194.5249762317515) + " "
+						+ (length - 19.09061785175298));
+			writer.write("\r\n");
+        
+			if (label == 14)
+				writer.write((point[0] - 287.22729116591654) + " " + (point[1] - 204.18458891357025) + " "
+						+ (point[2] - 299.49883391642254) + " " + (point[3] - 238.21243491453822) + " "
+						+ (length - 36.172988056602236));
+			writer.write("\r\n");
+
+			if (label == 15)
+				writer.write((point[0] - 387.79159541310145) + " " + (point[1] - 220.4005654006134) + " "
+						+ (point[2] - 399.8627095318793) + " " + (point[3] - 238.55108154821437) + " "
+						+ (length - 21.798005241142636));
+			writer.write("\r\n");
+			
+			if (label == 16)
+				writer.write((point[0] - 305.3832535507701) + " " + (point[1] - 238.07718582965657) + " "
+						+ (point[2] - 317.7703310239664) + " " + (point[3] - 253.47017090067237) + " "
+						+ (length - 19.75812940851136));
+			writer.write("\r\n");
+			if (label == 17)
+				writer.write((point[0] - 83.30628723439102) + " " + (point[1] - 271.7887197677545) + " "
+						+ (point[2] - 97.2035177400693) + " " + (point[3] - 311.15070927231375) + " "
+						+ (length - 41.74325374818051));
+			writer.write("\r\n");
+			if (label == 18)
+				writer.write((point[0] - 196.8083178212894) + " " + (point[1] - 307.58702537538244) + " "
+						+ (point[2] - 209.2698192157919) + " " + (point[3] - 330.102325095052) + " "
+						+ (length - 25.73378593351043));
+			writer.write("\r\n");
+			if (label == 19)
+				writer.write((point[0] - 187.97215142327738) + " " + (point[1] - 397.12932856571365 ) + " "
+						+ (point[2] - 201.05541499056932) + " " + (point[3] - 415.7467803201413) + " "
+						+ (length - 22.75480818200121));
+			writer.write("\r\n");
+			if (label == 20)
+				writer.write((point[0] - 262.3361618230495) + " " + (point[1] - 397.1830771085031 ) + " "
+						+ (point[2] - 274.34468615662405) + " " + (point[3] - 420.133780264653 ) + " "
+						+ (length - 25.90249856735373));
+			writer.write("\r\n");
+			
+			writer.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void Testerrorfour(final double[] point, int label, double length) {
+
+		// Errorlist for Fake_big_file.tif
+		try {
+			FileWriter writer = new FileWriter("error-Fake_four.txt", true);
+
+			if (label == 1)
+				writer.write((point[0] - 246.9961427022165) + " " + (point[1] - 19.804594837699458) + " "
+						+ (point[2] - 261.36977964030376) + " " + (point[3] - 1.0418674544315567) + " "
+						+ (length - 23.63559556446119));
+			writer.write("\r\n");
+			if (label == 2)
+				writer.write((point[0] - 372.56166620886665) + " " + (point[1] - 21.720349759718815) + " "
+						+ (point[2] - 387.25534099606835 ) + " " + (point[3] - 13.708919626473548) + " "
+						+ (length - 16.735802685617312));
+			writer.write("\r\n");
+			if (label == 3)
+				writer.write((point[0] - 128.50544705924705) + " " + (point[1] - 61.96424673453504) + " "
+						+ (point[2] - 142.0507088984846) + " " + (point[3] - 44.49777923994937) + " "
+						+ (length - 22.103203501595033));
+			writer.write("\r\n");
+			if (label == 4)
+				writer.write((point[0] - 196.31944223919538) + " " + (point[1] -69.59397621060532) + " "
+						+ (point[2] - 210.9692701132741) + " " + (point[3] - 45.69409751268013 ) + " "
+						+ (length - 28.032510742273367));
+			writer.write("\r\n");
+			if (label == 5)
+				writer.write((point[0] - 58.61112320382826) + " " + (point[1] - 63.42905477642745) + " "
+						+ (point[2] - 71.66576978169842) + " " + (point[3] - 51.00748898087748) + " "
+						+ (length - 18.01996376484353));
+			writer.write("\r\n");
+			if (label == 6)
+				writer.write((point[0] - 91.67834782432345) + " " + (point[1] - 62.678064701487045) + " "
+						+ (point[2] - 104.36211216953461) + " " + (point[3] - 53.8672435624161) + " "
+						+ (length - 15.443718694328426));
+			writer.write("\r\n");
+       
+			if (label == 7)
+				writer.write((point[0] - 277.7761745378519) + " " + (point[1] - 93.02698136834665) + " "
+						+ (point[2] - 291.64732993963435) + " " + (point[3] - 87.76837114864867 ) + " "
+						+ (length - 14.834484609284909));
+			writer.write("\r\n");
+			if (label == 8)
+				writer.write((point[0] - 182.9069448917257) + " " + (point[1] - 103.61775776279539) + " "
+						+ (point[2] - 196.05993089823494) + " " + (point[3] - 94.13698786731403) + " "
+						+ (length - 16.213760782079333));
+			writer.write("\r\n");
+			if (label == 9)
+				writer.write((point[0] - 255.4078812743308) + " " + (point[1] - 169.86605171478112) + " "
+						+ (point[2] - 269.5747729176865) + " " + (point[3] - 171.21638730628098) + " "
+						+ (length - 14.231100626594317));
+			writer.write("\r\n");
+			if (label == 10)
+				writer.write((point[0] - 181.72534344407936) + " " + (point[1] - 185.81542903477995) + " "
+						+ (point[2] - 194.43942497020035) + " " + (point[3] - 171.47225665119402) + " "
+						+ (length - 19.167014975684488));
+			writer.write("\r\n");
+			if (label == 11)
+				writer.write((point[0] - 51.82675589676167) + " " + (point[1] - 180.1851579327744) + " "
+						+ (point[2] - 64.3276628519142) + " " + (point[3] - 178.97461153417208) + " "
+						+ (length - 12.559382838521563));
+			writer.write("\r\n");
+			if (label == 12)
+				writer.write((point[0] - 351.0942761263851) + " " + (point[1] - 214.98359386963045) + " "
+						+ (point[2] - 364.46938077544723) + " " + (point[3] -192.65919780274118 ) + " "
+						+ (length - 26.02445165848273));
+			writer.write("\r\n");
+			if (label == 13)
+				writer.write((point[0] - 277.53462196685587) + " " + (point[1] - 299.24612843893607) + " "
+						+ (point[2] - 292.1273078410969) + " " + (point[3] - 295.3689064514161) + " "
+						+ (length - 15.098984448127062));
+			writer.write("\r\n");
+        
+			if (label == 14)
+				writer.write((point[0] - 226.92311949430476) + " " + (point[1] - 344.7937059034321) + " "
+						+ (point[2] - 241.3425032845104 ) + " " + (point[3] - 313.98844907831386) + " "
+						+ (length - 34.01297512642403));
+			writer.write("\r\n");
+
+			if (label == 15)
+				writer.write((point[0] - 89.01673780411032) + " " + (point[1] - 334.288777809216) + " "
+						+ (point[2] - 102.59180581181907) + " " + (point[3] - 327.3442287581981) + " "
+						+ (length - 15.248253438866751));
+			writer.write("\r\n");
+			
+			if (label == 16)
+				writer.write((point[0] - 380.13035754507115) + " " + (point[1] - 364.8437584545042) + " "
+						+ (point[2] - 393.67672482889003) + " " + (point[3] - 339.75576791755964) + " "
+						+ (length - 28.511600021218364));
+			writer.write("\r\n");
+			if (label == 17)
+				writer.write((point[0] -79.08785656321496) + " " + (point[1] - 379.1919061648394) + " "
+						+ (point[2] -93.38053218888024) + " " + (point[3] - 367.83353345808314) + " "
+						+ (length - 18.256319647893765));
+			writer.write("\r\n");
+			if (label == 18)
+				writer.write((point[0] - 28.394015551227405) + " " + (point[1] - 410.32826030425895) + " "
+						+ (point[2] - 42.87688838030825 ) + " " + (point[3] - 386.760186564061) + " "
+						+ (length - 27.662387915845905));
+			writer.write("\r\n");
+			if (label == 19)
+				writer.write((point[0] - 107.48363735749044) + " " + (point[1] - 422.44065142624805 ) + " "
+						+ (point[2] - 121.08890896190134) + " " + (point[3] - 393.68727069233506) + " "
+						+ (length - 31.809751949035192));
+			writer.write("\r\n");
+			if (label == 20)
+				writer.write((point[0] - 364.52057197326985) + " " + (point[1] - 425.57696520366466 ) + " "
+						+ (point[2] - 378.4745312914248) + " " + (point[3] - 398.09246755793447 ) + " "
+						+ (length - 30.823863993517612));
+			writer.write("\r\n");
+			
 			writer.close();
 
 		} catch (IOException e) {
@@ -1172,127 +950,65 @@ public class Linefitter {
 		}
 	}
 
-	private void Testerrorthird(final double[] point, int label, double length) {
+	
+	private void Testerrorfive(final double[] point, int label, double length) {
 
-		// Errorlist for Fake_big_file_nonoise.tif
+		// Errorlist for Fake_big_file.tif
 		try {
-			FileWriter writer = new FileWriter("error-Fake_bigfile_noisy_third.txt", true);
-			
+			FileWriter writer = new FileWriter("error-Fake_five.txt", true);
+
 			if (label == 1)
-				writer.write((point[0] - 159.70876069055475) + " " + (point[1] - 14.145735424295653) + " "
-						+ (point[2] - 167.61212303542496) + " " + (point[3] - 3.8033283013758235) + " "
-						+ (length - 13.016471159670546));
+				writer.write((point[0] - 222.90371643469152) + " " + (point[1] - 16.028490341799035) + " "
+						+ (point[2] - 255.2312724055033) + " " + (point[3] - 36.02343425047382) + " "
+						+ (length - 38.011427978399055));
 			writer.write("\r\n");
 			if (label == 2)
-				writer.write((point[0] - 136.20057982375772) + " " + (point[1] - 5.207904433739971) + " "
-						+ (point[2] - 152.86561656707167) + " " + (point[3] - 7.9806486301158355) + " "
-						+ (length - 16.89412797496633));
+				writer.write((point[0] - 360.91877489118144) + " " + (point[1] - 17.45868075904963) + " "
+						+ (point[2] - 391.7462103358474 ) + " " + (point[3] - 63.491803165883596) + " "
+						+ (length - 55.401977713955375));
 			writer.write("\r\n");
 			if (label == 3)
-				writer.write((point[0] - 47.45429996121627) + " " + (point[1] - 25.63722823136536) + " "
-						+ (point[2] - 57.27725022588619) + " " + (point[3] - 14.891294327282901) + " "
-						+ (length - 14.55903318813058));
+				writer.write((point[0] - 128.96895079354505) + " " + (point[1] - 55.02041872625349) + " "
+						+ (point[2] - 159.71930546208145) + " " + (point[3] - 59.17680554453315) + " "
+						+ (length - 31.02998330041361));
 			writer.write("\r\n");
 			if (label == 4)
-				writer.write((point[0] - 335.8381671659929) + " " + (point[1] - 24.31304234800028) + " "
-						+ (point[2] - 352.92772515391044 ) + " " + (point[3] - 27.088979208768457) + " "
-						+ (length - 17.31354434185467));
+				writer.write((point[0] - 198.8351823841789) + " " + (point[1] -136.2169214947499) + " "
+						+ (point[2] - 230.26320248688194) + " " + (point[3] - 186.4924501678817) + " "
+						+ (length - 59.29038059364104));
 			writer.write("\r\n");
 			if (label == 5)
-				writer.write((point[0] - 177.3827474288163) + " " + (point[1] - 36.48388865262402) + " "
-						+ (point[2] - 186.42256997573605 ) + " " + (point[3] - 25.703042029276453) + " "
-						+ (length - 14.069294424239743));
+				writer.write((point[0] - 106.15907400122536 ) + " " + (point[1] - 151.76688612246622) + " "
+						+ (point[2] - 136.3486806598561) + " " + (point[3] - 201.56365209669153) + " "
+						+ (length - 58.23341181568021));
 			writer.write("\r\n");
 			if (label == 6)
-				writer.write((point[0] - 301.2171132081411 ) + " " + (point[1] - 30.315498396371794) + " "
-						+ (point[2] - 317.15918882436847 ) + " " + (point[3] - 33.18008496056557) + " "
-						+ (length - 16.197395813440853));
+				writer.write((point[0] - 258.23494092128317) + " " + (point[1] - 202.2428912845651) + " "
+						+ (point[2] - 289.6033517149683) + " " + (point[3] - 239.63541831163295 ) + " "
+						+ (length - 48.80756368834017));
 			writer.write("\r\n");
+       
 			if (label == 7)
-				writer.write((point[0] - 335.03929214268237) + " " + (point[1] - 165.69191076004964) + " "
-						+ (point[2] - 342.5256140270755 ) + " " + (point[3] - 157.48931895989702 ) + " "
-						+ (length - 11.105292774018817));
+				writer.write((point[0] - 161.12270856208303) + " " + (point[1] - 219.44944752857754) + " "
+						+ (point[2] - 192.30906160583731) + " " + (point[3] - 232.04958503613773 ) + " "
+						+ (length -33.63557761328185));
 			writer.write("\r\n");
 			if (label == 8)
-				writer.write((point[0] - 67.96287883132905) + " " + (point[1] - 173.86588761653982) + " "
-						+ (point[2] - 77.93444046791349) + " " + (point[3] - 164.38574542277735) + " "
-						+ (length - 13.758820352274325));
+				writer.write((point[0] - 388.78833042563593) + " " + (point[1] - 351.8343450878364) + " "
+						+ (point[2] - 418.9224848972848) + " " + (point[3] - 375.98872415617024 ) + " "
+						+ (length - 38.61995978633273));
 			writer.write("\r\n");
 			if (label == 9)
-				writer.write((point[0] - 132.08500177775954) + " " + (point[1] - 191.2328208796786) + " "
-						+ (point[2] - 133.99927669679693) + " " + (point[3] - 179.71223488708554) + " "
-						+ (length - 11.67854229252893));
+				writer.write((point[0] - 24.202688921682622) + " " + (point[1] - 362.7494073097436) + " "
+						+ (point[2] - 54.487901283178786) + " " + (point[3] - 405.33575976290547) + " "
+						+ (length - 52.25697564006019));
 			writer.write("\r\n");
 			if (label == 10)
-				writer.write((point[0] - 240.43561617353788 ) + " " + (point[1] - 215.53133293573083) + " "
-						+ (point[2] - 255.6876330404176) + " " + (point[3] -205.4850084015699) + " "
-						+ (length - 18.2634239712401));
-			writer.write("\r\n");
-			if (label == 11)
-				writer.write((point[0] - 282.1835439050488 ) + " " + (point[1] - 253.03694030233416) + " "
-						+ (point[2] - 292.61517066888075) + " " + (point[3] - 246.2773467971297) + " "
-						+ (length - 12.43024301031551));
-			writer.write("\r\n");
-			if (label == 12)
-				writer.write((point[0] - 294.153062640094) + " " + (point[1] - 261.93721368868546) + " "
-						+ (point[2] - 302.13372226040036) + " " + (point[3] - 252.38483925060393) + " "
-						+ (length - 12.44744091693156));
-			writer.write("\r\n");
-			if (label == 13)
-				writer.write((point[0] -143.94147746939367) + " " + (point[1] - 297.3714118164239) + " "
-						+ (point[2] - 157.24715327889555) + " " + (point[3] - 293.39652929013005) + " "
-						+ (length - 13.886709467883303));
-			writer.write("\r\n");
-			if (label == 14)
-				writer.write((point[0] - 305.2899421104744) + " " + (point[1] - 311.5437229719812) + " "
-						+ (point[2] - 312.97810052264117) + " " + (point[3] - 302.27436866967133 ) + " "
-						+ (length - 12.04278659415342));
-			writer.write("\r\n");
-			if (label == 15)
-				writer.write((point[0] - 76.28332921728651 ) + " " + (point[1] -  326.1859505945892) + " "
-						+ (point[2] - 84.60177818692252 ) + " " + (point[3] - 316.258685571946) + " "
-						+ (length - 12.951725139541594));
-			writer.write("\r\n");
-			if (label == 16)
-				writer.write((point[0] - 135.61245447425634) + " " + (point[1] - 316.38039979427714) + " "
-						+ (point[2] - 137.49991384966583) + " " + (point[3] - 328.74893924805554) + " "
-						+ (length - 12.511725345190966));
-			writer.write("\r\n");
-			if (label == 17)
-				writer.write((point[0] - 38.84748653022617) + " " + (point[1] - 335.8949791635391) + " "
-						+ (point[2] - 41.53933477646034) + " " + (point[3] - 324.41375518435126) + " "
-						+ (length - 11.79256337871594));
-			writer.write("\r\n");
-			if (label == 18)
-				writer.write((point[0] - 99.35229992942286) + " " + (point[1] - 339.2657583667901) + " "
-						+ (point[2] - 109.0361829873792) + " " + (point[3] - 327.86290858949945) + " "
-						+ (length - 14.96003255757259));
-			writer.write("\r\n");
-			if (label == 19)
-				writer.write((point[0] - 232.91604534730675) + " " + (point[1] - 333.41185260962834 ) + " "
-						+ (point[2] - 243.45367569566125) + " " + (point[3] - 328.4354683761082) + " "
-						+ (length - 11.653585431024636));
-			writer.write("\r\n");
-			if (label == 20)
-				writer.write((point[0] - 388.7911761490889) + " " + (point[1] - 339.7061239652844 ) + " "
-						+ (point[2] - 395.4960477552932) + " " + (point[3] - 329.50112703979767) + " "
-						+ (length - 12.210539116061916));
-			writer.write("\r\n");
-			if (label == 21)
-				writer.write((point[0] - 315.65300280159875) + " " + (point[1] - 362.6874993570169 ) + " "
-						+ (point[2] - 333.3737841658348  ) + " " + (point[3] - 354.04717540951754 ) + " "
-						+ (length - 19.715001650438374));
-			if (label == 22)
-				writer.write((point[0] - 196.19090817342362 ) + " " + (point[1] - 371.8379923415543 ) + " "
-						+ (point[2] - 198.92909691454048 ) + " " + (point[3] - 359.8836219091283) + " "
-						+ (length - 12.263957355504797));
+				writer.write((point[0] - 314.24729092693474) + " " + (point[1] - 379.8908139375993) + " "
+						+ (point[2] - 344.34962327362956) + " " + (point[3] - 415.1772672850986) + " "
+						+ (length - 46.38193832254224));
 			writer.write("\r\n");
 			
-			if (label == 24)
-				writer.write((point[0] - 335.4158263232457 ) + " " + (point[1] - 384.3346481250782 ) + " "
-						+ (point[2] - 340.80011140941934 ) + " " + (point[3] - 376.6039312635851  ) + " "
-						+ (length - 9.420961154880434));
-			writer.write("\r\n");
 			
 			writer.close();
 

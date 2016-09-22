@@ -39,7 +39,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/Fake_eight.tif"));
+				.openAs32Bit(new File("src/main/resources/Fake_five.tif"));
 		
 		
 		// small_mt.tif image to be used for testing

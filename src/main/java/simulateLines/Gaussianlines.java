@@ -28,12 +28,12 @@ public class Gaussianlines {
 			double endpos[] = new double[n];
 
 			for (int d = 0; d < range.numDimensions(); ++d) {
-				startpos[d] = rnd.nextDouble() * (range.max(d) - range.min(d)) + range.min(d);
+				startpos[d] = rnd.nextDouble() * (range.max(d) - range.min(d)) + range.min(d) * 2 - 2*rnd.nextDouble();
 
 			}
 
-			endpos[0] = startpos[0] + rnd.nextDouble()*2.9 - 12;
-			endpos[1] = startpos[1] + 4*rnd.nextDouble()*(endpos[0] - startpos[0]) + 20;
+			endpos[0] = startpos[0] - 3*rnd.nextDouble() + 33;
+			endpos[1] = startpos[1] + 2*rnd.nextDouble()*(endpos[0] - startpos[0])  ;
 			
 			
 			
@@ -51,7 +51,7 @@ public class Gaussianlines {
 		
 		for (int index = 0; index < linearray.size(); ++index){
 		try {
-	        FileWriter writer = new FileWriter("initial_length_one.txt", true);
+	        FileWriter writer = new FileWriter("initial_length_five.txt", true);
 	        writer.write( "StartX: "  + linearray.get(index).startpos[0]+  " " +
 	       		 "StartY: "+ linearray.get(index).startpos[1] + " " + "EndposX: " + linearray.get(index).endpos[0] +  
 	    		 " EndposY :" + linearray.get(index).endpos[1]+ "  Length " + linearray.get(index).length );

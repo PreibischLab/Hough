@@ -46,7 +46,7 @@ public class Velocitydetector {
 		final double[] psf = { 1.7, 1.8 };
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		final int minlength = 5;
-		double[] final_param = new double[2 * ndims + 3];
+		double[] final_param = new double[2 * ndims + 2];
 
 		// Show the stack
 		ImagePlus imp = ImageJFunctions.show(img);
