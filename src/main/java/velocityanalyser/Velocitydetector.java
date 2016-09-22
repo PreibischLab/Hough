@@ -9,6 +9,7 @@ import com.sun.tools.javac.util.Pair;
 
 import drawandOverlay.OverlayLines;
 import drawandOverlay.PushCurves;
+import graphconstructs.Staticproperties;
 import houghandWatershed.PerformWatershedding;
 import ij.ImageJ;
 import ij.ImagePlus;
@@ -26,6 +27,7 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 import peakFitter.Linefitter;
 import preProcessing.Kernels;
+import sun.rmi.rmic.iiop.StaticStringsHash;
 
 public class Velocitydetector {
 
@@ -48,6 +50,9 @@ public class Velocitydetector {
 		final int minlength = 5;
 		double[] final_param = new double[2 * ndims + 2];
 
+		
+		
+		
 		// Show the stack
 		ImagePlus imp = ImageJFunctions.show(img);
 
@@ -101,8 +106,10 @@ public class Velocitydetector {
 			}
 		}
 
+		ArrayList<ArrayList<Staticproperties>> Allstartandend = new ArrayList<ArrayList<Staticproperties>>();
 		for (int i = 1; i < img.dimension(ndims - 1); ++i) {
 
+			ArrayList<Staticproperties> startandendinframe = new ArrayList<Staticproperties>();
 			
 			IntervalView<FloatType> currentframe = Views.hyperSlice(img, ndims - 1, i);
 			
@@ -112,7 +119,7 @@ public class Velocitydetector {
 			
 			Linefitter currentline = new Linefitter(currentframe, currentlabelledimg);
 			
-			
+			ArrayList<double[]> final_paramlistnextframe = new ArrayList<double[]>();
 			for (int index = 0; index < final_paramlist.size(); ++index) {
 
 				Point linepoint = new Point(ndims - 1);
@@ -123,17 +130,33 @@ public class Velocitydetector {
 				
 				 int currentlabel = currentline.Getlabel(linepoint);
 				
-				 double[] final_trackparam =
+				 double[] paramnextframe =
 						currentline.Getfinaltrackparam(final_paramlist.get(index),
-								currentlabel, psf, i, false);
-				System.out.println("Frame:" + i + " " +  "Fits :" + currentlabel + " "+ "StartX:" + final_trackparam[0] 
-						+ " StartY:" + final_trackparam[1] + " " + "EndX:"
-						+ final_trackparam[2] + "EndY: " + final_trackparam[3]);
+								currentlabel, psf, i, true);
+				 final_paramlistnextframe.add(paramnextframe);
+				 
+				 
+				 final double[] oldstartpoint = {final_paramlist.get(index)[0], final_paramlist.get(index)[1]};
+				 final double[] oldendpoint = {final_paramlist.get(index)[2], final_paramlist.get(index)[3]};
+				 final double[] newstartpoint = {paramnextframe[0], paramnextframe[1]};
+				 final double[] newendpoint = {paramnextframe[2], paramnextframe[3]};
+				 final double[] directionstart = {newstartpoint[0] - oldstartpoint[0] , newstartpoint[1] - oldstartpoint[1] };
+				 final double[] directionend = {newendpoint[0] - oldendpoint[0] , newendpoint[1] - oldendpoint[1] };
+				System.out.println("Frame:" + i + " " +  "Fits :" + currentlabel + " "+ "StartX:" + paramnextframe[0] 
+						+ " StartY:" + paramnextframe[1] + " " + "EndX:"
+						+ paramnextframe[2] + "EndY: " + paramnextframe[3]);
 				
+				final Staticproperties edge = 
+			   new Staticproperties(currentlabel, oldstartpoint, oldendpoint, newstartpoint, newendpoint, directionstart , directionend );
 				
+	
+						startandendinframe.add(edge);	
 				
 				
 			}
+			
+			Allstartandend.add(i,startandendinframe);
+			final_paramlist = final_paramlistnextframe;
 
 		}
 

@@ -365,30 +365,30 @@ public class PushCurves {
 
 		if (slope >= 0) {
 			while (true) {
-
+				AddGaussian.addGaussian(imgout, 1.0, steppos, sigma);
 				steppos[0] = startline[0] + count * stepsize / Math.sqrt(1 + slope * slope);
 				steppos[1] = startline[1] + count * stepsize * slope / Math.sqrt(1 + slope * slope);
 
-				AddGaussian.addGaussian(imgout, 1.0, steppos, sigma);
+				
 
 				count++;
 
-				if (steppos[0] >= endline[0] || steppos[1] >= endline[1])
+				if (steppos[0] > endline[0] || steppos[1] > endline[1])
 					break;
 			}
 		}
 		int negcount = 0;
 		if (slope < 0) {
 			while (true) {
-
+				AddGaussian.addGaussian(imgout, 1.0, steppos, sigma);
 				steppos[0] = startline[0] + negcount * stepsize / Math.sqrt(1 + slope * slope);
 				steppos[1] = startline[1] + negcount * stepsize * slope / Math.sqrt(1 + slope * slope);
 
-				AddGaussian.addGaussian(imgout, 1.0, steppos, sigma);
+				
 
 				negcount++;
 
-				if (steppos[0] >= endline[0] || steppos[1] <= endline[1])
+				if (steppos[0] > endline[0] || steppos[1] < endline[1])
 					break;
 			}
 		}
