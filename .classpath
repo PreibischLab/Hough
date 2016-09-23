@@ -17,12 +17,12 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6">
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry exported="true" kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
+	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
@@ -31,12 +31,21 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/imglib2-algorithm"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/imglib2-algorithm-fft"/>
 	<classpathentry kind="src" path="/imglib2-algorithm-gpl"/>
-	<classpathentry kind="lib" path="/Users/varunkapoor/.m2/repository/net/imglib2/imglib2/2.2.1/imglib2-2.2.1.jar" sourcepath="/Users/varunkapoor/.m2/repository/net/imglib2/imglib2/2.2.1/imglib2-2.2.1-sources.jar">
+	<classpathentry kind="lib" path="/Users/varunkapoor/.m2/repository/net/sf/jgrapht/jgrapht/0.8.3/jgrapht-0.8.3.jar" sourcepath="/Users/varunkapoor/.m2/repository/net/sf/jgrapht/jgrapht/0.8.3/jgrapht-0.8.3-sources.jar">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>
-			<attribute name="maven.groupId" value="net.imglib2"/>
-			<attribute name="maven.artifactId" value="imglib2"/>
-			<attribute name="maven.version" value="2.2.1"/>
+			<attribute name="maven.groupId" value="net.sf.jgrapht"/>
+			<attribute name="maven.artifactId" value="jgrapht"/>
+			<attribute name="maven.version" value="0.8.3"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="/Users/varunkapoor/.m2/repository/sc/fiji/fiji-lib/2.1.0/fiji-lib-2.1.0.jar">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="maven.groupId" value="sc.fiji"/>
+			<attribute name="maven.artifactId" value="fiji-lib"/>
+			<attribute name="maven.version" value="2.1.0"/>
 			<attribute name="maven.scope" value="compile"/>
 		</attributes>
 	</classpathentry>
