@@ -394,6 +394,58 @@ public class PushCurves {
 		}
 
 	}
+	// Draw a line between starting and end point
+		public static void DrawallLine(RandomAccessibleInterval<FloatType> imgout, final ArrayList<double[]> final_param,
+				final double[] sigma) {
+
+			int ndims = imgout.numDimensions();
+
+			for (int index  = 0; index < final_param.size(); ++index){
+			
+			double[] startline = new double[ndims];
+			double[] endline = new double[ndims];
+
+			for (int d = 0; d < ndims; ++d) {
+				startline[d] = final_param.get(index)[d];
+				endline[d] = final_param.get(index)[ndims + d];
+			}
+
+			double slope = (endline[1] - startline[1]) / (endline[0] - startline[0]);
+			final double stepsize = 0.25 * (sigma[0] + sigma[1]);
+			final double[] steppos = new double[ndims];
+			int count = 0;
+
+			if (slope >= 0) {
+				while (true) {
+					AddGaussian.addGaussian(imgout, 1.0, steppos, sigma);
+					steppos[0] = startline[0] + count * stepsize / Math.sqrt(1 + slope * slope);
+					steppos[1] = startline[1] + count * stepsize * slope / Math.sqrt(1 + slope * slope);
+
+					
+
+					count++;
+
+					if (steppos[0] > endline[0] || steppos[1] > endline[1])
+						break;
+				}
+			}
+			int negcount = 0;
+			if (slope < 0) {
+				while (true) {
+					AddGaussian.addGaussian(imgout, 1.0, steppos, sigma);
+					steppos[0] = startline[0] + negcount * stepsize / Math.sqrt(1 + slope * slope);
+					steppos[1] = startline[1] + negcount * stepsize * slope / Math.sqrt(1 + slope * slope);
+
+					
+
+					negcount++;
+
+					if (steppos[0] > endline[0] || steppos[1] < endline[1])
+						break;
+				}
+			}
+			}
+		}
 
 	public static void Drawexactcircle(RandomAccessibleInterval<FloatType> imgout, double[] center, double radius,
 			double[] min, double[] max) {
