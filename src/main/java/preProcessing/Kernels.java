@@ -230,7 +230,7 @@ public static void SaltandPepperNoise(RandomAccessibleInterval<FloatType> inputi
 			x[d] = (long) (cursor.getDoublePosition(d));
 			
 			ranac.setPosition(x);
-			ranac.get().setReal(0.5*rnd.nextDouble());
+			ranac.get().setReal(0.4*rnd.nextDouble());
 			
 			
 		}

@@ -69,11 +69,7 @@ public class GaussianMaskFit {
 
 			}
 
-			final long[] longintlocation = new long[n];
-			for (int d = 0; d < n; ++d) {
-				longintlocation[d] = (long) location[d];
-
-			}
+			
 
 			// ImageJFunctions.show(gaussianMask);
 			// compute the sums
@@ -169,7 +165,7 @@ public class GaussianMaskFit {
 
 				final double signal = cImg.get().getRealDouble();
 				final double mask = cMask.get().getRealDouble();
-				final double weight = maxintensity;
+				final double weight = 8;
 
 				final double signalmask = signal * mask * weight;
 
@@ -216,7 +212,7 @@ public class GaussianMaskFit {
 	}
 
 	final public static void beststartfitsumofGaussian(final IterableInterval<FloatType> image, final double[] location,
-			final double[] sq_sigma, final double[] dxvector, final double slope, final double intercept,
+			final double[] sq_sigma, final double[] dxvector, final double slope, final double intercept, 
 			int numberofgaussians) {
 		final int ndims = image.numDimensions();
 		final Cursor<FloatType> cursor = image.localizingCursor();

@@ -32,7 +32,7 @@ public class MovingLines {
 		for (int d = 0; d < ndims; ++d)
 			Ci[d] = 1.0 / Math.pow(sigma[d],2);
 		
-		final int numframes = 15;
+		final int numframes = 25;
 		final Random rnd = new Random(130);
 		final int numlines = 10;
 

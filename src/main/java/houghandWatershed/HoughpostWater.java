@@ -31,7 +31,7 @@ import preProcessing.GetLocalmaxmin;
 import preProcessing.GlobalThresholding;
 import preProcessing.Kernels;
 import preProcessing.Kernels.ProcessingType;
-import preProcessing.MedianFilter;
+import preProcessing.MedianFilter2D;
 import util.ImgLib2Util;
 
 public class HoughpostWater {
@@ -39,7 +39,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/Fake_five.tif"));
+				.openAs32Bit(new File("src/main/resources/201607013_seeds.tif"));
 		
 		
 		// small_mt.tif image to be used for testing
@@ -60,7 +60,7 @@ public class HoughpostWater {
 		ImageJFunctions.show(biginputimg);
 		final int ndims = biginputimg.numDimensions();
 		// Define the psf of the microscope
-		double[] psf = {1.7, 1.8};
+		double[] psf = {1.65, 1.47};
 		
 		//psf[0] = 1.65;
 		//psf[1] = 1.47;
@@ -73,6 +73,8 @@ public class HoughpostWater {
 				new FloatType());
 		RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
+		
+		
 		// Compute the Sin Cosine lookup table
 	//	SinCosinelut.getTable();
 		// Preprocess image

@@ -28,7 +28,7 @@ public class Linefitter {
 	private final RandomAccessibleInterval<IntType> intimg;
 	private final int ndims;
 	final int maxiter = 2500;
-	final double lambda = 1e-4;
+	final double lambda = 1e-3;
 	final double termepsilon = 1e-3;
 	public Linefitter(RandomAccessibleInterval<FloatType> inputimg, RandomAccessibleInterval<IntType> intimg) {
 
@@ -124,6 +124,114 @@ public class Linefitter {
 		
 		if (offsetting){
 			System.out.println("Ofsetting on: " + "Label: " + label + " " + "Hough Detection: " 
+		                                                      + " StartX: "
+					+ (MinandMax[0] + smallinterval.realMin(0))   + " StartY: "
+					+ (MinandMax[1] + smallinterval.realMin(1)) + " EndX: " 
+		            + (MinandMax[2] + smallinterval.realMin(0)) + " EndY: " 
+					+ (MinandMax[3] + smallinterval.realMin(1)));
+			
+		}
+		for (int d = 0; d < ndims; ++d) {
+
+			if (MinandMax[d] == Double.MAX_VALUE || MinandMax[d + ndims] == -Double.MIN_VALUE)
+				return null;
+			if (MinandMax[d] >= inputimg.dimension(d) || MinandMax[d + ndims] >= inputimg.dimension(d))
+				return null;
+			if (MinandMax[d] <= 0 || MinandMax[d + ndims] <= 0)
+				return null;
+
+		}
+
+		return MinandMax;
+
+	}
+	
+	private final double[] MakerepeatedLineguess(double[] iniparam ,int label,
+			boolean offsetting) throws Exception {
+		long[] newposition = new long[ndims];
+		double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
+		double[] maxVal = { -Double.MIN_VALUE, -Double.MIN_VALUE };
+		
+		RandomAccessibleInterval<FloatType> currentimg = PerformWatershedding.CurrentLabelImage(intimg, inputimg, label);
+		final double[] cordone = { iniparam[0], iniparam[1] };
+		final double[] cordtwo = { iniparam[2], iniparam[3] };
+		
+		double slope = (cordone[1] - cordtwo[1]) / (cordone[0] - cordtwo[0]);
+		double intercept = cordone[1] - slope * cordone[0];
+		double newintercept = intercept;
+		
+		
+		final long[] minCorner = PerformWatershedding.GetMincorners(intimg, label);
+		final long[] maxCorner = PerformWatershedding.GetMaxcorners(intimg, label);
+		FinalInterval smallinterval = new FinalInterval(minCorner, maxCorner);
+		currentimg = Views.interval(currentimg, smallinterval);
+		if(offsetting){
+		
+			currentimg = Views.offsetInterval(currentimg, smallinterval);
+			
+			newintercept = intercept - (smallinterval.realMin(1) - slope * smallinterval.realMin(0));
+			
+		}
+		
+		final Cursor<FloatType> outcursor = Views.iterable(currentimg).localizingCursor();
+		
+		final double maxintensityline = GetLocalmaxmin.computeMaxIntensity(currentimg);
+		
+		while (outcursor.hasNext()) {
+
+			outcursor.fwd();
+			
+				if (outcursor.get().get()/maxintensityline  > 0.5) {
+					outcursor.localize(newposition);
+
+					long pointonline = (long) (newposition[1] - slope * newposition[0] - newintercept);
+
+					// To get the min and max co-rodinates along the line so we
+					// have starting points to
+					// move on the line smoothly
+
+					if (pointonline == 0) {
+						for (int d = 0; d < ndims; ++d) {
+							if (outcursor.getDoublePosition(d) <= minVal[d])
+								minVal[d] = outcursor.getDoublePosition(d);
+
+							if (outcursor.getDoublePosition(d) >= maxVal[d])
+								maxVal[d] = outcursor.getDoublePosition(d);
+
+						}
+
+					}
+			}
+		}
+
+		final double[] MinandMax = new double[2 * ndims + 2];
+
+		if (slope >= 0) {
+			for (int d = 0; d < ndims; ++d) {
+
+				MinandMax[d] = minVal[d];
+				MinandMax[d + ndims] = maxVal[d];
+			}
+
+		}
+
+		if (slope < 0) {
+
+			MinandMax[0] = minVal[0];
+			MinandMax[1] = maxVal[1];
+			MinandMax[2] = maxVal[0];
+			MinandMax[3] = minVal[1];
+
+		}
+
+		MinandMax[2 * ndims] =   iniparam[2 * ndims];
+		MinandMax[2 * ndims + 1] = iniparam[2 * ndims + 1];
+		
+		System.out.println("Label: " + label + " " + "Initial guess: " + " StartX: " + MinandMax[0]  + " StartY: "
+				+ MinandMax[1] + " EndX: " + MinandMax[2] + " EndY: " + MinandMax[3]);
+		
+		if (offsetting){
+			System.out.println("Ofsetting on: " + "Label: " + label + " " + "Initial guess: " 
 		                                                      + " StartX: "
 					+ (MinandMax[0] + smallinterval.realMin(0))   + " StartY: "
 					+ (MinandMax[1] + smallinterval.realMin(1)) + " EndX: " 
@@ -264,37 +372,40 @@ public class Linefitter {
 					
 					
 				}
-				System.out.println("ds: " + ds );
-				System.out.println("LM solver : " + " StartX: " + startpos[0] + " StartY:  " + startpos[1]);
-				System.out.println("LM solver : " + " EndX: " + endpos[0] + " EndY:  " + endpos[1]);
-				System.out.println(" Length:  " + Math.sqrt(LMdist));
+				
 				
 				for (int d = 0; d < ndims; ++d) {
 					LMparam[d] = startpos[d];
 					LMparam[ndims + d] = endpos[d];
 				}
 				
+			
+				
 				for (int d = 0; d < ndims; ++d) {
 						returnparam[d] = startfit[d];
 						returnparam[ndims + d] = endfit[d];
 				} 
-				if (Math.abs(Math.sqrt(Maskdist) - Math.sqrt(LMdist)) > 10) {
-                        System.out.println("Mask fits fail, returning LM solver results!");
-						for (int d = 0; d < ndims; ++d) {
-							returnparam[d] = startpos[d];
-							returnparam[ndims + d] = endpos[d];
-						}
-
+				
+				if ( Math.abs(Math.sqrt(Maskdist) - Math.sqrt(LMdist)) > 10) {
+                    System.out.println("Mask fits fail, returning LM solver results!");
+					for (int d = 0; d < ndims; ++d) {
+						returnparam[d] = startpos[d];
+				returnparam[ndims + d] = endpos[d];
 					}
-				
-				//Testmovingline(returnparam, label, Distance(new double[] {returnparam[0], returnparam[1]},
-				//		new double[] {returnparam[2], returnparam[3]}), 0);
-				Testerrorfive(returnparam, label, Distance(new double[] {returnparam[0], returnparam[1]},
-						new double[] {returnparam[2], returnparam[3]}));
-				
-				
-			//	System.out.println("Number of gaussians for mask fit:" + (numberofgaussians) );
 
+				}
+				
+				for (int d = 0; d < ndims; ++d){
+					if	(Double.isNaN(startfit[d]) || Double.isNaN(endfit[d])){
+						 System.out.println("Mask fits fail, returning LM solver results!");
+							returnparam[d] = startpos[d];
+					returnparam[ndims + d] = endpos[d];
+					
+					}
+				}
+				Testmovingline(returnparam, label, Distance(new double[] {returnparam[0], returnparam[1]},
+						new double[] {returnparam[2], returnparam[3]}), 0);
+				
 				
 				returnparam[2* ndims] = finalparamstart[4];
 				returnparam[2* ndims + 1] = finalparamstart[5];
@@ -335,8 +446,7 @@ public class Linefitter {
 			}
 			
 			
-			final double[] finalparamstart = iniparam.clone();
-			
+			final double[] finalparamstart = MakerepeatedLineguess(iniparam, label, offsetting);
 			 RandomAccessibleInterval<FloatType> currentimg =  PerformWatershedding.CurrentLabelImage(intimg, inputimg, label);
 			 
 				final long[] minCorner = PerformWatershedding.GetMincorners(intimg, label);
@@ -347,22 +457,19 @@ public class Linefitter {
 				
 					currentimg = Views.offsetInterval(currentimg, smallinterval);
 					
-					for (int d = 0; d < ndims; ++d){
-						
-						finalparamstart[d] -=smallinterval.realMin(d);
-						finalparamstart[d + ndims] -= smallinterval.realMin(d);
-						
-					}
-					
 				}
-
-				final double[] fixed_param = new double[ndims];
+			
+				final double[] fixed_param = new double[ndims + 1];
 
 				for (int d = 0; d < ndims; ++d) {
 
 					fixed_param[d] = 1.0 / Math.pow(psf[d], 2);
 				}
 				fixed_param[ndims] =  GetLocalmaxmin.computeMaxIntensity(currentimg);
+				
+				
+				
+				
 			// LM solver part
 						
 				LevenbergMarquardtSolverLine.solve(X, finalparamstart, fixed_param, I, new GaussianLineds(), lambda,
@@ -395,11 +502,7 @@ public class Linefitter {
 				double dy = newslope * dx;
 				double ds = finalparamstart[4];
 				double[] dxvector = {dx, dy};
-				System.out.println("Label: " +label);
-				System.out.println("ds: " + ds );
-				System.out.println("Initial solver : " + " StartX: " + startpos[0] + " StartY:  " + startpos[1]);
-				System.out.println("Initial solver : " + " EndX: " + endpos[0] + " EndY:  " + endpos[1]);
-				System.out.println(" Length:  " + Math.sqrt(LMdist));
+				
 
 				double[] startfit = new double[ndims];
 				double[] endfit = new double[ndims];
@@ -438,7 +541,7 @@ public class Linefitter {
 					returnparam[ndims + d] = endfit[d];
 				}
 				
-				if (Math.abs(Math.sqrt(Maskdist) - Math.sqrt(LMdist)) > 10) {
+				if ( Math.abs(Math.sqrt(Maskdist) - Math.sqrt(LMdist)) > 10) {
                     System.out.println("Mask fits fail, returning LM solver results!");
 					for (int d = 0; d < ndims; ++d) {
 						returnparam[d] = startpos[d];
@@ -446,8 +549,22 @@ public class Linefitter {
 					}
 
 				}
+				
+				for (int d = 0; d < ndims; ++d){
+				if	(Double.isNaN(startfit[d]) || Double.isNaN(endfit[d])){
+					 System.out.println("Mask fits fail, returning LM solver results!");
+						returnparam[d] = startpos[d];
+				returnparam[ndims + d] = endpos[d];
+				
+				}
+				
+		}
+					
+					
+					
+				
 			Testmovingline(returnparam, label, Distance(new double[] {returnparam[0], returnparam[1]},
-								new double[] {returnparam[2], returnparam[3]}), rate);
+							new double[] {returnparam[2], returnparam[3]}), rate);
 				
 				
 				returnparam[2* ndims] = finalparamstart[4];
@@ -1091,7 +1208,7 @@ public class Linefitter {
 
 		if (rate == 0){
 			
-			
+			writer.write(" Rate :" + rate + " ");
 			if (label == 1)
 				writer.write((point[0] - 169.73720446120004) + " " + (point[1] - 104.95635903304128 ) + " "
 						+ (point[2] - 181.43458804585626) + " " + (point[3] - 60.78333591544249) + " "
@@ -1147,7 +1264,7 @@ public class Linefitter {
 		
          if (rate == 1){
 			
-			
+        	 writer.write(" Rate :" + rate + " ");
 			if (label == 1)
 				writer.write((point[0] - 171.1859449967859) + " " + (point[1] - 99.48545618483672) + " "
 						+ (point[2] - 181.43458804585626) + " " + (point[3] - 60.78333591544249) + " "
@@ -1204,7 +1321,7 @@ public class Linefitter {
 		
          if (rate == 2){
  			
- 			
+        	 writer.write(" Rate :" + rate + " ");
  			if (label == 1)
  				writer.write((point[0] -172.43796447094846) + " " + (point[1] - 94.75743433485547) + " "
  						+ (point[2] - 181.43458804585626) + " " + (point[3] - 60.78333591544249) + " "

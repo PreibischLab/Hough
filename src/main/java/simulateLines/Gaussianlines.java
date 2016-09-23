@@ -42,7 +42,6 @@ public class Gaussianlines {
 
 			
 			
-			//PushCurves.Drawshortline(outimg, linearray, slope, intercept, startpos, endpos, sigma);
 
 			PushCurves.Drawshortline(outimg, linearray, slope, intercept, startpos, endpos, sigma);
 			
@@ -146,7 +145,7 @@ public class Gaussianlines {
 			
 
 		}
-	/*	
+	/*
 		for (int index = 0; index < linearray.size(); ++index){
 		try {
 	        FileWriter writer = new FileWriter("moving_length.txt", true);
@@ -158,8 +157,8 @@ public class Gaussianlines {
 	        writer.close();
 	    } catch (IOException e) {
 	        e.printStackTrace();
-	    }
-		}*/
+	    }*/
+		//}
 		}
 	public static double Distance(final double[] cordone, final double[] cordtwo) {
 

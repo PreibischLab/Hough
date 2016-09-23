@@ -24,6 +24,7 @@ import net.imglib2.algorithm.labeling.Watershed;
 import net.imglib2.algorithm.localextrema.RefinedPeak;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.labeling.DefaultROIStrategyFactory;
 import net.imglib2.labeling.Labeling;
 import net.imglib2.labeling.LabelingROIStrategy;
@@ -77,7 +78,6 @@ public class PerformWatershedding {
 		// Get maximum labels on the watershedded image
 
 		final int Maxlabel = GetMaxlabelsseeded(oldseedLabeling.getStorageImg());
-
 		ArrayList<RefinedPeak<Point>> ReducedMinlist = new ArrayList<RefinedPeak<Point>>(biginputimg.numDimensions());
 		ArrayList<RefinedPeak<Point>> MainMinlist = new ArrayList<RefinedPeak<Point>>(biginputimg.numDimensions());
 
@@ -85,19 +85,23 @@ public class PerformWatershedding {
 		final Img<FloatType> distimg = new ArrayImgFactory<FloatType>().create(biginputimg, new FloatType());
 
 		DistanceTransformImage(biginputimg, distimg, InverseType.Straight);
+		System.out.println("Total labels: " + Maxlabel);
 
+		
 		// Do watershedding on the distance transformed image
 
 		NativeImgLabeling<Integer, IntType> outputLabeling = new NativeImgLabeling<Integer, IntType>(
 				new ArrayImgFactory<IntType>().create(biginputimg, new IntType()));
 
 		outputLabeling = GetlabeledImage(distimg, oldseedLabeling);
-
+		ImageJFunctions.show(outputLabeling.getStorageImg());
 		final double[] sizes = new double[biginputimg.numDimensions()];
 
 		// Automatic threshold determination for doing the Hough transform
-		final Float val = GlobalThresholding.AutomaticThresholding(preprocessedimg);
+		 Float val = GlobalThresholding.AutomaticThresholding(preprocessedimg);
 
+		if (val < 0)
+			val = new Float(0);
 		ArrayList<Lineobjects> linelist = new ArrayList<Lineobjects>(biginputimg.numDimensions());
 
 		for (int label = 1; label < Maxlabel - 1; label++) {
