@@ -118,7 +118,7 @@ public class PerformWatershedding {
 
 			FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
 
-			if (Distance(minCorner, maxCorner) < 2 * minlength){
+			if (Distance(minCorner, maxCorner) < 4 * minlength){
 			System.out.println("Ignoring label");
 				continue;
 			}

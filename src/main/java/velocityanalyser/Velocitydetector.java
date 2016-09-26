@@ -47,9 +47,10 @@ public class Velocitydetector {
 
 		new ImageJ();
 
+		String filestring = new String("2016-05-26-bigtest");
 		// Load the stack of images
 		final RandomAccessibleInterval<FloatType> img = util.ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/2016-05-26-test-brighter.tif"), new ArrayImgFactory<FloatType>());
+				.openAs32Bit(new File("res/2016-05-26-test.tif"), new ArrayImgFactory<FloatType>());
 		int ndims = img.numDimensions();
 
 		// Normalize the intensity of the whole stack to be between min and max
@@ -138,7 +139,7 @@ public class Velocitydetector {
 			distance = MTline.Distance(cordone, cordtwo);
 
 			try {
-				FileWriter writer = new FileWriter("res/2016-05-26-testbig.txt", true);
+				FileWriter writer = new FileWriter("res/2016-05-26-test.txt", true);
 				writer.write("Frame:" + " " + 0 + "StartX:" + final_paramlist.get(listindex)[0] + " StartY:"
 						+ final_paramlist.get(listindex)[1] + " " + "EndX:" + final_paramlist.get(listindex)[2]
 						+ "EndY: " + final_paramlist.get(listindex)[3] + " "
@@ -187,7 +188,7 @@ public class Velocitydetector {
 				distance = MTline.Distance(cordone, cordtwo);
 
 				try {
-					FileWriter writer = new FileWriter("res/2016-05-26-testbig.txt", true);
+					FileWriter writer = new FileWriter("res/2016-05-26-test.txt", true);
 					writer.write("Frame: " + i + " " + "StartX:" + PrevFrameparam.get(listindex)[0] + " StartY:"
 							+ PrevFrameparam.get(listindex)[1] + " " + "EndX:" + PrevFrameparam.get(listindex)[2]
 							+ "EndY: " + PrevFrameparam.get(listindex)[3] + " "

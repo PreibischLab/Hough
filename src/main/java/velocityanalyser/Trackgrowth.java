@@ -58,6 +58,7 @@ public class Trackgrowth {
 			 double[] paramnextframe =
 					currentline.Getfinaltrackparam(PrevFrameparam.get(index),
 							currentlabel, psf, framenumber, true);
+			 if (paramnextframe!=null){
 			 NextFrameparam.add(paramnextframe);
 			 
 			 
@@ -83,7 +84,7 @@ public class Trackgrowth {
 
 					startandendinframe.add(edge);	
 		}
-		
+		}
 		Pair<ArrayList<double[]> , ArrayList<Staticproperties>> pair = 
 		new Pair<ArrayList<double[]> , ArrayList<Staticproperties>>(NextFrameparam, startandendinframe);
 		
