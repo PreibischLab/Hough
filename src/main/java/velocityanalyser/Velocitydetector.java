@@ -47,7 +47,6 @@ public class Velocitydetector {
 
 		new ImageJ();
 
-		String filestring = new String("2016-05-26-bigtest");
 		// Load the stack of images
 		final RandomAccessibleInterval<FloatType> img = util.ImgLib2Util
 				.openAs32Bit(new File("res/2016-05-26-test.tif"), new ArrayImgFactory<FloatType>());
