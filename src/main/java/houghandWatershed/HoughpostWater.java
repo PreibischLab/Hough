@@ -39,7 +39,7 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/201607013_seeds.tif"));
+				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
 		
 		
 		// small_mt.tif image to be used for testing
@@ -89,7 +89,7 @@ public class HoughpostWater {
 		// Do watershedding and Hough
 
 		// Declare minimum length of the line(in pixels) to be detected
-		double minlength = 5;
+		double minlength = 2;
 
 		System.out.println("Doing Hough transform in labels: ");
 		
@@ -143,9 +143,9 @@ public class HoughpostWater {
 									+ final_param[1] + " " + "EndX:" + final_param[2] + "EndY: " + final_param[3]) ;
 					System.out.println(  "Length: " + distance);
 									
-		/*							
+									
 			try { FileWriter writer = new
-					  FileWriter("Actualdata.txt", true); 
+					  FileWriter("res/Actualdata.txt", true); 
 			writer.write("StartX:" + final_param[0] + " StartY:"
 					+ final_param[1] + " " + "EndX:" + final_param[2] + "EndY: " + final_param[3] + " "
 					
@@ -153,7 +153,7 @@ public class HoughpostWater {
 					  ); writer.write("\r\n"); writer.close();
 			
 
-		}catch (IOException e) { e.printStackTrace(); }*/
+		}catch (IOException e) { e.printStackTrace(); }
 		}
 		
 		}

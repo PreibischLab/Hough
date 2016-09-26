@@ -13,13 +13,11 @@ public class DisplayGraph {
 	// add listener to the imageplus slice slider
 	private ImagePlus imp;
 	private final SimpleWeightedGraph<double[], DefaultWeightedEdge> graph;
-	private final int ndims;
 	
-	public DisplayGraph(final ImagePlus imp, SimpleWeightedGraph<double[], DefaultWeightedEdge> graph, final int ndims){
+	public DisplayGraph(final ImagePlus imp, SimpleWeightedGraph<double[], DefaultWeightedEdge> graph){
 		
 		this.imp = imp;
 		this.graph = graph;
-		this.ndims = ndims;
 		
 		// add listener to the imageplus slice slider
 				SliceObserver sliceObserver = new SliceObserver( imp, new ImagePlusListener() );
@@ -51,21 +49,16 @@ public class DisplayGraph {
 		        final double[] startedge = graph.getEdgeSource(e);
 		        final double[] targetedge = graph.getEdgeTarget(e);
 		        
-		        
-		        
-		       
-		        
-		      
-		        
 		        Line newline = new Line(startedge[0], startedge[1], targetedge[0], targetedge[1]);
 				newline.setStrokeColor(Color.GREEN);
-				newline.setStrokeWidth(graph.degreeOf(startedge));
-
+				newline.setStrokeWidth(0.8);
 				o.add(newline);
+					
+				imp.updateAndDraw();
+				//System.out.println( arg0.getCurrentSlice() );
 				
 			}
-			imp.updateAndDraw();
-			System.out.println( arg0.getCurrentSlice() );
+			
 		}		
 	}
 	

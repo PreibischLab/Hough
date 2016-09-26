@@ -423,7 +423,7 @@ public static void SaltandPepperNoise(RandomAccessibleInterval<FloatType> inputi
 					inputcursor.fwd();
 					inputcursor.localize(position);
 					outputran.setPosition(inputcursor);
-					if (inputcursor.get().get()<=Lowthreshold)
+					if (inputcursor.get().get()<= Lowthreshold)
 						outputran.get().setZero();
 					else
 					//	AddGaussian.addGaussian(Threshimg, position, sigma, false);

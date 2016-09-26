@@ -36,7 +36,7 @@ public class Trackend implements Linetracker {
 			reset();
 			
 			
-			for (int frame = 1; frame < maxframe; ++frame){
+			for (int frame = 0; frame < maxframe - 1  ; ++frame){
 			
 			
 				ArrayList<Staticproperties> Baseframestartend = Allstartandend.get(frame);
@@ -102,10 +102,8 @@ public class Trackend implements Linetracker {
 		
 		public void reset() {
 			graph = new SimpleWeightedGraph<double[], DefaultWeightedEdge>(DefaultWeightedEdge.class);
-			final Iterator<Staticproperties> it = Allstartandend.get(0).iterator();
-			while (it.hasNext()) {
-				graph.addVertex(it.next().oldendpoint);
-			}
+
+			graph.addVertex(Allstartandend.get(0).get(0).oldendpoint);
 		}
 
 		@Override

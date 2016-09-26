@@ -361,11 +361,14 @@ public class PushCurves {
 		double slope = (endline[1] - startline[1]) / (endline[0] - startline[0]);
 		final double stepsize = 0.25 * (sigma[0] + sigma[1]);
 		final double[] steppos = new double[ndims];
+		
 		int count = 0;
 
 		if (slope >= 0) {
+			for (int d = 0; d < ndims; ++d)
+			steppos[d] = startline[d];
 			while (true) {
-				AddGaussian.addGaussian(imgout, 1.0, steppos, sigma);
+				AddGaussian.addGaussian(imgout, steppos, sigma);
 				steppos[0] = startline[0] + count * stepsize / Math.sqrt(1 + slope * slope);
 				steppos[1] = startline[1] + count * stepsize * slope / Math.sqrt(1 + slope * slope);
 
@@ -379,8 +382,10 @@ public class PushCurves {
 		}
 		int negcount = 0;
 		if (slope < 0) {
+			steppos[0] = startline[0];
+			steppos[1] = startline[1];
 			while (true) {
-				AddGaussian.addGaussian(imgout, 1.0, steppos, sigma);
+				AddGaussian.addGaussian(imgout, steppos, sigma);
 				steppos[0] = startline[0] + negcount * stepsize / Math.sqrt(1 + slope * slope);
 				steppos[1] = startline[1] + negcount * stepsize * slope / Math.sqrt(1 + slope * slope);
 
@@ -416,8 +421,10 @@ public class PushCurves {
 			int count = 0;
 
 			if (slope >= 0) {
+				for (int d = 0; d < ndims; ++d)
+					steppos[d] = startline[d];
 				while (true) {
-					AddGaussian.addGaussian(imgout, 1.0, steppos, sigma);
+					AddGaussian.addGaussian(imgout, steppos, sigma);
 					steppos[0] = startline[0] + count * stepsize / Math.sqrt(1 + slope * slope);
 					steppos[1] = startline[1] + count * stepsize * slope / Math.sqrt(1 + slope * slope);
 
@@ -431,8 +438,10 @@ public class PushCurves {
 			}
 			int negcount = 0;
 			if (slope < 0) {
+				steppos[0] = startline[0];
+				steppos[1] = startline[1];
 				while (true) {
-					AddGaussian.addGaussian(imgout, 1.0, steppos, sigma);
+					AddGaussian.addGaussian(imgout, steppos, sigma);
 					steppos[0] = startline[0] + negcount * stepsize / Math.sqrt(1 + slope * slope);
 					steppos[1] = startline[1] + negcount * stepsize * slope / Math.sqrt(1 + slope * slope);
 
@@ -665,31 +674,36 @@ public class PushCurves {
 		int count = 0;
 		double stepsize = 1;
 		if (slope >= 0) {
+			for (int d  = 0; d < n ; ++d)
+				steppos[d] = minVal[d];
 			while (true) {
 
+				AddGaussian.addGaussian(imgout, 1.0, steppos, new double[] { sigma, sigma });
 				steppos[0] = minVal[0] + count * stepsize / Math.sqrt(1 + slope * slope);
 				steppos[1] = minVal[1] + count * stepsize * slope / Math.sqrt(1 + slope * slope);
 
-				AddGaussian.addGaussian(imgout, 1.0, steppos, new double[] { sigma, sigma });
+				
 
 				count++;
 
-				if (steppos[0] >= maxVal[0] || steppos[1] >= maxVal[1])
+				if (steppos[0] > maxVal[0] || steppos[1] > maxVal[1])
 					break;
 			}
 		}
 		int negcount = 0;
 		if (slope < 0) {
+			steppos[0] = minVal[0];
+			steppos[1] = maxVal[1];
 			while (true) {
-
+				AddGaussian.addGaussian(imgout, 1.0, steppos, new double[] { sigma, sigma });
 				steppos[0] = minVal[0] + negcount * stepsize / Math.sqrt(1 + slope * slope);
 				steppos[1] = maxVal[1] + negcount * stepsize * slope / Math.sqrt(1 + slope * slope);
 
-				AddGaussian.addGaussian(imgout, 1.0, steppos, new double[] { sigma, sigma });
+				
 
 				negcount++;
 
-				if (steppos[0] >= maxVal[0] || steppos[1] <= minVal[1])
+				if (steppos[0] > maxVal[0] || steppos[1] < minVal[1])
 					break;
 			}
 		}

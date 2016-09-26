@@ -100,8 +100,7 @@ public class PerformWatershedding {
 		// Automatic threshold determination for doing the Hough transform
 		 Float val = GlobalThresholding.AutomaticThresholding(preprocessedimg);
 
-		if (val < 0)
-			val = new Float(0);
+		
 		ArrayList<Lineobjects> linelist = new ArrayList<Lineobjects>(biginputimg.numDimensions());
 
 		for (int label = 1; label < Maxlabel - 1; label++) {
@@ -119,6 +118,11 @@ public class PerformWatershedding {
 
 			FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
 
+			if (Distance(minCorner, maxCorner) < 2 * minlength){
+			System.out.println("Ignoring label");
+				continue;
+			}
+			
 			RandomAccessibleInterval<FloatType> outimgview = Views.interval(outimg, intervalsmall);
 			// Set size of pixels in Hough space
 			int mintheta = 0;
@@ -468,4 +472,15 @@ public class PerformWatershedding {
 
 	}
 
+	public double Distance(final long[] minCorner, final long[] maxCorner) {
+
+		double distance = 0;
+
+		for (int d = 0; d < minCorner.length; ++d) {
+
+			distance += Math.pow((minCorner[d] - maxCorner[d]), 2);
+
+		}
+		return Math.sqrt(distance);
+	}
 }
