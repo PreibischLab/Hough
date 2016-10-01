@@ -9,48 +9,62 @@ import drawandOverlay.PushCurves;
 import mISC.Tree.Distance;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.algorithm.gauss3.Gauss3;
 import net.imglib2.exception.IncompatibleTypeException;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.view.Views;
 import preProcessing.GetLocalmaxmin.IntensityType;
 
 public class Gaussianlines {
 
 	public static void Drawsimulatedlines(RandomAccessibleInterval<FloatType> outimg, final Interval range,
-			final Random rnd,  final double[] sigma,  final int numlines) throws IncompatibleTypeException {
+			 final double[] sigma,  final int numlines) throws IncompatibleTypeException {
 
 		final int n = outimg.numDimensions();
-
+        // Pnoise1: (2, 1, 2) Pnoise2: (3 , 3 , 2) Pnoise3:  (30, 13, 13) Pnoise4: (15, 56, 64) + 3.5, 9.5 Pnoise5: (54, 44, 91)
 		ArrayList<Fakeline> linearray = new ArrayList<Fakeline>();
-
+		final Random rnd = new Random(2);
+		final Random rndsec = new Random(1);
+		final Random Length = new Random(2);
 		for (int lineindex = 0; lineindex < numlines; ++lineindex) {
-
-			double[] startpos = new double[n];
+			
+			
+			
+			double startpos[] = new double[n];
 			double endpos[] = new double[n];
+			
 
 			for (int d = 0; d < range.numDimensions(); ++d) {
-				startpos[d] = rnd.nextDouble() * (range.max(d) - range.min(d)) + range.min(d) * 2 - 2*rnd.nextDouble();
+				startpos[d] = rnd.nextDouble() * (range.max(d) - range.min(d)) + range.min(d) ;
 
 			}
 
-			endpos[0] = startpos[0] - 3*rnd.nextDouble() + 33;
-			endpos[1] = startpos[1] + 2*rnd.nextDouble()*(endpos[0] - startpos[0])  ;
+			
+			double MinLength = 9.78 + 0*3.5;
+			double MaxLength = 29.82 + 0*9.5;
+			double Result = Length.nextDouble()*(MaxLength - MinLength) + MinLength;
+			double MinSlope = 0;
+			double MaxSlope = 360;
+			double SlopeResult = Math.tan(rndsec.nextDouble() * (MaxSlope - MinSlope ) + MinSlope);
+			
+			endpos[0] = (startpos[0] + Result / Math.sqrt(1 + SlopeResult * SlopeResult));
+			endpos[1] =  (startpos[1] + SlopeResult * Result / Math.sqrt(1 + SlopeResult * SlopeResult))  ;
 			
 			
 			
 			double slope = (endpos[1] - startpos[1]) / (endpos[0] - startpos[0]);
 			double intercept = startpos[1] - slope * startpos[0];
 
-			
+		
 			
 
 			PushCurves.Drawshortline(outimg, linearray, slope, intercept, startpos, endpos, sigma);
 			
-
+			
 		}
-	/*	
 		for (int index = 0; index < linearray.size(); ++index){
 		try {
-	        FileWriter writer = new FileWriter("initial.txt", true);
+	        FileWriter writer = new FileWriter("../res/Pnoise5.txt", true);
 	        writer.write( "StartX: "  + linearray.get(index).startpos[0]+  " " +
 	       		 "StartY: "+ linearray.get(index).startpos[1] + " " + "EndposX: " + linearray.get(index).endpos[0] +  
 	    		 " EndposY :" + linearray.get(index).endpos[1]+ "  Length " + linearray.get(index).length );
@@ -60,8 +74,9 @@ public class Gaussianlines {
 	    } catch (IOException e) {
 	        e.printStackTrace();
 	    }
+	    
 		}
-		*/
+		
 		}
 	
 	public static ArrayList<Fakeline> Drawstartline(final Interval range, 
@@ -130,11 +145,11 @@ public class Gaussianlines {
 				startpos[d] = linearrayini.get(index).startpos[d];
 				
 			}
-			endpos[0] = linearrayini.get(index).endpos[0]+ 4 * Math.sin(velocity.nextDouble()* rate);
+			endpos[0] = (linearrayini.get(index).endpos[0]+ 4 * Math.sin(velocity.nextDouble()* rate));
 			double inislope = (linearrayini.get(index).endpos[1] - linearrayini.get(index).startpos[1]) 
 					/ (linearrayini.get(index).endpos[0] - linearrayini.get(index).startpos[0]);
 			double iniintercept = linearrayini.get(index).startpos[1] - inislope * linearrayini.get(index).startpos[0];
-			endpos[1] = inislope * endpos[0] +  iniintercept;
+			endpos[1] = (inislope * endpos[0] +  iniintercept);
 			
 			
 			double slope = (endpos[1] - startpos[1]) / (endpos[0] - startpos[0]);

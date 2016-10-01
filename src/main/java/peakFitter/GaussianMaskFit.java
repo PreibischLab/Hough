@@ -165,7 +165,7 @@ public class GaussianMaskFit {
 
 				final double signal = cImg.get().getRealDouble();
 				final double mask = cMask.get().getRealDouble();
-				final double weight = 8;
+				final double weight =  maxintensity;
 
 				final double signalmask = signal * mask * weight;
 

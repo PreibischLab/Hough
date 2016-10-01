@@ -49,7 +49,7 @@ public class Velocitydetector {
 
 		// Load the stack of images
 		final RandomAccessibleInterval<FloatType> img = util.ImgLib2Util
-				.openAs32Bit(new File("res/2016-05-26-test.tif"), new ArrayImgFactory<FloatType>());
+				.openAs32Bit(new File("../res/2016-05-26-test-brighter.tif"), new ArrayImgFactory<FloatType>());
 		int ndims = img.numDimensions();
 
 		// Normalize the intensity of the whole stack to be between min and max
@@ -65,7 +65,7 @@ public class Velocitydetector {
 		final double[] psf = { 1.65, 1.47 };
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		final int minlength = 5;
-		double[] final_param = new double[2 * ndims + 2];
+		double[] final_param = new double[2 * ndims + 3];
 
 		// Show the stack
 		ImagePlus imp = ImageJFunctions.show(img);
@@ -85,7 +85,7 @@ public class Velocitydetector {
 
 		System.out.println("Doing Hough transform in labels: ");
 
-		PerformWatershedding Houghobject = new PerformWatershedding(groundframe, preprocessedimg, minlength);
+		PerformWatershedding Houghobject = new PerformWatershedding(preprocessedimg, minlength);
 
 		Pair<Img<IntType>, ArrayList<Lineobjects>> linepair = Houghobject.DowatersheddingandHough();
 
@@ -138,7 +138,7 @@ public class Velocitydetector {
 			distance = MTline.Distance(cordone, cordtwo);
 
 			try {
-				FileWriter writer = new FileWriter("res/2016-05-26-test.txt", true);
+				FileWriter writer = new FileWriter("../res/2016-05-26-test-brighter.txt", true);
 				writer.write("Frame:" + " " + 0 + "StartX:" + final_paramlist.get(listindex)[0] + " StartY:"
 						+ final_paramlist.get(listindex)[1] + " " + "EndX:" + final_paramlist.get(listindex)[2]
 						+ "EndY: " + final_paramlist.get(listindex)[3] + " "
@@ -162,7 +162,7 @@ public class Velocitydetector {
 
 			IntervalView<FloatType> currentframe = Views.hyperSlice(img, ndims - 1, i);
 
-			final Trackgrowth growthtracker = new Trackgrowth(currentframe, minlength, PrevFrameparam, i, psf);
+			final Trackgrowth growthtracker = new Trackgrowth(currentframe, minlength, PrevFrameparam, i, psf, true);
 
 			Pair<ArrayList<double[]>, ArrayList<Staticproperties>> pair = growthtracker.Updatetrackpoints();
 
@@ -187,7 +187,7 @@ public class Velocitydetector {
 				distance = MTline.Distance(cordone, cordtwo);
 
 				try {
-					FileWriter writer = new FileWriter("res/2016-05-26-test.txt", true);
+					FileWriter writer = new FileWriter("../res/2016-05-26-test-brighter.txt", true);
 					writer.write("Frame: " + i + " " + "StartX:" + PrevFrameparam.get(listindex)[0] + " StartY:"
 							+ PrevFrameparam.get(listindex)[1] + " " + "EndX:" + PrevFrameparam.get(listindex)[2]
 							+ "EndY: " + PrevFrameparam.get(listindex)[3] + " "

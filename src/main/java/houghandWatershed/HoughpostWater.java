@@ -39,9 +39,10 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("src/main/resources/2015-01-14_Seeds-1.tiff"));
+				.openAs32Bit(new File("../res/Pnonoise3.tif"));
 		
-		
+	//	RandomAccessibleInterval<FloatType> inputimg = ImgLib2Util
+		//		.openAs32Bit(new File("../res/Pnoise1snr15-pre.tif"));
 		// small_mt.tif image to be used for testing
 		// 2015-01-14_Seeds-1.tiff for actual
 		// mt_experiment.tif for big testing
@@ -55,20 +56,22 @@ public class HoughpostWater {
 		FloatType maxval = new FloatType(1);
 
 		Normalize.normalize(Views.iterable(biginputimg), minval, maxval);
-		
+		//Normalize.normalize(Views.iterable(inputimg), minval, maxval);
 		
 		ImageJFunctions.show(biginputimg);
 		final int ndims = biginputimg.numDimensions();
 		// Define the psf of the microscope
-		double[] psf = {1.65, 1.47};
-		
+		double[] psf = {1.4, 1.5};
+		boolean offsetting = true;
 		//psf[0] = 1.65;
 		//psf[1] = 1.47;
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		// Initialize empty images to be used later
+		
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
-		
+		RandomAccessibleInterval<FloatType> preinputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
+				new FloatType());
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
 		RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(biginputimg,
@@ -78,9 +81,9 @@ public class HoughpostWater {
 		// Compute the Sin Cosine lookup table
 	//	SinCosinelut.getTable();
 		// Preprocess image
+		preinputimg = Kernels.Meanfilterandsupress(biginputimg, radius);
+		inputimg = Kernels.GradientmagnitudeImage(preinputimg);
 		
-		//preinputimg = Kernels.Preprocess(biginputimg, ProcessingType.CannyEdge);
-		inputimg = Kernels.Meanfilterandsupress(biginputimg, radius);
 
 		ImageJFunctions.show(inputimg).setTitle("Preprocessed image");
 		
@@ -89,18 +92,18 @@ public class HoughpostWater {
 		// Do watershedding and Hough
 
 		// Declare minimum length of the line(in pixels) to be detected
-		double minlength = 2;
+		double minlength = 5;
 
 		System.out.println("Doing Hough transform in labels: ");
 		
-		PerformWatershedding Houghobject = new PerformWatershedding(biginputimg, inputimg, minlength);
+		PerformWatershedding Houghobject = new PerformWatershedding(inputimg, minlength);
 		
 		Pair<Img<IntType>, ArrayList<Lineobjects>> linepair  = Houghobject.DowatersheddingandHough();
 
 		// Overlay detected lines on the image
 
 
-		double[] final_param = new double[2 * ndims + 2];
+		double[] final_param = new double[2 * ndims + 3];
 
 		
 		
@@ -124,7 +127,7 @@ public class HoughpostWater {
 
 			// Do gradient descent to improve the Hough detected lines
 			final_param = MTline.Getfinallineparam(simpleobject.get(index).Label, simpleobject.get(index).slope,
-					simpleobject.get(index).intercept,psf, minlength, true);
+					simpleobject.get(index).intercept,psf, minlength, offsetting);
 			if (final_param!=null){
 			final double[] cordone = { final_param[0], final_param[1] };
 			final double[] cordtwo = { final_param[2], final_param[3] };
@@ -140,12 +143,13 @@ public class HoughpostWater {
 			System.out
 					.println("Fits :" +
 							 "StartX:" + final_param[0] + " StartY:"
-									+ final_param[1] + " " + "EndX:" + final_param[2] + "EndY: " + final_param[3]) ;
+									+ final_param[1] + " " + "EndX:" + final_param[2] + "EndY: " + final_param[3] + " " + "ds: " + final_param[4] + " Bg noise" + " " + final_param[6]) ;
+			
 					System.out.println(  "Length: " + distance);
 									
-									
+			/*						
 			try { FileWriter writer = new
-					  FileWriter("res/Actualdata.txt", true); 
+					  FileWriter("../res/Actualdata.txt", true); 
 			writer.write("StartX:" + final_param[0] + " StartY:"
 					+ final_param[1] + " " + "EndX:" + final_param[2] + "EndY: " + final_param[3] + " "
 					
@@ -153,7 +157,7 @@ public class HoughpostWater {
 					  ); writer.write("\r\n"); writer.close();
 			
 
-		}catch (IOException e) { e.printStackTrace(); }
+		}catch (IOException e) { e.printStackTrace(); }*/
 		}
 		
 		}

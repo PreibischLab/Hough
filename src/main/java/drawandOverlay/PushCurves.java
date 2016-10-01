@@ -13,6 +13,7 @@ import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealCursor;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPointSampleList;
 import net.imglib2.RealRandomAccess;
@@ -274,7 +275,7 @@ public class PushCurves {
 	}
 
 	public static void Drawshortline(RandomAccessibleInterval<FloatType> imgout, ArrayList<Fakeline> linearray,
-			double slope, double intercept, final double[] startpos, final double[] endpos, final double[] sigma) {
+			double slope, double intercept, final double[] startpos, final double[] endpos, final double[] sigma) throws IncompatibleTypeException {
 		final int ndims = imgout.numDimensions();
 		final double[] tmppos = new double[ndims];
 		final double[] startline = new double[ndims];
@@ -301,7 +302,8 @@ public class PushCurves {
 				startline[d] = minVal[d];
 				endline[d] = maxVal[d];
 			}
-
+			
+		
 		}
 
 		if (slope < 0) {
@@ -310,31 +312,36 @@ public class PushCurves {
 			startline[1] = maxVal[1];
 			endline[0] = maxVal[0];
 			endline[1] = minVal[1];
+		
 
 		}
 		
 		
 		
+		final double stepsize =  Math.min(sigma[0], sigma[1]);
+		double steppos[] = {startline[0], startline[1]};
 		
+		double dx = stepsize / Math.sqrt(1 + slope * slope);
+		double dy = slope * dx;
 		
-		final double stepsize = 1;
-       double steppos[] = {startline[0], startline[1]};
+      
 		while (true) {
+			
+			
+
+			if (steppos[0] > endline[0]   || steppos[1] > endline[1]   && slope >= 0)
+				break;
+
+			if (steppos[0] > endline[0]  || steppos[1] < endline[1]   && slope < 0)
+				break;
 			AddGaussian.addGaussian(imgout, steppos, sigma);
+			steppos[0] += dx;
+			steppos[1] += dy;
 			
-			steppos[0] += stepsize / Math.sqrt(1 + slope * slope);
-			steppos[1] += stepsize * slope / Math.sqrt(1 + slope * slope);
-
 			
-
-			if (steppos[0] > endline[0] || steppos[1] > endline[1] && slope > 0)
-				break;
-
-			if (steppos[0] > endline[0] || steppos[1] < endline[1] && slope < 0)
-				break;
-
+			
 		}
-
+		 
 		final double distance = Distance(startline, endline);
 		final Fakeline singleline = new Fakeline(distance, slope, intercept, startline, endline);
 		linearray.add(singleline);

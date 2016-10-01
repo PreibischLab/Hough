@@ -4,6 +4,7 @@ package preProcessing;
 import java.util.Random;
 
 import net.imglib2.Cursor;
+import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
@@ -236,6 +237,12 @@ public static void SaltandPepperNoise(RandomAccessibleInterval<FloatType> inputi
 		}
 		
 	}
+
+public static void addBackground(final IterableInterval<FloatType> iterable, final double value) {
+	for (final FloatType t : iterable)
+		t.setReal(t.get() + value);
+}
+
 	public static RandomAccessibleInterval<FloatType> CannyEdge(RandomAccessibleInterval<FloatType> inputimg,
 			 double[] sigma) {
 		int n = inputimg.numDimensions();
@@ -399,7 +406,7 @@ public static void SaltandPepperNoise(RandomAccessibleInterval<FloatType> inputi
 				while(inputcursor.hasNext()){
 					inputcursor.fwd();
 					outputran.setPosition(inputcursor);
-					if (inputcursor.get().get()<=Lowthreshold)
+					if (inputcursor.get().get()<=  Lowthreshold)
 						outputran.get().setZero();
 					else
 						outputran.get().set(inputcursor.get());

@@ -20,15 +20,17 @@ public class Trackgrowth {
 	private final ArrayList<double[]> PrevFrameparam;
 	private final int framenumber;
 	private final double[] psf;
+	private final boolean offsetting;
 	
 	public Trackgrowth(final IntervalView<FloatType> currentframe, final double minlength, final ArrayList<double[]> PrevFrameparam,
-			final int framenumber, final double[] psf){
+			final int framenumber, final double[] psf, final boolean offsetting){
 		
 		this.currentframe = currentframe;
 		this.minlength = minlength;
 		this.PrevFrameparam = PrevFrameparam;
 		this.framenumber = framenumber;
 		this.psf = psf;
+		this.offsetting = offsetting;
 		
 	}
 	
@@ -57,7 +59,7 @@ public class Trackgrowth {
 			
 			 double[] paramnextframe =
 					currentline.Getfinaltrackparam(PrevFrameparam.get(index),
-							currentlabel, psf, framenumber, true);
+							currentlabel, psf, framenumber, offsetting);
 			 if (paramnextframe!=null){
 			 NextFrameparam.add(paramnextframe);
 			 
