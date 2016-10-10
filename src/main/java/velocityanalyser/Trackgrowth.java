@@ -8,6 +8,7 @@ import graphconstructs.Staticproperties;
 import houghandWatershed.PerformWatershedding;
 import net.imglib2.Point;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
@@ -16,16 +17,20 @@ import peakFitter.Linefitter;
 public class Trackgrowth {
 
 	private final IntervalView<FloatType> currentframe;
+	private final RandomAccessibleInterval<BitType> currbitimg;
 	private final double minlength;
 	private final ArrayList<double[]> PrevFrameparam;
 	private final int framenumber;
 	private final double[] psf;
 	private final boolean offsetting;
 	
-	public Trackgrowth(final IntervalView<FloatType> currentframe, final double minlength, final ArrayList<double[]> PrevFrameparam,
+	public Trackgrowth(final IntervalView<FloatType> currentframe,
+			final RandomAccessibleInterval<BitType> currbitimg,
+			final double minlength, final ArrayList<double[]> PrevFrameparam,
 			final int framenumber, final double[] psf, final boolean offsetting){
 		
 		this.currentframe = currentframe;
+		this.currbitimg = currbitimg;
 		this.minlength = minlength;
 		this.PrevFrameparam = PrevFrameparam;
 		this.framenumber = framenumber;
@@ -36,7 +41,7 @@ public class Trackgrowth {
 	
 	public Pair<ArrayList<double[]>, ArrayList<Staticproperties>> Updatetrackpoints() throws Exception{
 		
-		PerformWatershedding Watershedobject = new PerformWatershedding(currentframe, minlength);
+		PerformWatershedding Watershedobject = new PerformWatershedding(currentframe, currbitimg, minlength);
 		RandomAccessibleInterval<IntType> currentlabelledimg = Watershedobject.Dowatersheddingonly();
 		
 		Linefitter currentline = new Linefitter(currentframe, currentlabelledimg);

@@ -21,7 +21,7 @@ public class Gaussianlines {
 			 final double[] sigma,  final int numlines) throws IncompatibleTypeException {
 
 		final int n = outimg.numDimensions();
-        // Pnoise1: (2, 1, 2) Pnoise2: (3 , 3 , 2) Pnoise3:  (30, 13, 13) Pnoise4: (15, 56, 64) + 3.5, 9.5 Pnoise5: (54, 44, 91)
+		 // Pnoise1: (2, 1, 2) Pnoise2: (3 , 3 , 2) Pnoise3:  (30, 13, 13) Pnoise4: (15, 56, 64) + 3.5, 9.5 Pnoise5: (54, 44, 91)
 		ArrayList<Fakeline> linearray = new ArrayList<Fakeline>();
 		final Random rnd = new Random(2);
 		final Random rndsec = new Random(1);
@@ -61,21 +61,12 @@ public class Gaussianlines {
 			PushCurves.Drawshortline(outimg, linearray, slope, intercept, startpos, endpos, sigma);
 			
 			
+		
+			
+
+			
 		}
-		for (int index = 0; index < linearray.size(); ++index){
-		try {
-	        FileWriter writer = new FileWriter("../res/Pnoise5.txt", true);
-	        writer.write( "StartX: "  + linearray.get(index).startpos[0]+  " " +
-	       		 "StartY: "+ linearray.get(index).startpos[1] + " " + "EndposX: " + linearray.get(index).endpos[0] +  
-	    		 " EndposY :" + linearray.get(index).endpos[1]+ "  Length " + linearray.get(index).length );
-	        writer.write("\r\n"); 
-	        writer.write("\r\n");
-	        writer.close();
-	    } catch (IOException e) {
-	        e.printStackTrace();
-	    }
-	    
-		}
+		
 		
 		}
 	

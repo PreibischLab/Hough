@@ -25,11 +25,14 @@ import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 import peakFitter.Linefitter;
+import preProcessing.GetLocalmaxmin;
+import preProcessing.GlobalThresholding;
 import preProcessing.Kernels;
 import preProcessing.MedianFilter2D;
 
@@ -83,9 +86,13 @@ public class Velocitydetector {
 
 		ImageJFunctions.show(preprocessedimg);
 
+		
+		final Float ThresholdValue = GlobalThresholding.AutomaticThresholding(preprocessedimg);
+		RandomAccessibleInterval<BitType> bitimg = new ArrayImgFactory<BitType>().create(preprocessedimg, new BitType());
+		GetLocalmaxmin.ThresholdingBit(preprocessedimg, bitimg, ThresholdValue);
 		System.out.println("Doing Hough transform in labels: ");
 
-		PerformWatershedding Houghobject = new PerformWatershedding(preprocessedimg, minlength);
+		PerformWatershedding Houghobject = new PerformWatershedding(preprocessedimg, bitimg,  minlength);
 
 		Pair<Img<IntType>, ArrayList<Lineobjects>> linepair = Houghobject.DowatersheddingandHough();
 
@@ -161,8 +168,20 @@ public class Velocitydetector {
 		for (int i = 1; i < img.dimension(ndims - 1); ++i) {
 
 			IntervalView<FloatType> currentframe = Views.hyperSlice(img, ndims - 1, i);
+			
+			RandomAccessibleInterval<FloatType> precurrent = new ArrayImgFactory<FloatType>().create(currentframe,
+					new FloatType());
 
-			final Trackgrowth growthtracker = new Trackgrowth(currentframe, minlength, PrevFrameparam, i, psf, true);
+			precurrent = Kernels.Supressthresh(currentframe);
+			// Kernels.Meanfilterandsupress(currentframeframe, radius);
+
+			ImageJFunctions.show(preprocessedimg);
+
+			
+			final Float currThresholdValue = GlobalThresholding.AutomaticThresholding(precurrent);
+			RandomAccessibleInterval<BitType> currbitimg = new ArrayImgFactory<BitType>().create(precurrent, new BitType());
+			GetLocalmaxmin.ThresholdingBit(precurrent, currbitimg, currThresholdValue);
+			final Trackgrowth growthtracker = new Trackgrowth(currentframe, currbitimg, minlength, PrevFrameparam, i, psf, true);
 
 			Pair<ArrayList<double[]>, ArrayList<Staticproperties>> pair = growthtracker.Updatetrackpoints();
 

@@ -39,10 +39,10 @@ public class HoughpostWater {
 	public static void main(String[] args) throws Exception {
 
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
-				.openAs32Bit(new File("../res/Pnonoise3.tif"));
+				.openAs32Bit(new File("../res/Pnoise1snr45.tif"));
 		
-	//	RandomAccessibleInterval<FloatType> inputimg = ImgLib2Util
-		//		.openAs32Bit(new File("../res/Pnoise1snr15-pre.tif"));
+		RandomAccessibleInterval<FloatType> processedimg = ImgLib2Util
+				.openAs32Bit(new File("../res/Pnoise1snr45-pre.tif"));
 		// small_mt.tif image to be used for testing
 		// 2015-01-14_Seeds-1.tiff for actual
 		// mt_experiment.tif for big testing
@@ -56,13 +56,12 @@ public class HoughpostWater {
 		FloatType maxval = new FloatType(1);
 
 		Normalize.normalize(Views.iterable(biginputimg), minval, maxval);
-		//Normalize.normalize(Views.iterable(inputimg), minval, maxval);
 		
 		ImageJFunctions.show(biginputimg);
 		final int ndims = biginputimg.numDimensions();
 		// Define the psf of the microscope
 		double[] psf = {1.4, 1.5};
-		boolean offsetting = true;
+		boolean offsetting = false;
 		//psf[0] = 1.65;
 		//psf[1] = 1.47;
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
@@ -81,13 +80,15 @@ public class HoughpostWater {
 		// Compute the Sin Cosine lookup table
 	//	SinCosinelut.getTable();
 		// Preprocess image
-		preinputimg = Kernels.Meanfilterandsupress(biginputimg, radius);
+		preinputimg = Kernels.Meanfilterandsupress(processedimg, radius);
 		inputimg = Kernels.GradientmagnitudeImage(preinputimg);
-		
+		Normalize.normalize(Views.iterable(inputimg), minval, maxval);
 
 		ImageJFunctions.show(inputimg).setTitle("Preprocessed image");
 		
-		
+		final Float ThresholdValue = GlobalThresholding.AutomaticThresholding(inputimg);
+		RandomAccessibleInterval<BitType> bitimg = new ArrayImgFactory<BitType>().create(inputimg, new BitType());
+		GetLocalmaxmin.ThresholdingBit(inputimg, bitimg, ThresholdValue);
 
 		// Do watershedding and Hough
 
@@ -96,7 +97,7 @@ public class HoughpostWater {
 
 		System.out.println("Doing Hough transform in labels: ");
 		
-		PerformWatershedding Houghobject = new PerformWatershedding(inputimg, minlength);
+		PerformWatershedding Houghobject = new PerformWatershedding(inputimg, bitimg, minlength);
 		
 		Pair<Img<IntType>, ArrayList<Lineobjects>> linepair  = Houghobject.DowatersheddingandHough();
 

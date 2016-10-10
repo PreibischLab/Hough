@@ -35,6 +35,7 @@ public class Fakedata {
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(range, new FloatType());
 		RandomAccessibleInterval<FloatType> noisyimg = new ArrayImgFactory<FloatType>().create(imgout, new FloatType());
 		RandomAccessibleInterval<FloatType> noisyimgsec = new ArrayImgFactory<FloatType>().create(imgout, new FloatType());
+		RandomAccessibleInterval<FloatType> noisyimgthird = new ArrayImgFactory<FloatType>().create(imgout, new FloatType());
 		final int ndims = imgout.numDimensions();
 		
 		FloatType minval = new FloatType(0);
@@ -53,16 +54,18 @@ public class Fakedata {
 		ImageJFunctions.show(imgout);
 		
 		noisyimg = Poissonprocess.poissonProcess(imgout, 45);
-		noisyimgsec = Poissonprocess.poissonProcess(imgout, 35);
+		noisyimgsec = Poissonprocess.poissonProcess(imgout, 25);
+		noisyimgthird = Poissonprocess.poissonProcess(imgout, 15);
 		//noisyimg = imgout;
 		
 		
 		Normalize.normalize(Views.iterable(noisyimg), minval, maxval);
 		Normalize.normalize(Views.iterable(noisyimgsec), minval, maxval);
-		
+		Normalize.normalize(Views.iterable(noisyimgthird), minval, maxval);
 		
 		ImageJFunctions.show(noisyimg);
 		ImageJFunctions.show(noisyimgsec);
+		ImageJFunctions.show(noisyimgthird);
 		
 	}
 	

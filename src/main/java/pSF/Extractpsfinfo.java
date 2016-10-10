@@ -18,18 +18,21 @@ import preProcessing.GetLocalmaxmin;
 public class Extractpsfinfo {
 
 	private final RandomAccessibleInterval<FloatType> inputimg;
+	private final RandomAccessibleInterval<BitType> bitimg;
 	private final int ndims;
 	
-	public Extractpsfinfo(RandomAccessibleInterval<FloatType> inputimg){
+	public Extractpsfinfo(RandomAccessibleInterval<FloatType> inputimg,
+			RandomAccessibleInterval<BitType> bitimg){
 		
 		this.inputimg = inputimg;
+		this.bitimg = bitimg;
 		this.ndims = inputimg.numDimensions();
 		
 	}
 	
 	public void Extractparams(ArrayList<double[]> totalgausslist, final long radius,final boolean ignorebrightpeaks) throws Exception{
 	
-		PerformWatershedding Watershedobject = new PerformWatershedding(inputimg, 0);
+		PerformWatershedding Watershedobject = new PerformWatershedding(inputimg, bitimg, 0);
 		
 		RandomAccessibleInterval<IntType> intimg = Watershedobject.Dowatersheddingonly();
 		

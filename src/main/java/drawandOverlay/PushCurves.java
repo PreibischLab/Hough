@@ -1,5 +1,7 @@
 package drawandOverlay;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -320,28 +322,42 @@ public class PushCurves {
 		
 		final double stepsize =  Math.min(sigma[0], sigma[1]);
 		double steppos[] = {startline[0], startline[1]};
-		
 		double dx = stepsize / Math.sqrt(1 + slope * slope);
 		double dy = slope * dx;
 		
-      
+      double endlinepos[] = new double[ndims];
 		while (true) {
 			
 			
-
+			
+			
 			if (steppos[0] > endline[0]   || steppos[1] > endline[1]   && slope >= 0)
 				break;
 
 			if (steppos[0] > endline[0]  || steppos[1] < endline[1]   && slope < 0)
 				break;
+			
+			
 			AddGaussian.addGaussian(imgout, steppos, sigma);
+			endlinepos = steppos;
 			steppos[0] += dx;
 			steppos[1] += dy;
 			
 			
 			
+			
 		}
-		 
+		try {
+	        FileWriter writer = new FileWriter("../res/ActualP1.txt", true);
+	        writer.write( "StartX: "  + startline[0]+  " " +
+	       		 "StartY: "+ startline[1] + " " + "EndposX: " + endlinepos[0] +  
+	    		 " EndposY :" + endlinepos[1]+ "  Length " + Distance(startline, endlinepos) );
+	        writer.write("\r\n"); 
+	        writer.write("\r\n");
+	        writer.close();
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
 		final double distance = Distance(startline, endline);
 		final Fakeline singleline = new Fakeline(distance, slope, intercept, startline, endline);
 		linearray.add(singleline);

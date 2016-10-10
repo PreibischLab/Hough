@@ -25,64 +25,52 @@ import preProcessing.Kernels.ProcessingType;
 import util.ImgLib2Util;
 
 public class Psfmain {
-	
-	
+
 	public static void main(String[] args) throws Exception {
 		RandomAccessibleInterval<FloatType> biginputimg = ImgLib2Util
 				.openAs32Bit(new File("src/main/resources/example_beads.tif"));
-		
-		
+
 		new ImageJ();
-      
+
 		new Normalize();
 		FloatType minval = new FloatType(0);
 		FloatType maxval = new FloatType(1);
 		Normalize.normalize(Views.iterable(biginputimg), minval, maxval);
-	//	ImageJFunctions.show(biginputimg);
+		// ImageJFunctions.show(biginputimg);
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(biginputimg,
 				new FloatType());
 		inputimg = biginputimg;
-	
+
 		// Initialize empty images to be used later
-				RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(inputimg,
-						new FloatType());
-				 final int ndims = inputimg.numDimensions();
-				 final Img<BitType> bitimg = new ArrayImgFactory<BitType>().create(inputimg, new BitType());
-				 final Float threshold = GlobalThresholding.AutomaticThresholding(inputimg);
-					GetLocalmaxmin.ThresholdingBit(inputimg, bitimg, threshold);
+		RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(inputimg,
+				new FloatType());
 
-		Extractpsfinfo getpsf = new Extractpsfinfo(inputimg);
-		
+		final Img<BitType> bitimg = new ArrayImgFactory<BitType>().create(inputimg, new BitType());
+		final Float threshold = GlobalThresholding.AutomaticThresholding(inputimg);
+		GetLocalmaxmin.ThresholdingBit(inputimg, bitimg, threshold);
+
+		Extractpsfinfo getpsf = new Extractpsfinfo(inputimg, bitimg);
+
 		ArrayList<double[]> totalgausslist = new ArrayList<double[]>();
-		
 
-		final long radius = 8; //Raidus of the Hypersphere to choose data size around the point
-		
-		// Say true if you want to ignore the brightest beads, say false if you want to take all beads.
+		final long radius = 8; // Raidus of the Hypersphere to choose data size
+								// around the point
+
+		// Say true if you want to ignore the brightest beads, say false if you
+		// want to take all beads.
 		getpsf.Extractparams(totalgausslist, radius, false);
-		
-		
-		
-		
-		PushCurves.DrawDetectedGaussians(gaussimg, totalgausslist);	
+
+		PushCurves.DrawDetectedGaussians(gaussimg, totalgausslist);
 		ImageJFunctions.show(gaussimg).setTitle("Iterated Result");
-		
-		
-		
-		for (int index = 0; index < totalgausslist.size(); ++index){
-			
-			
+
+		for (int index = 0; index < totalgausslist.size(); ++index) {
+
 			System.out.println("Amp: " + 2 * totalgausslist.get(index)[0] + " " + "Mean X: "
 					+ totalgausslist.get(index)[1] + " " + "Mean Y: " + totalgausslist.get(index)[2] + " " + "SigX: "
-					+ Math.sqrt(1.0/totalgausslist.get(index)[3]) + " " + "SigY: "
-					+ Math.sqrt(1.0/totalgausslist.get(index)[4])+  " "+ "Noise: "+ totalgausslist.get(index)[5]);
-		
-			
-			
-			
+					+ Math.sqrt(1.0 / totalgausslist.get(index)[3]) + " " + "SigY: "
+					+ Math.sqrt(1.0 / totalgausslist.get(index)[4]) + " " + "Noise: " + totalgausslist.get(index)[5]);
+
 		}
-		
-		
-		
+
 	}
 }
