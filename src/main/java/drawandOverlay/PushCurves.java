@@ -320,38 +320,29 @@ public class PushCurves {
 		
 		
 		
-		final double stepsize =  Math.min(sigma[0], sigma[1]);
+		final double stepsize =  1 ;
 		double steppos[] = {startline[0], startline[1]};
 		double dx = stepsize / Math.sqrt(1 + slope * slope);
 		double dy = slope * dx;
 		
-      double endlinepos[] = new double[ndims];
 		while (true) {
 			
 			
 			
-			
-			if (steppos[0] > endline[0]   || steppos[1] > endline[1]   && slope >= 0)
+			if (steppos[0] > endline[0] || steppos[1] > endline[1] && slope >= 0)
 				break;
-
-			if (steppos[0] > endline[0]  || steppos[1] < endline[1]   && slope < 0)
+			if (steppos[0] > endline[0] || steppos[1] < endline[1] && slope < 0)
 				break;
-			
-			
-			AddGaussian.addGaussian(imgout, steppos, sigma);
-			endlinepos = steppos;
 			steppos[0] += dx;
 			steppos[1] += dy;
-			
-			
-			
-			
+			AddGaussian.addGaussian(imgout, steppos, sigma);
 		}
+		double acstartpos[] = {startline[0] + dx, startline[1] + dy};
 		try {
-	        FileWriter writer = new FileWriter("../res/ActualP1.txt", true);
-	        writer.write( "StartX: "  + startline[0]+  " " +
-	       		 "StartY: "+ startline[1] + " " + "EndposX: " + endlinepos[0] +  
-	    		 " EndposY :" + endlinepos[1]+ "  Length " + Distance(startline, endlinepos) );
+	        FileWriter writer = new FileWriter("../res/ActualP3.txt", true);
+	        writer.write( "StartX: "  + (acstartpos[0])+  " " +
+	       		 "StartY: "+ (acstartpos[1]) + " " + "EndposX: " + steppos[0] +  
+	    		 " EndposY :" + steppos[1]+ "  Length " + Distance(acstartpos, steppos) );
 	        writer.write("\r\n"); 
 	        writer.write("\r\n");
 	        writer.close();

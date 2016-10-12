@@ -70,7 +70,7 @@ public class GaussianLineds implements MTFitFunction {
 
 	private static final double Estartds(final double[] x, final double[] a, final double[] b) {
 
-		double sum = 0;
+		
 		double di;
 		final int ndims = x.length;
 		double[] minVal = new double[ndims];
@@ -81,9 +81,6 @@ public class GaussianLineds implements MTFitFunction {
 			maxVal[i] = a[ndims + i];
 		}
 		double slope = (maxVal[1] - minVal[1]) / (maxVal[0] - minVal[0]);
-		double dsum = 0;
-		double sumofgaussians = 0;
-
 		
 		
 		double ds = Math.abs(a[2 * ndims]);
@@ -91,14 +88,30 @@ public class GaussianLineds implements MTFitFunction {
 		double[] dxvector = { ds / Math.sqrt( 1 + slope * slope) , slope * ds/ Math.sqrt( 1 + slope * slope)  };
 		double[] dxvectorderiv = { 1/ Math.sqrt( 1 + slope * slope) , slope/ Math.sqrt( 1 + slope * slope)  };
 
+		
+		
+		double dsum = 0;
+		double sum = 0;
 		for (int i = 0; i < x.length; i++) {
-			di = x[i] - (a[i] + dxvector[i]);
+			minVal[i] += dxvector[i];
+			di = x[i] - minVal[i];
 			sum += b[i] * di * di;
 			dsum += 2 * b[i] * di * dxvectorderiv[i];
 		}
-		sumofgaussians += dsum * Math.exp(-sum);
-
-		return sumofgaussians;
+		double sumofgaussians = dsum * Math.exp(-sum);
+		
+		double dsumend = 0;
+		double sumend = 0;
+		for (int i = 0; i < x.length; i++) {
+			maxVal[i] -= dxvector[i];
+			di = x[i] - maxVal[i];
+			sumend += b[i] * di * di;
+			dsumend += -2 * b[i] * di * dxvectorderiv[i];
+		}
+		sumofgaussians+= dsumend * Math.exp(-sumend);
+		
+		
+		return   sumofgaussians ;
 
 	}
 
@@ -119,7 +132,7 @@ public class GaussianLineds implements MTFitFunction {
 
 	private static final double Etotal(final double[] x, final double[] a, final double[] b) {
 
-		return Estart(x, a, b) + Eend(x, a, b) + Esum(x, a, b);
+		return Estart(x, a, b) + Esum(x, a, b) + Eend(x, a, b);
 
 	}
 
@@ -153,12 +166,16 @@ public class GaussianLineds implements MTFitFunction {
 			}
 			sumofgaussians += Math.exp(-sum);
 
+			
 			if (minVal[0] >= maxVal[0] || minVal[1] >= maxVal[1] && slope > 0)
 				break;
 			if (minVal[0] >= maxVal[0] || minVal[1] <= maxVal[1] && slope < 0)
 				break;
 
 		}
+		
+		
+		
 
 		return sumofgaussians;
 	}

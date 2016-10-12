@@ -21,35 +21,34 @@ public class Gaussianlines {
 			 final double[] sigma,  final int numlines) throws IncompatibleTypeException {
 
 		final int n = outimg.numDimensions();
-		 // Pnoise1: (2, 1, 2) Pnoise2: (3 , 3 , 2) Pnoise3:  (30, 13, 13) Pnoise4: (15, 56, 64) + 3.5, 9.5 Pnoise5: (54, 44, 91)
+		 // Pnoise1: (10, -10) Pnoise2: (20 , 10) Pnoise3:  (30, 18) Pnoise4: (15, 56) Pnoise5: (24, 44)
 		ArrayList<Fakeline> linearray = new ArrayList<Fakeline>();
-		final Random rnd = new Random(2);
-		final Random rndsec = new Random(1);
-		final Random Length = new Random(2);
+		final Random rnd = new Random(30);
+		final Random rndsec = new Random(18);
+		
 		for (int lineindex = 0; lineindex < numlines; ++lineindex) {
-			
-			
-			
+
 			double startpos[] = new double[n];
 			double endpos[] = new double[n];
-			
+			double MaxLength = 29.82;
 
 			for (int d = 0; d < range.numDimensions(); ++d) {
-				startpos[d] = rnd.nextDouble() * (range.max(d) - range.min(d)) + range.min(d) ;
-
+				startpos[d] = (rnd.nextDouble() * (range.max(d) - range.min(d)) + range.min(d)) ;
+				endpos[d] = ((rndsec.nextDouble() * (range.max(d) - range.min(d)) + range.min(d)))  ;
 			}
 
-			
-			double MinLength = 9.78 + 0*3.5;
-			double MaxLength = 29.82 + 0*9.5;
-			double Result = Length.nextDouble()*(MaxLength - MinLength) + MinLength;
-			double MinSlope = 0;
-			double MaxSlope = 360;
-			double SlopeResult = Math.tan(rndsec.nextDouble() * (MaxSlope - MinSlope ) + MinSlope);
-			
-			endpos[0] = (startpos[0] + Result / Math.sqrt(1 + SlopeResult * SlopeResult));
-			endpos[1] =  (startpos[1] + SlopeResult * Result / Math.sqrt(1 + SlopeResult * SlopeResult))  ;
-			
+			while (true){
+			if (Distance(startpos, endpos) > MaxLength){
+				
+				for (int d = 0; d < range.numDimensions(); ++d) {
+					
+					endpos[d] = (startpos[d] + endpos[d]) / 2;
+				}
+				
+			}
+			if (Distance(startpos, endpos) <= MaxLength)
+				break;
+			}
 			
 			
 			double slope = (endpos[1] - startpos[1]) / (endpos[0] - startpos[0]);

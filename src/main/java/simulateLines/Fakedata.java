@@ -31,7 +31,7 @@ public class Fakedata {
 		new ImageJ();
 		
 		final FinalInterval range = new FinalInterval(600, 600);
-		final FinalInterval smallrange = new FinalInterval(450, 450);
+		final FinalInterval smallrange = new FinalInterval(500, 550);
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(range, new FloatType());
 		RandomAccessibleInterval<FloatType> noisyimg = new ArrayImgFactory<FloatType>().create(imgout, new FloatType());
 		RandomAccessibleInterval<FloatType> noisyimgsec = new ArrayImgFactory<FloatType>().create(imgout, new FloatType());
@@ -50,8 +50,9 @@ public class Fakedata {
 		final int numlines = 20;
 		Gaussianlines.Drawsimulatedlines(imgout, smallrange,  sigma, numlines);
 		Normalize.normalize(Views.iterable(imgout), minval, maxval);
-		Kernels.addBackground(Views.iterable(imgout), 0.2);
 		ImageJFunctions.show(imgout);
+		Kernels.addBackground(Views.iterable(imgout), 0.2);
+		
 		
 		noisyimg = Poissonprocess.poissonProcess(imgout, 45);
 		noisyimgsec = Poissonprocess.poissonProcess(imgout, 25);
