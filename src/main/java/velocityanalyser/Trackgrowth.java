@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import com.sun.tools.javac.util.Pair;
 
 import graphconstructs.Staticproperties;
-import houghandWatershed.PerformWatershedding;
+import houghandWatershed.WatershedDistimg;
 import net.imglib2.Point;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.logic.BitType;
@@ -41,8 +41,11 @@ public class Trackgrowth {
 	
 	public Pair<ArrayList<double[]>, ArrayList<Staticproperties>> Updatetrackpoints() throws Exception{
 		
-		PerformWatershedding Watershedobject = new PerformWatershedding(currentframe, currbitimg, minlength);
-		RandomAccessibleInterval<IntType> currentlabelledimg = Watershedobject.Dowatersheddingonly();
+		WatershedDistimg Watershedobject = new WatershedDistimg(currentframe, currbitimg);
+		Watershedobject.checkInput();
+		Watershedobject.process();
+		RandomAccessibleInterval<IntType> currentlabelledimg = Watershedobject.getResult();
+		
 		
 		Linefitter currentline = new Linefitter(currentframe, currentlabelledimg);
 		int ndims = currentframe.numDimensions();

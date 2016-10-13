@@ -1,28 +1,16 @@
 package drawandOverlay;
 
-import java.awt.Color;
 import java.util.ArrayList;
-import java.util.Collection;
-
-import com.sun.tools.javac.util.Pair;
-
 import houghandWatershed.TransformCordinates;
-import ij.ImagePlus;
-import ij.ImageStack;
-import ij.gui.Line;
-import ij.gui.Overlay;
 import labeledObjects.Lineobjects;
 import labeledObjects.Simpleobject;
 import net.imglib2.Cursor;
 import net.imglib2.Point;
-import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealPointSampleList;
 import net.imglib2.algorithm.localextrema.RefinedPeak;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
-import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
@@ -31,18 +19,6 @@ import preProcessing.GetLocalmaxmin.IntensityType;
 
 public class OverlayLines {
 	
-	private double slope;
-	private double intercept;
-	private int count;
-	private int index;
-	private  OverlayLines(double slope, double intercept, int count, int index){
-		
-		this.slope = slope;
-		this.intercept = intercept;
-		this.count = count;
-		this.index = index;
-		
-	}
 
 
 	
@@ -52,11 +28,9 @@ public class OverlayLines {
 
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(inputimg, new FloatType());
 		double[] points = new double[imgout.numDimensions()];
-		double[] singlepoint = new double[imgout.numDimensions()];
 		int maxcount = 0;
 		int maxindex = 0;
 		
-		ArrayList<OverlayLines> listmultiple = new ArrayList<OverlayLines>();
 		ArrayList<RefinedPeak<Point>> MainMinlist = new ArrayList<RefinedPeak<Point>>(inputimg.numDimensions());
 		for (int index = 0; index < SubpixelMinlist.size(); ++index) {
 			points = TransformCordinates.transformfwd(new double[] { SubpixelMinlist.get(index).getDoublePosition(0),
@@ -82,8 +56,6 @@ public class OverlayLines {
 						count++;
 
 					
-					OverlayLines multipleinlabel = new OverlayLines(slope, intercept, count, index);
-					listmultiple.add(multipleinlabel);
 					if (count > maxcount) {
 						maxcount = count;
 						maxindex = index;
@@ -94,41 +66,7 @@ public class OverlayLines {
 
 			}
 		}
-		/*
-		if (maxcount > 0){
-
-		singlepoint = TransformCordinates.transformfwd(new double[] { SubpixelMinlist.get(maxindex).getDoublePosition(0),
-				SubpixelMinlist.get(maxindex).getDoublePosition(1) }, sizes, min, max);
-		double singleslope = -1.0 / Math.tan(Math.toRadians(singlepoint[0]));
-		double tolerance = 30;
-		int secondmaxcount = 0;
-		int secondmaxindex = 0;
-		int seccount =	0;
-		for (int secindex = 0; secindex < listmultiple.size(); ++secindex){
-			
-			double anglebetweenlines = 
-			(listmultiple.get(secindex).slope - singleslope)/(1 + listmultiple.get(secindex).slope*singleslope);
-			if (Math.abs(Math.toDegrees((Math.atan(anglebetweenlines)))) >= tolerance  ){
-				
-            		
-				
-            			if (seccount >= secondmaxcount){
-            				
-            				secondmaxcount = seccount;
-            				secondmaxindex = listmultiple.get(secindex).index;
-				}
-				seccount++;
-				
-			}
-			
-		}
-	/*	if (secondmaxcount > 0 && secondmaxindex!=maxindex ){
-			MainMinlist.add(SubpixelMinlist.get(secondmaxindex));
-			// System.out.println(" Second: "+ secondmaxindex + " First " + maxindex );
-			
-		}
-		*/
-	//	}
+		
 		
 		if (maxcount > 0) {
 			MainMinlist.add(SubpixelMinlist.get(maxindex));
@@ -158,7 +96,7 @@ public class OverlayLines {
 	public static void GetAlllines(
 			RandomAccessibleInterval<FloatType> imgout,
 			RandomAccessibleInterval<FloatType> inputimg,
-			Img<IntType> intimg, 
+			RandomAccessibleInterval<IntType> intimg, 
 			ArrayList<Lineobjects> linelist,
 			ArrayList<Simpleobject> lineobject,
 			final long radius) {

@@ -2,9 +2,6 @@
 package houghandWatershed;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import com.sun.tools.javac.util.Pair;
@@ -14,23 +11,18 @@ import drawandOverlay.PushCurves;
 import ij.ImageJ;
 import labeledObjects.Lineobjects;
 import labeledObjects.Simpleobject;
-import lut.SinCosinelut;
-import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.stats.Normalize;
-import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
-import peakFitter.LengthDetection;
 import peakFitter.Linefitter;
 import preProcessing.GetLocalmaxmin;
 import preProcessing.GlobalThresholding;
 import preProcessing.Kernels;
-import preProcessing.Kernels.ProcessingType;
 import preProcessing.MedianFilter2D;
 import util.ImgLib2Util;
 
@@ -95,9 +87,13 @@ public class HoughpostWater {
 
 		System.out.println("Doing Hough transform in labels: ");
 
-		PerformWatershedding Houghobject = new PerformWatershedding(inputimg, bitimg, minlength);
+		HoughTransform2D Houghobject = new HoughTransform2D(inputimg, bitimg, minlength);
+		
+		Houghobject.checkInput();
+		Houghobject.process();
+		Pair<RandomAccessibleInterval<IntType>, ArrayList<Lineobjects>> linepair  = Houghobject.getResult();
 
-		Pair<Img<IntType>, ArrayList<Lineobjects>> linepair = Houghobject.DowatersheddingandHough();
+		
 
 		// Overlay detected lines on the image
 

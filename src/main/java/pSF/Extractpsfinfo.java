@@ -2,7 +2,7 @@ package pSF;
 
 import java.util.ArrayList;
 
-import houghandWatershed.PerformWatershedding;
+import houghandWatershed.WatershedDistimg;
 import net.imglib2.Cursor;
 import net.imglib2.Point;
 import net.imglib2.PointSampleList;
@@ -32,11 +32,14 @@ public class Extractpsfinfo {
 	
 	public void Extractparams(ArrayList<double[]> totalgausslist, final long radius,final boolean ignorebrightpeaks) throws Exception{
 	
-		PerformWatershedding Watershedobject = new PerformWatershedding(inputimg, bitimg, 0);
+		WatershedDistimg Watershedobject = new WatershedDistimg(inputimg, bitimg);
+		Watershedobject.checkInput();
+		Watershedobject.process();
+		RandomAccessibleInterval<IntType> intimg = Watershedobject.getResult();
+	
 		
-		RandomAccessibleInterval<IntType> intimg = Watershedobject.Dowatersheddingonly();
 		
-		final int maxlabel = PerformWatershedding.GetMaxlabelsseeded(intimg); 
+		final int maxlabel = Watershedobject.GetMaxlabelsseeded(intimg); 
 		PointSampleList<FloatType> centroidlist = new PointSampleList<FloatType>(ndims);
 		 
 		for (int label = 1; label < maxlabel - 1; ++label){

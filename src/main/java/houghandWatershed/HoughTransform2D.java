@@ -1,42 +1,34 @@
 package houghandWatershed;
 
-import java.util.Iterator;
-
+import java.util.ArrayList;
 import com.sun.tools.javac.util.Pair;
 
-import houghandWatershed.PerformWatershedding.InverseType;
+import drawandOverlay.HoughPushCurves;
+import drawandOverlay.OverlayLines;
+import labeledObjects.Lineobjects;
 import net.imglib2.Cursor;
-import net.imglib2.KDTree;
+import net.imglib2.FinalInterval;
+import net.imglib2.Point;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealPoint;
-import net.imglib2.RealPointSampleList;
 import net.imglib2.algorithm.BenchmarkAlgorithm;
 import net.imglib2.algorithm.OutputAlgorithm;
-import net.imglib2.algorithm.labeling.AllConnectedComponents;
-import net.imglib2.algorithm.labeling.ConnectedComponents;
-import net.imglib2.algorithm.labeling.Watershed;
-import net.imglib2.img.Img;
+import net.imglib2.algorithm.localextrema.RefinedPeak;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
-import net.imglib2.labeling.DefaultROIStrategyFactory;
-import net.imglib2.labeling.Labeling;
-import net.imglib2.labeling.LabelingROIStrategy;
-import net.imglib2.labeling.NativeImgLabeling;
-import net.imglib2.neighborsearch.NearestNeighborSearchOnKDTree;
-import net.imglib2.roi.labeling.ImgLabeling;
-import net.imglib2.type.NativeType;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.logic.BitType;
-import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 import net.imglib2.view.Views;
+import preProcessing.GetLocalmaxmin;
+import preProcessing.GlobalThresholding;
 
 /**
  * Hough transform of images that operates on 2D images.
  * <p>
- * For 3D images, the Hough transform is done only in 2D XY slices. 
+ * For 3D images, the Hough transform is done only in 2D XY slices.
  * 
  * @author Varun Kapoor - 2016
  *
@@ -44,31 +36,34 @@ import net.imglib2.view.Views;
  *            the type of the source image.
  */
 
-public class HoughTransform2D< T extends RealType< T > & NativeType< T >> extends BenchmarkAlgorithm implements OutputAlgorithm< RandomAccessibleInterval< T >> {
+public class HoughTransform2D extends BenchmarkAlgorithm
+		implements OutputAlgorithm<Pair<RandomAccessibleInterval<IntType>, ArrayList<Lineobjects>>> {
 
-	
-
-	private final RandomAccessibleInterval<T> source;
+	private static final String BASE_ERROR_MSG = "[HoughTransform2D] ";
+	private final RandomAccessibleInterval<FloatType> source;
 	private final RandomAccessibleInterval<BitType> bitimg;
 	private final double minlength;
-	private static final String BASE_ERROR_MSG = "[HoughTransform2D] ";
-	
+	private RandomAccessibleInterval<IntType> watershedimage;
+	private ArrayList<Lineobjects> linelist;
+
 	/**
-	 * Instantiate a new Hough Transform object that does Hough
-	 * Transform on 2D images or slices of a 3D image.
+	 * Instantiate a new Hough Transform object that does Hough Transform on 2D
+	 * images or slices of a 3D image.
 	 * 
 	 * @param source
-	 *              the source 2D image on which the Hough transform has to be done
+	 *            the source 2D image on which the Hough transform has to be
+	 *            done
 	 * @param bitimg
-	 *              the bitimg of the source to be used for doing the distance transform and
-	 *              watershedding, created using user defined threshold
+	 *            the bitimg of the source to be used for doing the distance
+	 *            transform and watershedding, created using user defined
+	 *            threshold
 	 * @param minlength
-	 *               the minimum length of the lines to be detected
-	 *               this is done to avoid dots which appear in microscopy images.  
+	 *            the minimum length of the lines to be detected this is done to
+	 *            avoid dots which appear in microscopy images.
 	 * 
 	 */
 
-	public HoughTransform2D(final RandomAccessibleInterval<T> source,
+	public HoughTransform2D(final RandomAccessibleInterval<FloatType> source,
 			final RandomAccessibleInterval<BitType> bitimg, final double minlength) {
 
 		this.source = source;
@@ -76,20 +71,27 @@ public class HoughTransform2D< T extends RealType< T > & NativeType< T >> extend
 		this.bitimg = bitimg;
 
 	}
-	
-	
-	
-	
+
+	public RandomAccessibleInterval<IntType> getWatershedimage() {
+
+		return watershedimage;
+	}
+
+	public ArrayList<Lineobjects> getLinelist() {
+
+		return linelist;
+	}
+
 	@Override
 	public boolean checkInput() {
-		if ( source.numDimensions() > 2 )
-		{
-			errorMessage = BASE_ERROR_MSG + " Can only operate on 1D, 2D, make slices of your stack . Got " + source.numDimensions() + "D.";
+		if (source.numDimensions() > 2) {
+			errorMessage = BASE_ERROR_MSG + " Can only operate on 1D, 2D, make slices of your stack . Got "
+					+ source.numDimensions() + "D.";
 			return false;
 		}
-		if ( minlength < 2 )
-		{
-			errorMessage = BASE_ERROR_MSG + "minimum length of line to be detected cannot be smaller than 2. Got " + minlength + ".";
+		if (minlength < 2) {
+			errorMessage = BASE_ERROR_MSG + "minimum length of line to be detected cannot be smaller than 2. Got "
+					+ minlength + ".";
 			return false;
 		}
 		return true;
@@ -97,128 +99,118 @@ public class HoughTransform2D< T extends RealType< T > & NativeType< T >> extend
 
 	@Override
 	public boolean process() {
-		// TODO Auto-generated method stub
-		return false;
+
+		
+		WatershedDistimg WaterafterDisttransform = new WatershedDistimg(source, bitimg);
+		WaterafterDisttransform.checkInput();
+		WaterafterDisttransform.process();
+		watershedimage = WaterafterDisttransform.getResult();
+		final int Maxlabel = WaterafterDisttransform.GetMaxlabelsseeded(watershedimage);
+		
+		
+
+		System.out.println("Total labels: " + Maxlabel);
+
+		ArrayList<RefinedPeak<Point>> ReducedMinlist = new ArrayList<RefinedPeak<Point>>(
+				source.numDimensions());
+		ArrayList<RefinedPeak<Point>> MainMinlist = new ArrayList<RefinedPeak<Point>>(source.numDimensions());
+
+		ImageJFunctions.show(watershedimage);
+		final double[] sizes = new double[source.numDimensions()];
+
+		// Automatic threshold determination for doing the Hough transform
+		Float val = GlobalThresholding.AutomaticThresholding(source);
+
+		linelist = new ArrayList<Lineobjects>(source.numDimensions());
+
+		for (int label = 1; label < Maxlabel - 1; label++) {
+
+			System.out.println("Label Number:" + label);
+
+			RandomAccessibleInterval<FloatType> outimg = new ArrayImgFactory<FloatType>().create(source,
+					new FloatType());
+
+			outimg = CurrentLabelImage(watershedimage, source, label);
+
+			long[] minCorner = GetMincorners(watershedimage, label);
+			long[] maxCorner = GetMaxcorners(watershedimage, label);
+
+			FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
+
+			RandomAccessibleInterval<FloatType> outimgview = Views.interval(outimg, intervalsmall);
+
+			// Set size of pixels in Hough space
+			int mintheta = 0;
+
+			// Usually is 180 but to allow for detection of vertical
+			// lines,allowing a few more degrees
+
+			int maxtheta = 220;
+			double size = Math
+					.sqrt((outimg.dimension(0) * outimg.dimension(0) + outimg.dimension(1) * outimg.dimension(1)));
+			int minRho = (int) -Math.round(size);
+			int maxRho = -minRho;
+			double thetaPerPixel = 0.3;
+			double rhoPerPixel = 0.3;
+			double[] min = { mintheta, minRho };
+			double[] max = { maxtheta, maxRho };
+			int pixelsTheta = (int) Math.round((maxtheta - mintheta) / thetaPerPixel);
+			int pixelsRho = (int) Math.round((maxRho - minRho) / rhoPerPixel);
+
+			double ratio = (max[0] - min[0]) / (max[1] - min[1]);
+			FinalInterval interval = new FinalInterval(new long[] { pixelsTheta, (long) (pixelsRho * ratio) });
+			final RandomAccessibleInterval<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval,
+					new FloatType());
+
+			HoughPushCurves.Houghspace(outimgview, houghimage, min, max, val);
+
+			for (int d = 0; d < houghimage.numDimensions(); ++d)
+				sizes[d] = houghimage.dimension(d);
+
+			// Define Arraylist to get the slope and the intercept of the Hough
+			// detected lines
+			ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(source.numDimensions());
+
+			// Get the list of all the detections
+			SubpixelMinlist = GetLocalmaxmin.HoughspaceMaxima(houghimage, interval, sizes, thetaPerPixel, rhoPerPixel);
+
+			// Reduce the number of detections by picking One line per Label,
+			// using the best detection for each label
+			ReducedMinlist = OverlayLines.ReducedList(outimg, SubpixelMinlist, sizes, min, max);
+
+			ArrayList<double[]> points = new ArrayList<double[]>();
+
+			for (int index = 0; index < ReducedMinlist.size(); ++index)
+				MainMinlist.add(ReducedMinlist.get(index));
+
+			points = OverlayLines.GetRhoTheta(ReducedMinlist, sizes, min, max);
+
+			/**
+			 * This object has rho, theta, min dimensions, max dimensions of the
+			 * label
+			 * 
+			 */
+			final Lineobjects line = new Lineobjects(label, points, minCorner, maxCorner);
+
+			linelist.add(line);
+		}
+
+		return true;
 	}
 
 	@Override
-	public RandomAccessibleInterval<T> getResult() {
-		// TODO Auto-generated method stub
-		return null;
+	public Pair<RandomAccessibleInterval<IntType>, ArrayList<Lineobjects>> getResult() {
+
+		Pair<RandomAccessibleInterval<IntType>, ArrayList<Lineobjects>> linepair = new Pair<RandomAccessibleInterval<IntType>, ArrayList<Lineobjects>>(
+				watershedimage, linelist);
+
+		return linepair;
 	}
 
 	
-	/**
-	 * 
-	 * Method the get the seed image used for watershedding
-	 * 
-	 * @return An IntType image used as seeds to perform the watershedding.
-	 */
-	private RandomAccessibleInterval<IntType> Labelobjects() {
 
-		// Prepare seed image for watershedding
-		NativeImgLabeling<Integer, IntType> oldseedLabeling = new NativeImgLabeling<Integer, IntType>(
-				new ArrayImgFactory<IntType>().create(source, new IntType()));
+	
 
-		oldseedLabeling = PrepareSeedImage(source);
-
-		return oldseedLabeling.getStorageImg();
-	}
-	/***
-	 * 
-	 * Do the distance transform of the input image using the bit image
-	 * provided.
-	 * 
-	 * @param inputimg
-	 *            The pre-processed input image as RandomAccessibleInterval
-	 *            <T>
-	 * @param outimg
-	 *            The distance transormed image having the same dimensions as
-	 *            the input image.
-	 * @param invtype
-	 *            Straight: The intensity value is set to the distance, gives
-	 *            white on black background. Inverse: The intensity is set to
-	 *            the negative of the distance, gives black on white background.
-	 */
-
-	private void DistanceTransformImage(RandomAccessibleInterval<T> inputimg,
-			RandomAccessibleInterval<T> outimg) {
-		int n = inputimg.numDimensions();
-
-		// make an empty list
-		final RealPointSampleList<BitType> list = new RealPointSampleList<BitType>(n);
-
-		// cursor on the binary image
-		final Cursor<BitType> cursor = Views.iterable(bitimg).localizingCursor();
-
-		// for every pixel that is 1, make a new RealPoint at that location
-		while (cursor.hasNext())
-			if (cursor.next().getInteger() == 1)
-				list.add(new RealPoint(cursor), cursor.get());
-
-		// build the KD-Tree from the list of points that == 1
-		final KDTree<BitType> tree = new KDTree<BitType>(list);
-
-		// Instantiate a nearest neighbor search on the tree (does not modifiy
-		// the tree, just uses it)
-		final NearestNeighborSearchOnKDTree<BitType> search = new NearestNeighborSearchOnKDTree<BitType>(tree);
-
-		// randomaccess on the output
-		final RandomAccess<T> ranac = outimg.randomAccess();
-
-		// reset cursor for the input (or make a new one)
-		cursor.reset();
-
-		// for every pixel of the binary image
-		while (cursor.hasNext()) {
-			cursor.fwd();
-
-			// set the randomaccess to the same location
-			ranac.setPosition(cursor);
-
-			// if value == 0, look for the nearest 1-valued pixel
-			if (cursor.get().getInteger() == 0) {
-				// search the nearest 1 to the location of the cursor (the
-				// current 0)
-				search.search(cursor);
-
-				// get the distance (the previous call could return that, this
-				// for generality that it is two calls)
-				
-					ranac.get().setReal(search.getDistance());
-					
-
-			} else {
-				// if value == 1, no need to search
-				ranac.get().setZero();
-			}
-		}
-
-	}
-
-	private NativeImgLabeling<Integer, IntType> PrepareSeedImage(RandomAccessibleInterval<T> inputimg) {
-
-		// New Labeling type
-		final ImgLabeling<Integer, IntType> seedLabeling = new ImgLabeling<Integer, IntType>(
-				new ArrayImgFactory<IntType>().create(inputimg, new IntType()));
-
-		// Old Labeling type
-		final NativeImgLabeling<Integer, IntType> oldseedLabeling = new NativeImgLabeling<Integer, IntType>(
-				new ArrayImgFactory<IntType>().create(inputimg, new IntType()));
-
-		// The label generator for both new and old type
-		final Iterator<Integer> labelGenerator = AllConnectedComponents.getIntegerNames(0);
-
-		// Getting unique labelled image (new version)
-		ConnectedComponents.labelAllConnectedComponents(bitimg, seedLabeling, labelGenerator,
-				ConnectedComponents.StructuringElement.EIGHT_CONNECTED);
-
-		// Getting unique labelled image (old version)
-		AllConnectedComponents.labelAllConnectedComponents(oldseedLabeling, bitimg, labelGenerator,
-				AllConnectedComponents.getStructuringElement(inputimg.numDimensions()));
-
-		return oldseedLabeling;
-	}
 	public static long[] GetMaxcorners(RandomAccessibleInterval<IntType> inputimg, int label) {
 
 		Cursor<IntType> intCursor = Views.iterable(inputimg).localizingCursor();
@@ -299,72 +291,21 @@ public class HoughTransform2D< T extends RealType< T > & NativeType< T >> extend
 
 		double boxsize = Distance(minVal, maxVal);
 
-		Pair<long[], long[]> boundingBox = new Pair<long[], long[]>(minVal, maxVal);
 		return boxsize;
 	}
 
-	public static int GetMaxlabelsseeded(RandomAccessibleInterval<IntType> intimg) {
+	
 
-		// To get maximum Labels on the image
-		Cursor<IntType> intCursor = Views.iterable(intimg).cursor();
-		int currentLabel = 1;
-		boolean anythingFound = true;
-		while (anythingFound) {
-			anythingFound = false;
-			intCursor.reset();
-			while (intCursor.hasNext()) {
-				intCursor.fwd();
-				int i = intCursor.get().get();
-				if (i == currentLabel) {
+	public RandomAccessibleInterval<FloatType> CurrentLabelImage(RandomAccessibleInterval<IntType> Intimg,
+			RandomAccessibleInterval<FloatType> originalimg, int currentLabel) {
 
-					anythingFound = true;
-
-				}
-			}
-			currentLabel++;
-		}
-
-		return currentLabel;
-
-	}
-
-	public NativeImgLabeling<Integer, IntType> GetlabeledImage(RandomAccessibleInterval<T> inputimg,
-			NativeImgLabeling<Integer, IntType> seedLabeling) {
-
-		int n = inputimg.numDimensions();
-		long[] dimensions = new long[n];
-
-		for (int d = 0; d < n; ++d)
-			dimensions[d] = inputimg.dimension(d);
-		final NativeImgLabeling<Integer, IntType> outputLabeling = new NativeImgLabeling<Integer, IntType>(
-				new ArrayImgFactory<IntType>().create(inputimg, new IntType()));
-
-		final Watershed<T, Integer> watershed = new Watershed<T, Integer>();
-
-		watershed.setSeeds(seedLabeling);
-		watershed.setIntensityImage(inputimg);
-		watershed.setStructuringElement(AllConnectedComponents.getStructuringElement(2));
-		watershed.setOutputLabeling(outputLabeling);
-		watershed.process();
-		DefaultROIStrategyFactory<Integer> deffactory = new DefaultROIStrategyFactory<Integer>();
-		LabelingROIStrategy<Integer, Labeling<Integer>> factory = deffactory
-				.createLabelingROIStrategy(watershed.getResult());
-		outputLabeling.setLabelingCursorStrategy(factory);
-
-		return outputLabeling;
-
-	}
-
-	public  RandomAccessibleInterval<T> CurrentLabelImage(RandomAccessibleInterval<IntType> Intimg,
-			RandomAccessibleInterval<T> originalimg, int currentLabel) {
-
-		RandomAccess<T> inputRA = originalimg.randomAccess();
+		RandomAccess<FloatType> inputRA = originalimg.randomAccess();
 
 		Cursor<IntType> intCursor = Views.iterable(Intimg).cursor();
-		final T type = originalimg.randomAccess().get().createVariable();
-		final ImgFactory< T > factory = Util.getArrayOrCellImgFactory( source, type );
-		RandomAccessibleInterval<T> outimg = factory.create(originalimg, type);
-		RandomAccess<T> imageRA = outimg.randomAccess();
+		final FloatType type = originalimg.randomAccess().get().createVariable();
+		final ImgFactory<FloatType> factory = Util.getArrayOrCellImgFactory(originalimg, type);
+		RandomAccessibleInterval<FloatType> outimg = factory.create(originalimg, type);
+		RandomAccess<FloatType> imageRA = outimg.randomAccess();
 
 		// Go through the whole image and add every pixel, that belongs to
 		// the currently processed label

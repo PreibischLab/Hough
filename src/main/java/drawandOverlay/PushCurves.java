@@ -3,32 +3,18 @@ package drawandOverlay;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-
 import houghandWatershed.Finalfunction;
 import houghandWatershed.TransformCordinates;
-import lut.SinCosinelut;
 import net.imglib2.Cursor;
-import net.imglib2.FinalInterval;
 import net.imglib2.Point;
 import net.imglib2.PointSampleList;
 import net.imglib2.RandomAccess;
-import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealCursor;
-import net.imglib2.RealPoint;
-import net.imglib2.RealPointSampleList;
-import net.imglib2.RealRandomAccess;
-import net.imglib2.algorithm.gauss3.Gauss3;
 import net.imglib2.exception.IncompatibleTypeException;
 import net.imglib2.img.Img;
-import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
-import peakFitter.LengthDetection;
-import preProcessing.GetLocalmaxmin;
 import preProcessing.GetLocalmaxmin.IntensityType;
 import simulateLines.Fakeline;
 
@@ -123,7 +109,6 @@ public class PushCurves {
 		double[] newpos = new double[n];
 		double[] backpos = new double[n];
 		double[] sigma = new double[n];
-		double increment;
 		final RandomAccess<FloatType> outbound = imgout.randomAccess();
 		// SinCosinelut.getTable();
 		double stepsize = 0.1;
@@ -189,7 +174,6 @@ public class PushCurves {
 		double[] newpos = new double[n];
 		double[] backpos = new double[n];
 		double[] sigma = new double[n];
-		double increment;
 		final RandomAccess<FloatType> outbound = imgout.randomAccess();
 		double stepsize = 0.1;
 		int[] setpos = new int[n];
@@ -637,13 +621,13 @@ public class PushCurves {
 	}
 
 	public static void DrawTruncatedline(RandomAccessibleInterval<FloatType> imgout,
-			RandomAccessibleInterval<FloatType> inputimg, Img<IntType> intimg, double slope, double intercept,
+			RandomAccessibleInterval<FloatType> inputimg, RandomAccessibleInterval<IntType> intimg, double slope, double intercept,
 			int label) {
 
 		int n = imgout.numDimensions();
 		final double[] realpos = new double[n];
-		double sigmasq, sigma = 1.0;
-		sigmasq = sigma * sigma;
+		double  sigma = 1.0;
+		
 		final Cursor<FloatType> inputcursor = Views.iterable(imgout).localizingCursor();
 		double[] newposition = new double[n];
 		RandomAccess<IntType> ranac = intimg.randomAccess();

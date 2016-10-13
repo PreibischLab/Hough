@@ -14,15 +14,13 @@ import drawandOverlay.DisplayGraph;
 import drawandOverlay.OverlayLines;
 import drawandOverlay.PushCurves;
 import graphconstructs.Staticproperties;
-import houghandWatershed.PerformWatershedding;
+import houghandWatershed.HoughTransform2D;
 import ij.ImageJ;
 import ij.ImagePlus;
 import labeledObjects.Lineobjects;
 import labeledObjects.Simpleobject;
-import net.imglib2.Point;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.stats.Normalize;
-import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.logic.BitType;
@@ -34,7 +32,6 @@ import peakFitter.Linefitter;
 import preProcessing.GetLocalmaxmin;
 import preProcessing.GlobalThresholding;
 import preProcessing.Kernels;
-import preProcessing.MedianFilter2D;
 
 public class Velocitydetector {
 
@@ -92,9 +89,13 @@ public class Velocitydetector {
 		GetLocalmaxmin.ThresholdingBit(preprocessedimg, bitimg, ThresholdValue);
 		System.out.println("Doing Hough transform in labels: ");
 
-		PerformWatershedding Houghobject = new PerformWatershedding(preprocessedimg, bitimg,  minlength);
+        HoughTransform2D Houghobject = new HoughTransform2D(preprocessedimg, bitimg, minlength);
+		
+		Houghobject.checkInput();
+		Houghobject.process();
+		Pair<RandomAccessibleInterval<IntType>, ArrayList<Lineobjects>> linepair  = Houghobject.getResult();
 
-		Pair<Img<IntType>, ArrayList<Lineobjects>> linepair = Houghobject.DowatersheddingandHough();
+		
 
 		// Display the Hough detection
 		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(groundframe,
