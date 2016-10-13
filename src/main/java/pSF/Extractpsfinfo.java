@@ -12,7 +12,7 @@ import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
-import peakFitter.Gausswback;
+import peakFitter.GaussianPointfitter;
 import preProcessing.GetLocalmaxmin;
 
 public class Extractpsfinfo {
@@ -59,7 +59,7 @@ public class Extractpsfinfo {
 		
 			
 		 
-		 Gausswback  MTlength = new Gausswback(inputimg,intimg);
+		GaussianPointfitter  MTlength = new GaussianPointfitter(inputimg,intimg);
 		 
 		 double[] final_param= new double[2*ndims+2];
 		
@@ -70,7 +70,7 @@ public class Extractpsfinfo {
 		
 		 while(listcursor.hasNext()){
 			 listcursor.fwd();
-			 final_param = MTlength.Getfinalpointsparam(listcursor, radius);
+			 final_param = MTlength.Getfinalparam(listcursor, radius);
 			 
 			 totalgausslist.add(final_param);
 			 

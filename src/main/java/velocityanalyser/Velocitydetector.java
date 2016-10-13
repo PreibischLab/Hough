@@ -1,8 +1,6 @@
 package velocityanalyser;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import org.jgrapht.graph.DefaultWeightedEdge;
@@ -15,6 +13,7 @@ import drawandOverlay.OverlayLines;
 import drawandOverlay.PushCurves;
 import graphconstructs.Staticproperties;
 import houghandWatershed.HoughTransform2D;
+import houghandWatershed.WatershedDistimg;
 import ij.ImageJ;
 import ij.ImagePlus;
 import labeledObjects.Lineobjects;
@@ -28,10 +27,12 @@ import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
-import peakFitter.Linefitter;
+import peakFitter.SubpixelLength;
+import peakFitter.SubpixelVelocity;
 import preProcessing.GetLocalmaxmin;
 import preProcessing.GlobalThresholding;
 import preProcessing.Kernels;
+import preProcessing.MedianFilter2D;
 
 public class Velocitydetector {
 
@@ -49,7 +50,7 @@ public class Velocitydetector {
 
 		// Load the stack of images
 		final RandomAccessibleInterval<FloatType> img = util.ImgLib2Util
-				.openAs32Bit(new File("../res/2016-05-26-test-brighter.tif"), new ArrayImgFactory<FloatType>());
+				.openAs32Bit(new File("../res/Fake_moving-1.tif"), new ArrayImgFactory<FloatType>());
 		int ndims = img.numDimensions();
 
 		// Normalize the intensity of the whole stack to be between min and max
@@ -65,10 +66,10 @@ public class Velocitydetector {
 		final double[] psf = { 1.65, 1.47 };
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		final int minlength = 5;
-		double[] final_param = new double[2 * ndims + 3];
 
 		// Show the stack
-		ImagePlus imp = ImageJFunctions.show(img);
+		ImagePlus impstart = ImageJFunctions.show(img);
+		ImagePlus impend = impstart;
 		ArrayList<ArrayList<Staticproperties>> Allstartandend = new ArrayList<ArrayList<Staticproperties>>();
 
 		// Do Hough transform on the First seed image
@@ -77,10 +78,15 @@ public class Velocitydetector {
 
 		RandomAccessibleInterval<FloatType> preprocessedimg = new ArrayImgFactory<FloatType>().create(groundframe,
 				new FloatType());
-
-		preprocessedimg = Kernels.Supressthresh(groundframe);
-		// Kernels.Meanfilterandsupress(groundframe, radius);
-
+		RandomAccessibleInterval<FloatType> inputimg= new ArrayImgFactory<FloatType>().create(groundframe,
+				new FloatType());
+		// Preprocess image using Median Filter and suppress background
+				final MedianFilter2D<FloatType> medfilter = new MedianFilter2D<FloatType>( groundframe, (int)radius );
+				medfilter.process();
+				inputimg = medfilter.getResult();
+				preprocessedimg = Kernels.Supressthresh(inputimg);
+				Normalize.normalize(Views.iterable(preprocessedimg), minval, maxval);
+		
 		ImageJFunctions.show(preprocessedimg);
 
 		
@@ -90,7 +96,6 @@ public class Velocitydetector {
 		System.out.println("Doing Hough transform in labels: ");
 
         HoughTransform2D Houghobject = new HoughTransform2D(preprocessedimg, bitimg, minlength);
-		
 		Houghobject.checkInput();
 		Houghobject.process();
 		Pair<RandomAccessibleInterval<IntType>, ArrayList<Lineobjects>> linepair  = Houghobject.getResult();
@@ -106,60 +111,21 @@ public class Velocitydetector {
 
 		ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
 
-		Linefitter MTline = new Linefitter(groundframe, linepair.fst);
 
 		RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(groundframe,
 				new FloatType());
 
-		double distance = 0;
-		ArrayList<double[]> final_paramlist = new ArrayList<double[]>();
-		// Run LM solver optimizer and mask fits to improve the Hough detected
-		// lines
-		for (int index = 0; index < simpleobject.size(); ++index) {
+		SubpixelLength MTline = new SubpixelLength(groundframe, linepair.fst, simpleobject, psf, minlength);
+		MTline.checkInput();
+		MTline.process();
+		ArrayList<double[]> final_paramlist = MTline.getResult();
 
-			final_param = MTline.Getfinallineparam(simpleobject.get(index).Label, simpleobject.get(index).slope,
-					simpleobject.get(index).intercept, psf, minlength, true);
-
-			if (final_param != null) {
-				final_paramlist.add(final_param);
-				final double[] cordone = { final_param[0], final_param[1] };
-				final double[] cordtwo = { final_param[2], final_param[3] };
-
-				distance = MTline.Distance(cordone, cordtwo);
-
-				System.out.println("Fits :" + "StartX:" + final_param[0] + " StartY:" + final_param[1] + " " + "EndX:"
-						+ final_param[2] + "EndY: " + final_param[3]);
-				System.out.println("Length: " + distance);
-
-			}
-		}
+		
 
 		// Draw detected lines from the seed image
 		PushCurves.DrawallLine(gaussimg, final_paramlist, psf);
 		ImageJFunctions.show(gaussimg);
-		// Write down the line parameters for the seed image
-
-		for (int listindex = 0; listindex < final_paramlist.size(); ++listindex) {
-			final double[] cordone = { final_paramlist.get(listindex)[0], final_paramlist.get(listindex)[1] };
-			final double[] cordtwo = { final_paramlist.get(listindex)[2], final_paramlist.get(listindex)[3] };
-
-			distance = MTline.Distance(cordone, cordtwo);
-
-			try {
-				FileWriter writer = new FileWriter("../res/2016-05-26-test-brighter.txt", true);
-				writer.write("Frame:" + " " + 0 + "StartX:" + final_paramlist.get(listindex)[0] + " StartY:"
-						+ final_paramlist.get(listindex)[1] + " " + "EndX:" + final_paramlist.get(listindex)[2]
-						+ "EndY: " + final_paramlist.get(listindex)[3] + " "
-
-						+ "Length: " + " " + distance);
-				writer.write("\r\n");
-				writer.close();
-
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-
-		}
+		
 
 		ArrayList<double[]> PrevFrameparam = final_paramlist;
 
@@ -169,58 +135,45 @@ public class Velocitydetector {
 		for (int i = 1; i < img.dimension(ndims - 1); ++i) {
 
 			IntervalView<FloatType> currentframe = Views.hyperSlice(img, ndims - 1, i);
-			
+			RandomAccessibleInterval<FloatType> inputimgcurr = new ArrayImgFactory<FloatType>().create(currentframe,
+					new FloatType());
 			RandomAccessibleInterval<FloatType> precurrent = new ArrayImgFactory<FloatType>().create(currentframe,
 					new FloatType());
-
-			precurrent = Kernels.Supressthresh(currentframe);
-			// Kernels.Meanfilterandsupress(currentframeframe, radius);
-
-			ImageJFunctions.show(preprocessedimg);
-
-			
+			// Preprocess image using Median Filter and suppress background
+			final MedianFilter2D<FloatType> medfiltercurr = new MedianFilter2D<FloatType>( currentframe, (int)radius );
+			medfiltercurr.process();
+			inputimgcurr = medfiltercurr.getResult();
+			precurrent = Kernels.Supressthresh(inputimgcurr);
+			Normalize.normalize(Views.iterable(precurrent), minval, maxval);
+	
 			final Float currThresholdValue = GlobalThresholding.AutomaticThresholding(precurrent);
 			RandomAccessibleInterval<BitType> currbitimg = new ArrayImgFactory<BitType>().create(precurrent, new BitType());
 			GetLocalmaxmin.ThresholdingBit(precurrent, currbitimg, currThresholdValue);
-			final Trackgrowth growthtracker = new Trackgrowth(currentframe, currbitimg, minlength, PrevFrameparam, i, psf, true);
-
-			Pair<ArrayList<double[]>, ArrayList<Staticproperties>> pair = growthtracker.Updatetrackpoints();
-
+			
+			WatershedDistimg Watershedobject = new WatershedDistimg(currentframe, currbitimg);
+			Watershedobject.checkInput();
+			Watershedobject.process();
+			RandomAccessibleInterval<IntType> watershedimg = Watershedobject.getResult();
+			
+			
+			final SubpixelVelocity growthtracker = new SubpixelVelocity(currentframe, watershedimg, PrevFrameparam, psf, i);
+			growthtracker.checkInput();
+			growthtracker.process();
+			ArrayList<double[]> NewFrameparam = growthtracker.getResult();
+			ArrayList<Staticproperties> StateVectors = growthtracker.getStateVectors();
 			// Update the list of line parameters with the current frame
 			// detection
-			PrevFrameparam = pair.fst;
-
+			PrevFrameparam = NewFrameparam;
 			// Append the object static properties with the current frame
 			// detection
-			Allstartandend.add(pair.snd);
+			Allstartandend.add(StateVectors);
 
 			// Draw the lines detected in the current frame
 			RandomAccessibleInterval<FloatType> newgaussimg = new ArrayImgFactory<FloatType>().create(groundframe,
 					new FloatType());
-			PushCurves.DrawallLine(newgaussimg, pair.fst, psf);
+			PushCurves.DrawallLine(newgaussimg, NewFrameparam, psf);
 			ImageJFunctions.show(newgaussimg);
-			// Write down the line parameters for the current frame image
-			for (int listindex = 0; listindex < PrevFrameparam.size(); ++listindex) {
-				final double[] cordone = { PrevFrameparam.get(listindex)[0], PrevFrameparam.get(listindex)[1] };
-				final double[] cordtwo = { PrevFrameparam.get(listindex)[2], PrevFrameparam.get(listindex)[3] };
-
-				distance = MTline.Distance(cordone, cordtwo);
-
-				try {
-					FileWriter writer = new FileWriter("../res/2016-05-26-test-brighter.txt", true);
-					writer.write("Frame: " + i + " " + "StartX:" + PrevFrameparam.get(listindex)[0] + " StartY:"
-							+ PrevFrameparam.get(listindex)[1] + " " + "EndX:" + PrevFrameparam.get(listindex)[2]
-							+ "EndY: " + PrevFrameparam.get(listindex)[3] + " "
-
-							+ "Length: " + " " + distance);
-					writer.write("\r\n");
-					writer.close();
-
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-
-			}
+			
 
 		}
 
@@ -234,7 +187,7 @@ public class Velocitydetector {
 		trackerstart.process();
 		SimpleWeightedGraph<double[], DefaultWeightedEdge> graphstart = trackerstart.getResult();
 
-		ImagePlus impstart = imp.duplicate();
+		
 
 		DisplayGraph displaytracksstart = new DisplayGraph(impstart, graphstart);
 		displaytracksstart.getImp();
@@ -243,7 +196,7 @@ public class Velocitydetector {
 		trackerend.process();
 		SimpleWeightedGraph<double[], DefaultWeightedEdge> graphend = trackerend.getResult();
 
-		ImagePlus impend = imp.duplicate();
+		
 
 		DisplayGraph displaytracksend = new DisplayGraph(impend, graphend);
 		displaytracksend.getImp();

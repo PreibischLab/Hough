@@ -461,7 +461,7 @@ public class Linefitter {
 
 					}
 				}
-				
+
 
 				returnparam[2 * ndims] = finalparamstart[4];
 				returnparam[2 * ndims + 1] = finalparamstart[5];
