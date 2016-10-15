@@ -6,6 +6,7 @@ import org.jgrapht.graph.SimpleWeightedGraph;
 
 import graphconstructs.Logger;
 import graphconstructs.Staticproperties;
+import labeledObjects.Subgraphs;
 
 public class Trackend implements Linetracker {
 
@@ -14,6 +15,7 @@ public class Trackend implements Linetracker {
 		private final ArrayList<ArrayList<Staticproperties>> Allstartandend;
 		private final long maxframe;
 		private SimpleWeightedGraph< double[], DefaultWeightedEdge > graph;
+		private ArrayList<Subgraphs> Framedgraph;
 		protected Logger logger = Logger.DEFAULT_LOGGER;
 		protected String errorMessage;
 
@@ -26,7 +28,10 @@ public class Trackend implements Linetracker {
 			
 		}
 		
-		
+		public ArrayList<Subgraphs> getFramedgraph() {
+
+			return Framedgraph;
+		}
 		
 		
 
@@ -35,17 +40,23 @@ public class Trackend implements Linetracker {
 
 			reset();
 			
+			/*
+			 * Outputs
+			 */
+
+			graph = new SimpleWeightedGraph<double[], DefaultWeightedEdge>(DefaultWeightedEdge.class);
+			Framedgraph = new ArrayList<Subgraphs>();
+			for (int frame = 1; frame < maxframe   ; ++frame){
 			
-			for (int frame = 0; frame < maxframe - 1  ; ++frame){
 			
-			
-				ArrayList<Staticproperties> Baseframestartend = Allstartandend.get(frame);
+				ArrayList<Staticproperties> Baseframestartend = Allstartandend.get(frame - 1);
 				
 				
 				
 				Iterator<Staticproperties> baseobjectiterator = Baseframestartend.iterator();
 				
-				
+				SimpleWeightedGraph<double[], DefaultWeightedEdge> subgraph = new SimpleWeightedGraph<double[], DefaultWeightedEdge>(
+						DefaultWeightedEdge.class);
 		      
 				
 				while(baseobjectiterator.hasNext()){
@@ -64,7 +75,13 @@ public class Trackend implements Linetracker {
 						
 						
 					}
-				
+					subgraph.addVertex(source.oldendpoint);
+					subgraph.addVertex(source.newendpoint);
+					final DefaultWeightedEdge subedge = subgraph.addEdge(source.oldendpoint, source.newendpoint);
+					subgraph.setEdgeWeight(subedge, sqdist);
+
+					Subgraphs currentframegraph = new Subgraphs(frame - 1, frame, subgraph);
+					Framedgraph.add(currentframegraph);
 			       
 				}
 				

@@ -9,6 +9,8 @@ import org.jgrapht.graph.SimpleWeightedGraph;
 import com.sun.tools.javac.util.Pair;
 
 import drawandOverlay.DisplayGraph;
+import drawandOverlay.DisplaysubGraphend;
+import drawandOverlay.DisplaysubGraphstart;
 import drawandOverlay.OverlayLines;
 import drawandOverlay.PushCurves;
 import graphconstructs.Staticproperties;
@@ -16,8 +18,10 @@ import houghandWatershed.HoughTransform2D;
 import houghandWatershed.WatershedDistimg;
 import ij.ImageJ;
 import ij.ImagePlus;
+import ij.io.FileSaver;
 import labeledObjects.Lineobjects;
 import labeledObjects.Simpleobject;
+import labeledObjects.Subgraphs;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.array.ArrayImgFactory;
@@ -50,7 +54,7 @@ public class Velocitydetector {
 
 		// Load the stack of images
 		final RandomAccessibleInterval<FloatType> img = util.ImgLib2Util
-				.openAs32Bit(new File("../res/Fake_moving-1.tif"), new ArrayImgFactory<FloatType>());
+				.openAs32Bit(new File("../res/25frame_moving.tif"), new ArrayImgFactory<FloatType>());
 		int ndims = img.numDimensions();
 
 		// Normalize the intensity of the whole stack to be between min and max
@@ -63,13 +67,13 @@ public class Velocitydetector {
 
 		// Declare all the constants needed by the program here:
 
-		final double[] psf = { 1.65, 1.47 };
+		final double[] psf = { 1.4, 1.5 };
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		final int minlength = 5;
 
 		// Show the stack
 		ImagePlus impstart = ImageJFunctions.show(img);
-		ImagePlus impend = impstart;
+		ImagePlus impend = ImageJFunctions.show(img);
 		ArrayList<ArrayList<Staticproperties>> Allstartandend = new ArrayList<ArrayList<Staticproperties>>();
 
 		// Do Hough transform on the First seed image
@@ -132,9 +136,9 @@ public class Velocitydetector {
 		// Now start tracking the moving ends of the Microtubule and make
 		// seperate graph for both ends
 
-		for (int i = 1; i < img.dimension(ndims - 1); ++i) {
+		for (int frame = 1; frame < img.dimension(ndims - 1); ++frame) {
 
-			IntervalView<FloatType> currentframe = Views.hyperSlice(img, ndims - 1, i);
+			IntervalView<FloatType> currentframe = Views.hyperSlice(img, ndims - 1, frame);
 			RandomAccessibleInterval<FloatType> inputimgcurr = new ArrayImgFactory<FloatType>().create(currentframe,
 					new FloatType());
 			RandomAccessibleInterval<FloatType> precurrent = new ArrayImgFactory<FloatType>().create(currentframe,
@@ -156,7 +160,7 @@ public class Velocitydetector {
 			RandomAccessibleInterval<IntType> watershedimg = Watershedobject.getResult();
 			
 			
-			final SubpixelVelocity growthtracker = new SubpixelVelocity(currentframe, watershedimg, PrevFrameparam, psf, i);
+			final SubpixelVelocity growthtracker = new SubpixelVelocity(currentframe, watershedimg, PrevFrameparam, psf, frame);
 			growthtracker.checkInput();
 			growthtracker.process();
 			ArrayList<double[]> NewFrameparam = growthtracker.getResult();
@@ -186,22 +190,20 @@ public class Velocitydetector {
 		final Trackend trackerend = new Trackend(Allstartandend, maxframe);
 		trackerstart.process();
 		SimpleWeightedGraph<double[], DefaultWeightedEdge> graphstart = trackerstart.getResult();
-
+		ArrayList<Subgraphs> subgraphstart = trackerstart.getFramedgraph();
 		
 
-		DisplayGraph displaytracksstart = new DisplayGraph(impstart, graphstart);
-		displaytracksstart.getImp();
+		DisplaysubGraphstart displaytrackstart = new DisplaysubGraphstart(impstart, subgraphstart);
+		displaytrackstart.getImp();
 		impstart.draw();
-
 		trackerend.process();
 		SimpleWeightedGraph<double[], DefaultWeightedEdge> graphend = trackerend.getResult();
-
+		ArrayList<Subgraphs> subgraphend = trackerend.getFramedgraph();
 		
 
-		DisplayGraph displaytracksend = new DisplayGraph(impend, graphend);
-		displaytracksend.getImp();
+		DisplaysubGraphend displaytrackend = new DisplaysubGraphend(impend, subgraphend);
+		displaytrackend.getImp();
 		impend.draw();
-
 	}
 
 }

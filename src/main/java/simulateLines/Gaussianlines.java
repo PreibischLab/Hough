@@ -115,37 +115,47 @@ public class Gaussianlines {
 		return linearrayini;
 	}
 	
-	public static void Drawmovingsimulatedlines(RandomAccessibleInterval<FloatType> outimg, final Interval range, final int rate,
-			final ArrayList<Fakeline> linearrayini,
+	public static void Drawmovingsimulatedlines(RandomAccessibleInterval<FloatType> outimg, final Interval range, final int rate,final int numlines,
 			 final double[] sigma) throws IncompatibleTypeException {
-		final Random velocity = new Random(10);
 		final int n = outimg.numDimensions();
 
 		ArrayList<Fakeline> linearray = new ArrayList<Fakeline>();
-		
-		for (int index = 0; index < linearrayini.size(); ++index) {
+		final Random rnd = new Random(60);
+		final Random rndsec = new Random(28);
+		for (int index = 0; index < numlines; ++index) {
 
 				
-				
-				double[] startpos = new double[n];
-				double[] endpos = new double[n];
-				
-				
+			double startpos[] = new double[n];
+			double endpos[] = new double[n];
+			double MaxLength = 49.82;
+			
 			for (int d = 0; d < range.numDimensions(); ++d) {
-				startpos[d] = linearrayini.get(index).startpos[d];
+				startpos[d] = (rnd.nextDouble() * (range.max(d) - range.min(d)) + range.min(d));
+			}
+			endpos[0] = (rndsec.nextDouble()+ 14 * Math.sin(rate));
+			double inislope = rndsec.nextDouble();
+			double iniintercept = startpos[1] - inislope * startpos[0];
+			endpos[1] = (inislope * endpos[0] +  iniintercept);
+			
+			
+			while (true){
+			if (Distance(startpos, endpos) > MaxLength){
+				
+				for (int d = 0; d < range.numDimensions(); ++d) {
+					
+					endpos[d] = (startpos[d] + endpos[d]) / 2;
+				}
 				
 			}
-			endpos[0] = (linearrayini.get(index).endpos[0]+ 4 * Math.sin(velocity.nextDouble()* rate));
-			double inislope = (linearrayini.get(index).endpos[1] - linearrayini.get(index).startpos[1]) 
-					/ (linearrayini.get(index).endpos[0] - linearrayini.get(index).startpos[0]);
-			double iniintercept = linearrayini.get(index).startpos[1] - inislope * linearrayini.get(index).startpos[0];
-			endpos[1] = (inislope * endpos[0] +  iniintercept);
+			if (Distance(startpos, endpos) <= MaxLength)
+				break;
+			}
 			
 			
 			double slope = (endpos[1] - startpos[1]) / (endpos[0] - startpos[0]);
 			double intercept = startpos[1] - slope * startpos[0];
 
-			
+		
 			
 			PushCurves.Drawshortline(outimg, linearray, slope, intercept, startpos, endpos, sigma);
 			
