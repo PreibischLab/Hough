@@ -22,8 +22,8 @@ public class MovingLines {
 	public static void main (String[] args) throws IncompatibleTypeException{
         new ImageJ();
 		
-		final FinalInterval range = new FinalInterval(412, 412);
-		final FinalInterval smallrange = new FinalInterval(312, 312);
+		final FinalInterval range = new FinalInterval(512, 512);
+		final FinalInterval smallrange = new FinalInterval(412, 412);
 		
 		
 		

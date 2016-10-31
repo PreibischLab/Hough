@@ -106,7 +106,7 @@ public class GetLocalmaxmin {
 
 	// Thresholding a FlotType to convert to BitType
 	public static void ThresholdingBit(RandomAccessibleInterval<FloatType> img,
-			RandomAccessibleInterval<BitType> imgout, Float ThresholdValue) {
+			RandomAccessibleInterval<BitType> imgout, double ThresholdValue) {
 
 		final double[] backpos = new double[imgout.numDimensions()];
 		final Cursor<FloatType> bound = Views.iterable(img).localizingCursor();

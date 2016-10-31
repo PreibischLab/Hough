@@ -12,6 +12,7 @@ import graphconstructs.Staticproperties;
 import ij.ImagePlus;
 import ij.gui.Line;
 import ij.gui.Overlay;
+import ij.io.FileSaver;
 import labeledObjects.Subgraphs;
 
 public class DisplaysubGraphstart {
@@ -79,7 +80,8 @@ public ImagePlus getImp() { return this.imp; }
 			}
 			
 			
-			
+			final FileSaver savestart = new FileSaver(imp);
+			savestart.saveAsJpeg("Movingend_subgraph"+arg0.getCurrentSlice());
 			
 			System.out.println( arg0.getCurrentSlice() );
 		}		

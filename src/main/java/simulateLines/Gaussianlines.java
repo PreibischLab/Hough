@@ -127,12 +127,12 @@ public class Gaussianlines {
 				
 			double startpos[] = new double[n];
 			double endpos[] = new double[n];
-			double MaxLength = 49.82;
+			double MaxLength = 115.82;
 			
 			for (int d = 0; d < range.numDimensions(); ++d) {
 				startpos[d] = (rnd.nextDouble() * (range.max(d) - range.min(d)) + range.min(d));
 			}
-			endpos[0] = (rndsec.nextDouble()+ 14 * Math.sin(rate));
+			endpos[0] = (rndsec.nextDouble()+ 14 * Math.sin(2 *rate));
 			double inislope = rndsec.nextDouble();
 			double iniintercept = startpos[1] - inislope * startpos[0];
 			endpos[1] = (inislope * endpos[0] +  iniintercept);

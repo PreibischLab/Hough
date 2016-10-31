@@ -63,8 +63,7 @@ public class HoughpostWater {
 		// Preprocess image using Median Filter and suppress background
 		final MedianFilter2D<FloatType> medfilter = new MedianFilter2D<FloatType>( processedimg, (int)radius );
 		medfilter.process();
-		preinputimg = medfilter.getResult();
-		inputimg = Kernels.Supressthresh(preinputimg);
+	    inputimg = medfilter.getResult();
 		Normalize.normalize(Views.iterable(inputimg), minval, maxval);
 		
 

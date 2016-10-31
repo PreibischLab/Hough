@@ -3,6 +3,7 @@ package houghandWatershed;
 import com.sun.tools.javac.util.Pair;
 
 import net.imglib2.Cursor;
+import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.labeling.AllConnectedComponents;
@@ -161,7 +162,40 @@ public class Boundingboxes {
 			RandomAccessibleInterval<FloatType> originalimg, int currentLabel) {
 
 		RandomAccess<FloatType> inputRA = originalimg.randomAccess();
+		Cursor<IntType> intCursor = Views.iterable(Intimg).cursor();
 
+		RandomAccessibleInterval<FloatType> outimg = new ArrayImgFactory<FloatType>().create(originalimg,
+				new FloatType());
+		RandomAccess<FloatType> imageRA = outimg.randomAccess();
+
+		// Go through the whole image and add every pixel, that belongs to
+		// the currently processed label
+
+		while (intCursor.hasNext()) {
+			intCursor.fwd();
+			inputRA.setPosition(intCursor);
+			imageRA.setPosition(inputRA);
+			int i = intCursor.get().get();
+			if (i == currentLabel) {
+
+				imageRA.get().set(inputRA.get());
+				
+				
+				
+
+			}
+
+		}
+		
+		
+
+		return outimg;
+
+	}
+	public static RandomAccessibleInterval<FloatType> CurrentLabelImagesmall(RandomAccessibleInterval<IntType> Intimg,
+			RandomAccessibleInterval<FloatType> originalimg, int currentLabel) {
+
+		RandomAccess<FloatType> inputRA = originalimg.randomAccess();
 		Cursor<IntType> intCursor = Views.iterable(Intimg).cursor();
 
 		RandomAccessibleInterval<FloatType> outimg = new ArrayImgFactory<FloatType>().create(originalimg,
@@ -183,10 +217,17 @@ public class Boundingboxes {
 			}
 
 		}
-
-		return outimg;
-
+		
+		
+	long[] minCorner = GetMincorners(Intimg, currentLabel);
+	long[] maxCorner = GetMaxcorners(Intimg, currentLabel);
+	FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
+	RandomAccessibleInterval<FloatType> returnimg = Views.interval(outimg, intervalsmall);
+	
+	return returnimg;
+	
 	}
+	
 
 	public static double Distance(final long[] minCorner, final long[] maxCorner) {
 

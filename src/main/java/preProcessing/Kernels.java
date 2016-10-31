@@ -3,13 +3,12 @@ package preProcessing;
 
 import java.util.Random;
 
+import fftMethods.FFTConvolution;
 import net.imglib2.Cursor;
 import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.algorithm.fft2.FFTConvolution;
-//import net.imglib2.algorithm.fft2.FFTConvolution;
 import net.imglib2.algorithm.region.hypersphere.HyperSphere;
 import net.imglib2.algorithm.region.hypersphere.HyperSphereCursor;
 import net.imglib2.img.Img;
@@ -54,13 +53,13 @@ public class Kernels {
 					VerticalEdge(imgout);
 					break;
 				case SupressThresh:
-					imgout = Supressthresh(inputimg);
+					imgout = Supressthresh(inputimg, false, 1);
 					break;
 				case CannyEdge:
-					imgout = CannyEdge(inputimg,new double[]{1,1} );
+					imgout = CannyEdge(inputimg,new double[]{1,1}, false, 1 );
 					break;
 				default:
-					imgout = Supressthresh(inputimg);
+					imgout = Supressthresh(inputimg, false, 1);
 					break;
 					
 				
@@ -244,7 +243,7 @@ public static void addBackground(final IterableInterval<FloatType> iterable, fin
 }
 
 	public static RandomAccessibleInterval<FloatType> CannyEdge(RandomAccessibleInterval<FloatType> inputimg,
-			 double[] sigma) {
+			 double[] sigma , final boolean Heavythreshold, final double value) {
 		int n = inputimg.numDimensions();
 		RandomAccessibleInterval<FloatType> cannyimage = new ArrayImgFactory<FloatType>().create(inputimg,
 				new FloatType());
@@ -363,9 +362,15 @@ public static void addBackground(final IterableInterval<FloatType> iterable, fin
 		//Supress values below the low threshold
 		final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(Threshcannyimg);
 		Cursor<FloatType> cannycursor = Views.iterable(Threshcannyimg).localizingCursor();
+		 Float threshold = Lowthreshold;
+		if (Heavythreshold){
+			threshold = (float) (value * Lowthreshold);
+		}
+		
+		
 		while(cannycursor.hasNext()){
 			cannycursor.fwd();
-			if (cannycursor.get().get()<=Lowthreshold)
+			if (cannycursor.get().get()<= threshold)
 				cannycursor.get().setZero();
 			else
 				cannycursor.get().set(cannycursor.get());
@@ -416,13 +421,17 @@ public static void addBackground(final IterableInterval<FloatType> iterable, fin
 	}
 	
 	
-	public static RandomAccessibleInterval<FloatType> Supressthresh(RandomAccessibleInterval<FloatType> inputimg){
+	public static RandomAccessibleInterval<FloatType> Supressthresh(RandomAccessibleInterval<FloatType> inputimg,
+			final boolean Heavythreshold, final double Heavythresholdvalue){
 		RandomAccessibleInterval<FloatType> Threshimg = new ArrayImgFactory<FloatType>().create(inputimg,
 				new FloatType());
 		//Supress values below the low threshold
 		int n = inputimg.numDimensions();
 		double[] position = new double[n];
 				final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(inputimg);
+				 Float threshold = Lowthreshold;
+				if (Heavythreshold)
+					threshold = (float) (Heavythresholdvalue * Lowthreshold);
 				Cursor<FloatType> inputcursor = Views.iterable(inputimg).localizingCursor();
 				RandomAccess<FloatType> outputran = Threshimg.randomAccess();
 				final double[] sigma = { 1, 1 };
@@ -430,7 +439,7 @@ public static void addBackground(final IterableInterval<FloatType> iterable, fin
 					inputcursor.fwd();
 					inputcursor.localize(position);
 					outputran.setPosition(inputcursor);
-					if (inputcursor.get().get()<= Lowthreshold)
+					if (inputcursor.get().get()<= threshold)
 						outputran.get().setZero();
 					else
 					//	AddGaussian.addGaussian(Threshimg, position, sigma, false);

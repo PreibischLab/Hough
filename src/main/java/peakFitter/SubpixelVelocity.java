@@ -38,7 +38,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 	final double termepsilon = 1e-1;
 	//Mask fits iteration param
 	final int iterations = 1500;
-	final double cutoffdistance = 15;
+	final double cutoffdistance = 20;
 	final boolean halfgaussian = false;
 	final double Intensityratio = 0.5;
 	
@@ -128,7 +128,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 		double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
 		double[] maxVal = { -Double.MIN_VALUE, -Double.MIN_VALUE };
 
-		RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(intimg, source,
+		RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImagesmall(intimg, source,
 				label);
 		final double[] cordone = { iniparam[0], iniparam[1] };
 		final double[] cordtwo = { iniparam[2], iniparam[3] };
@@ -137,11 +137,6 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 		double intercept = cordone[1] - slope * cordone[0];
 		double newintercept = intercept;
 
-		final long[] minCorner = Boundingboxes.GetMincorners(intimg, label);
-		final long[] maxCorner = Boundingboxes.GetMaxcorners(intimg, label);
-		FinalInterval smallinterval = new FinalInterval(minCorner, maxCorner);
-
-		currentimg = Views.interval(currentimg, smallinterval);
 
 		final Cursor<FloatType> outcursor = Views.iterable(currentimg).localizingCursor();
 
@@ -246,15 +241,9 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 				return null;
 
 			else {
-				RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(intimg,
+				RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImagesmall(intimg,
 						source, label);
 
-				final long[] minCorner = Boundingboxes.GetMincorners(intimg, label);
-				final long[] maxCorner = Boundingboxes.GetMaxcorners(intimg, label);
-				FinalInterval smallinterval = new FinalInterval(minCorner, maxCorner);
-				currentimg = Views.interval(currentimg, smallinterval);
-				
-				
 
 				final double[] fixed_param = new double[ndims];
 
@@ -269,7 +258,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 				double inicutoffdistance = Distance(inistartpos, iniendpos);
 
 				// LM solver part
-				if (inicutoffdistance > 1) {
+				if (inicutoffdistance > 2) {
 					try {
 						LevenbergMarquardtSolverLine.solve(X, finalparamstart, fixed_param, I, new GaussianLineds(), lambda,
 								termepsilon, maxiter);
@@ -388,17 +377,10 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 	private PointSampleList<FloatType> gatherfullData(final int label) {
 		final PointSampleList<FloatType> datalist = new PointSampleList<FloatType>(ndims);
 
-		RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(intimg, source,
+		RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImagesmall(intimg, source,
 				label);
 
 		boolean outofbounds = false;
-		final long[] minCorner = Boundingboxes.GetMincorners(intimg, label);
-		final long[] maxCorner = Boundingboxes.GetMaxcorners(intimg, label);
-		FinalInterval smallinterval = new FinalInterval(minCorner, maxCorner);
-		
-			currentimg = Views.interval(currentimg, smallinterval);
-			
-		
 
 		Cursor<FloatType> localcursor = Views.iterable(currentimg).localizingCursor();
 

@@ -111,15 +111,16 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 
 		System.out.println("Total labels: " + Maxlabel);
 
+		final int ndims = source.numDimensions();
 		ArrayList<RefinedPeak<Point>> ReducedMinlist = new ArrayList<RefinedPeak<Point>>(
 				source.numDimensions());
 		ArrayList<RefinedPeak<Point>> MainMinlist = new ArrayList<RefinedPeak<Point>>(source.numDimensions());
 
 		ImageJFunctions.show(watershedimage);
-		final double[] sizes = new double[source.numDimensions()];
+		final double[] sizes = new double[ndims];
 
 		// Automatic threshold determination for doing the Hough transform
-		Float val = GlobalThresholding.AutomaticThresholding(source);
+		
 
 		linelist = new ArrayList<Lineobjects>(source.numDimensions());
 
@@ -127,17 +128,25 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 
 			System.out.println("Label Number:" + label);
 
-			RandomAccessibleInterval<FloatType> outimg = new ArrayImgFactory<FloatType>().create(source,
-					new FloatType());
-
-			outimg = CurrentLabelImage(watershedimage, source, label);
-
+			RandomAccessibleInterval<FloatType> outimg =  Boundingboxes.CurrentLabelImage(watershedimage, source, label);
+			
 			long[] minCorner = GetMincorners(watershedimage, label);
 			long[] maxCorner = GetMaxcorners(watershedimage, label);
 
 			FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
 
 			RandomAccessibleInterval<FloatType> outimgview = Views.interval(outimg, intervalsmall);
+			Float val = GlobalThresholding.AutomaticThresholding(outimgview);
+			//ImageJFunctions.show(outimg);
+			
+			final double area = Distance(minCorner, maxCorner);
+			
+			if (area < minlength * minlength){
+			System.out.println("Skipping currentl label, not a real line here!");
+				continue;
+			}
+
+
 
 			// Set size of pixels in Hough space
 			int mintheta = 0;
@@ -147,7 +156,7 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 
 			int maxtheta = 220;
 			double size = Math
-					.sqrt((outimg.dimension(0) * outimg.dimension(0) + outimg.dimension(1) * outimg.dimension(1)));
+					.sqrt((source.dimension(0) * source.dimension(0) + source.dimension(1) * source.dimension(1)));
 			int minRho = (int) -Math.round(size);
 			int maxRho = -minRho;
 			double thetaPerPixel = 0.3;
@@ -296,37 +305,7 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 
 	
 
-	public RandomAccessibleInterval<FloatType> CurrentLabelImage(RandomAccessibleInterval<IntType> Intimg,
-			RandomAccessibleInterval<FloatType> originalimg, int currentLabel) {
-
-		RandomAccess<FloatType> inputRA = originalimg.randomAccess();
-
-		Cursor<IntType> intCursor = Views.iterable(Intimg).cursor();
-		final FloatType type = originalimg.randomAccess().get().createVariable();
-		final ImgFactory<FloatType> factory = Util.getArrayOrCellImgFactory(originalimg, type);
-		RandomAccessibleInterval<FloatType> outimg = factory.create(originalimg, type);
-		RandomAccess<FloatType> imageRA = outimg.randomAccess();
-
-		// Go through the whole image and add every pixel, that belongs to
-		// the currently processed label
-
-		while (intCursor.hasNext()) {
-			intCursor.fwd();
-			inputRA.setPosition(intCursor);
-			imageRA.setPosition(inputRA);
-			int i = intCursor.get().get();
-			if (i == currentLabel) {
-
-				imageRA.get().set(inputRA.get());
-
-			}
-
-		}
-
-		return outimg;
-
-	}
-
+	
 	public static double Distance(final long[] minCorner, final long[] maxCorner) {
 
 		double distance = 0;

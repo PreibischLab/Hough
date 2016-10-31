@@ -54,7 +54,8 @@ public class Velocitydetector {
 
 		// Load the stack of images
 		final RandomAccessibleInterval<FloatType> img = util.ImgLib2Util
-				.openAs32Bit(new File("../res/25frame_moving.tif"), new ArrayImgFactory<FloatType>());
+				.openAs32Bit(new File("/Users/varunkapoor/Hough/src/main/resources/2015-01-14_Seeds-1.tiff"),
+						new ArrayImgFactory<FloatType>());
 		int ndims = img.numDimensions();
 
 		// Normalize the intensity of the whole stack to be between min and max
@@ -67,39 +68,107 @@ public class Velocitydetector {
 
 		// Declare all the constants needed by the program here:
 
-		final double[] psf = { 1.4, 1.5 };
+		final double[] psf = { 1.65, 1.47 };
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
-		final int minlength = 5;
+		final int minlength = 4;
 
 		// Show the stack
 		ImagePlus impstart = ImageJFunctions.show(img);
 		ImagePlus impend = ImageJFunctions.show(img);
 		ArrayList<ArrayList<Staticproperties>> Allstartandend = new ArrayList<ArrayList<Staticproperties>>();
 
+		
+		if (ndims == 2 ){
+			
+			
+			RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(img,
+					new FloatType());
+			RandomAccessibleInterval<FloatType> preinputimg = new ArrayImgFactory<FloatType>().create(img,
+					new FloatType());
+			RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(img,
+					new FloatType());
+			RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(img,
+					new FloatType());
+
+			
+			// Preprocess image using Median Filter and suppress background
+			final MedianFilter2D<FloatType> medfilter = new MedianFilter2D<FloatType>( img, 3 );
+			medfilter.process();
+			preinputimg = medfilter.getResult();
+			inputimg = Kernels.Supressthresh(preinputimg, false, 1);
+			Normalize.normalize(Views.iterable(inputimg), minval, maxval);
+			
+
+			ImageJFunctions.show(inputimg).setTitle("Preprocessed image");
+
+			// Create the Bit image for distance transform and seed image for watershedding
+			final Float ThresholdValue = GlobalThresholding.AutomaticThresholding(inputimg);
+			RandomAccessibleInterval<BitType> bitimg = new ArrayImgFactory<BitType>().create(inputimg, new BitType());
+			GetLocalmaxmin.ThresholdingBit(inputimg, bitimg, ThresholdValue);
+
+			// Do watershedding and Hough
+			System.out.println("Doing Hough transform in labels: ");
+
+			HoughTransform2D Houghobject = new HoughTransform2D(inputimg, bitimg, minlength);
+			
+			Houghobject.checkInput();
+			Houghobject.process();
+			Pair<RandomAccessibleInterval<IntType>, ArrayList<Lineobjects>> linepair  = Houghobject.getResult();
+
+
+			// Overlay detected lines on the image
+			final ArrayList<Simpleobject> simpleobject = new ArrayList<Simpleobject>();
+			OverlayLines.GetAlllines(imgout, img, linepair.fst, linepair.snd, simpleobject, radius);
+
+			ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
+
+			// Input the image on which you want to do the fitting (original noisy image, along with the
+			// labelled image (watershedded image) 
+
+			SubpixelLength MTline = new SubpixelLength(img, linepair.fst, simpleobject, psf, minlength);
+			MTline.checkInput();
+			MTline.process();
+			ArrayList<double[]> final_paramlist = MTline.getResult();
+			
+			// Draw the detected lines
+			PushCurves.DrawallLine(gaussimg, final_paramlist, psf);
+			ImageJFunctions.show(gaussimg).setTitle("Exact-line");
+
+		}
+			
+		
+		
+		
+		
+		if (ndims > 2){
 		// Do Hough transform on the First seed image
 
 		IntervalView<FloatType> groundframe = Views.hyperSlice(img, ndims - 1, 0);
 
-		RandomAccessibleInterval<FloatType> preprocessedimg = new ArrayImgFactory<FloatType>().create(groundframe,
-				new FloatType());
-		RandomAccessibleInterval<FloatType> inputimg= new ArrayImgFactory<FloatType>().create(groundframe,
-				new FloatType());
+		
+		
+		
+		System.out.println("Applying Median filter to the first image.");
 		// Preprocess image using Median Filter and suppress background
-				final MedianFilter2D<FloatType> medfilter = new MedianFilter2D<FloatType>( groundframe, (int)radius );
+				final MedianFilter2D<FloatType> medfilter = new MedianFilter2D<FloatType>( groundframe, 2);
 				medfilter.process();
-				inputimg = medfilter.getResult();
-				preprocessedimg = Kernels.Supressthresh(inputimg);
-				Normalize.normalize(Views.iterable(preprocessedimg), minval, maxval);
+				RandomAccessibleInterval<FloatType> groundframepre = medfilter.getResult();
+				Normalize.normalize(Views.iterable(groundframepre), minval, maxval);
+		System.out.println("Median Filter applied sucessfully.");
 		
-		ImageJFunctions.show(preprocessedimg);
-
 		
-		final Float ThresholdValue = GlobalThresholding.AutomaticThresholding(preprocessedimg);
-		RandomAccessibleInterval<BitType> bitimg = new ArrayImgFactory<BitType>().create(preprocessedimg, new BitType());
-		GetLocalmaxmin.ThresholdingBit(preprocessedimg, bitimg, ThresholdValue);
+		// for thresholding extremly noisy data, if non noisy set the value to 1
+		final double Heavythresholdvalue = 1.0;
+		RandomAccessibleInterval<FloatType> inputimg = Kernels.Supressthresh(groundframepre, false, 1);
+				//Kernels.Supressthresh(groundframepre, true, Heavythresholdvalue);
+		ImageJFunctions.show(inputimg);
+		
+		final Float ThresholdValue = GlobalThresholding.AutomaticThresholding(inputimg);
+		RandomAccessibleInterval<BitType> bitimg = new ArrayImgFactory<BitType>().create(inputimg, new BitType());
+		GetLocalmaxmin.ThresholdingBit(inputimg, bitimg, Heavythresholdvalue *ThresholdValue);
 		System.out.println("Doing Hough transform in labels: ");
 
-        HoughTransform2D Houghobject = new HoughTransform2D(preprocessedimg, bitimg, minlength);
+        HoughTransform2D Houghobject = new HoughTransform2D(inputimg, bitimg, minlength);
 		Houghobject.checkInput();
 		Houghobject.process();
 		Pair<RandomAccessibleInterval<IntType>, ArrayList<Lineobjects>> linepair  = Houghobject.getResult();
@@ -139,22 +208,24 @@ public class Velocitydetector {
 		for (int frame = 1; frame < img.dimension(ndims - 1); ++frame) {
 
 			IntervalView<FloatType> currentframe = Views.hyperSlice(img, ndims - 1, frame);
-			RandomAccessibleInterval<FloatType> inputimgcurr = new ArrayImgFactory<FloatType>().create(currentframe,
-					new FloatType());
-			RandomAccessibleInterval<FloatType> precurrent = new ArrayImgFactory<FloatType>().create(currentframe,
-					new FloatType());
-			// Preprocess image using Median Filter and suppress background
-			final MedianFilter2D<FloatType> medfiltercurr = new MedianFilter2D<FloatType>( currentframe, (int)radius );
-			medfiltercurr.process();
-			inputimgcurr = medfiltercurr.getResult();
-			precurrent = Kernels.Supressthresh(inputimgcurr);
-			Normalize.normalize(Views.iterable(precurrent), minval, maxval);
-	
-			final Float currThresholdValue = GlobalThresholding.AutomaticThresholding(precurrent);
-			RandomAccessibleInterval<BitType> currbitimg = new ArrayImgFactory<BitType>().create(precurrent, new BitType());
-			GetLocalmaxmin.ThresholdingBit(precurrent, currbitimg, currThresholdValue);
 			
-			WatershedDistimg Watershedobject = new WatershedDistimg(currentframe, currbitimg);
+			System.out.println("Applying Median filter to current frame.");
+			// Preprocess image using Median Filter and suppress background
+					final MedianFilter2D<FloatType> medfiltercurr = new MedianFilter2D<FloatType>( currentframe, 3);
+					medfiltercurr.process();
+					RandomAccessibleInterval<FloatType> precurrent = medfiltercurr.getResult();
+					Normalize.normalize(Views.iterable(precurrent), minval, maxval);
+			System.out.println("Median Filter applied sucessfully.");
+		
+			
+			RandomAccessibleInterval<FloatType> inputimgpre = precurrent;
+					//Kernels.CannyEdge(precurrent, psf, true, Heavythresholdvalue);
+	
+			final Float currThresholdValue = GlobalThresholding.AutomaticThresholding(inputimgpre);
+			RandomAccessibleInterval<BitType> currbitimg = new ArrayImgFactory<BitType>().create(inputimgpre, new BitType());
+			GetLocalmaxmin.ThresholdingBit(inputimgpre, currbitimg, Heavythresholdvalue *currThresholdValue);
+			
+			WatershedDistimg Watershedobject = new WatershedDistimg(inputimgpre, currbitimg);
 			Watershedobject.checkInput();
 			Watershedobject.process();
 			RandomAccessibleInterval<IntType> watershedimg = Watershedobject.getResult();
@@ -166,7 +237,7 @@ public class Velocitydetector {
 			ArrayList<double[]> NewFrameparam = growthtracker.getResult();
 			ArrayList<Staticproperties> StateVectors = growthtracker.getStateVectors();
 			// Update the list of line parameters with the current frame
-			// detection
+			// detectionx
 			PrevFrameparam = NewFrameparam;
 			// Append the object static properties with the current frame
 			// detection
@@ -196,6 +267,7 @@ public class Velocitydetector {
 		DisplaysubGraphstart displaytrackstart = new DisplaysubGraphstart(impstart, subgraphstart);
 		displaytrackstart.getImp();
 		impstart.draw();
+		
 		trackerend.process();
 		SimpleWeightedGraph<double[], DefaultWeightedEdge> graphend = trackerend.getResult();
 		ArrayList<Subgraphs> subgraphend = trackerend.getFramedgraph();
@@ -204,6 +276,7 @@ public class Velocitydetector {
 		DisplaysubGraphend displaytrackend = new DisplaysubGraphend(impend, subgraphend);
 		displaytrackend.getImp();
 		impend.draw();
+		
 	}
-
+	}
 }
