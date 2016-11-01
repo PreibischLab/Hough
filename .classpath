@@ -40,6 +40,15 @@
 			<attribute name="maven.scope" value="compile"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/Users/varunkapoor/.m2/repository/edu/mines/mines-jtk/20100113/mines-jtk-20100113.jar">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="maven.groupId" value="edu.mines"/>
+			<attribute name="maven.artifactId" value="mines-jtk"/>
+			<attribute name="maven.version" value="20100113"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="/Users/varunkapoor/.m2/repository/sc/fiji/fiji-lib/2.1.0/fiji-lib-2.1.0.jar">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>

@@ -127,6 +127,8 @@ public class RoiforHough extends BenchmarkAlgorithm
 				EllipseRoi ellipseroi = createEllipse(mean, covar, 3);
 				LabelledRoi currentroi = new LabelledRoi(index, ellipseroi);
 
+				
+				final double[] meanandintercept = LargestEigenvector(mean, covar);
 				Roiindex = index;
 				rois.add(currentroi);
 
@@ -148,7 +150,7 @@ public class RoiforHough extends BenchmarkAlgorithm
 
 				}
 				
-				LabelledImg currentimg = new LabelledImg(Roiindex, Roiimg);
+				LabelledImg currentimg = new LabelledImg(Roiindex, Roiimg, meanandintercept);
 				imgs.add(currentimg);
 				
 				
@@ -196,4 +198,40 @@ public class RoiforHough extends BenchmarkAlgorithm
 		return ellipse;
 	}
 
+	
+	/**
+	 * Returns the slope and the intercept of the line passing through the major axis of the ellipse
+	 * 
+	 * 
+	 *@param mean
+	 *            (x,y) components of mean vector
+	 * @param cov
+	 *            (xx, xy, yy) components of covariance matrix
+	 * @return slope and intercept of the line along the major axis
+	 */
+	public static double[] LargestEigenvector( final double[] mean, final double[] cov){
+		
+		final double a = cov[0];
+		final double b = cov[1];
+		final double c = cov[2];
+		final double d = Math.sqrt(a * a + 4 * b * b - 2 * a * c + c * c);
+		final double[] eigenvector1 = {2 * b, c - a + d};
+		final double[] eigenvector2 = {2 * b, c - a - d};
+		final double mageigenvec1 = eigenvector1[0] * eigenvector1[0] + eigenvector1[1] * eigenvector1[1];
+		final double mageigenvec2 = eigenvector2[0] * eigenvector2[0] + eigenvector2[1] * eigenvector2[1];
+		double[] LargerVec = new double[eigenvector1.length];
+		final double locationdiff = mageigenvec2 - mageigenvec1;
+		final boolean minVec = locationdiff > 0;
+        LargerVec= minVec ? eigenvector2 : eigenvector1;
+		
+        final double slope = LargerVec[1] / LargerVec[0];
+        final double intercept = mean[1] - mean[0] * slope;
+        
+        double[] pair = {slope, intercept};
+        
+        return pair;
+		
+	}
+	
+	
 }
