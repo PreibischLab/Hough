@@ -53,13 +53,13 @@ public class Kernels {
 					VerticalEdge(imgout);
 					break;
 				case SupressThresh:
-					imgout = Supressthresh(inputimg, false, 1);
+					imgout = Supressthresh(inputimg);
 					break;
 				case CannyEdge:
-					imgout = CannyEdge(inputimg,new double[]{1,1}, false, 1 );
+					imgout = CannyEdge(inputimg);
 					break;
 				default:
-					imgout = Supressthresh(inputimg, false, 1);
+					imgout = Supressthresh(inputimg);
 					break;
 					
 				
@@ -242,8 +242,7 @@ public static void addBackground(final IterableInterval<FloatType> iterable, fin
 		t.setReal(t.get() + value);
 }
 
-	public static RandomAccessibleInterval<FloatType> CannyEdge(RandomAccessibleInterval<FloatType> inputimg,
-			 double[] sigma , final boolean Heavythreshold, final double value) {
+	public static RandomAccessibleInterval<FloatType> CannyEdge(RandomAccessibleInterval<FloatType> inputimg) {
 		int n = inputimg.numDimensions();
 		RandomAccessibleInterval<FloatType> cannyimage = new ArrayImgFactory<FloatType>().create(inputimg,
 				new FloatType());
@@ -363,9 +362,6 @@ public static void addBackground(final IterableInterval<FloatType> iterable, fin
 		final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(Threshcannyimg);
 		Cursor<FloatType> cannycursor = Views.iterable(Threshcannyimg).localizingCursor();
 		 Float threshold = Lowthreshold;
-		if (Heavythreshold){
-			threshold = (float) (value * Lowthreshold);
-		}
 		
 		
 		while(cannycursor.hasNext()){
@@ -421,8 +417,7 @@ public static void addBackground(final IterableInterval<FloatType> iterable, fin
 	}
 	
 	
-	public static RandomAccessibleInterval<FloatType> Supressthresh(RandomAccessibleInterval<FloatType> inputimg,
-			final boolean Heavythreshold, final double Heavythresholdvalue){
+	public static RandomAccessibleInterval<FloatType> Supressthresh(RandomAccessibleInterval<FloatType> inputimg){
 		RandomAccessibleInterval<FloatType> Threshimg = new ArrayImgFactory<FloatType>().create(inputimg,
 				new FloatType());
 		//Supress values below the low threshold
@@ -430,8 +425,6 @@ public static void addBackground(final IterableInterval<FloatType> iterable, fin
 		double[] position = new double[n];
 				final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(inputimg);
 				 Float threshold = Lowthreshold;
-				if (Heavythreshold)
-					threshold = (float) (Heavythresholdvalue * Lowthreshold);
 				Cursor<FloatType> inputcursor = Views.iterable(inputimg).localizingCursor();
 				RandomAccess<FloatType> outputran = Threshimg.randomAccess();
 				final double[] sigma = { 1, 1 };

@@ -114,13 +114,12 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 		final int ndims = source.numDimensions();
 		ArrayList<RefinedPeak<Point>> ReducedMinlist = new ArrayList<RefinedPeak<Point>>(
 				source.numDimensions());
-		ArrayList<RefinedPeak<Point>> MainMinlist = new ArrayList<RefinedPeak<Point>>(source.numDimensions());
 
 		ImageJFunctions.show(watershedimage);
 		final double[] sizes = new double[ndims];
 
 		// Automatic threshold determination for doing the Hough transform
-		
+		Float val = GlobalThresholding.AutomaticThresholding(source);
 
 		linelist = new ArrayList<Lineobjects>(source.numDimensions());
 
@@ -130,13 +129,12 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 
 			RandomAccessibleInterval<FloatType> outimg =  Boundingboxes.CurrentLabelImage(watershedimage, source, label);
 			
-			long[] minCorner = GetMincorners(watershedimage, label);
-			long[] maxCorner = GetMaxcorners(watershedimage, label);
+			long[] minCorner = Boundingboxes.GetMincorners(watershedimage, label);
+			long[] maxCorner = Boundingboxes.GetMaxcorners(watershedimage, label);
 
 			FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
 
-			RandomAccessibleInterval<FloatType> outimgview = Views.interval(outimg, intervalsmall);
-			Float val = GlobalThresholding.AutomaticThresholding(outimgview);
+			 RandomAccessibleInterval<FloatType> outimgview = Views.interval(outimg, intervalsmall);
 			//ImageJFunctions.show(outimg);
 			
 			final double area = Distance(minCorner, maxCorner);
@@ -156,11 +154,11 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 
 			int maxtheta = 220;
 			double size = Math
-					.sqrt((source.dimension(0) * source.dimension(0) + source.dimension(1) * source.dimension(1)));
+					.sqrt((outimg.dimension(0) * outimg.dimension(0) + outimg.dimension(1) * outimg.dimension(1)));
 			int minRho = (int) -Math.round(size);
 			int maxRho = -minRho;
-			double thetaPerPixel = 0.3;
-			double rhoPerPixel = 0.3;
+			double thetaPerPixel = 1;
+			double rhoPerPixel = 1;
 			double[] min = { mintheta, minRho };
 			double[] max = { maxtheta, maxRho };
 			int pixelsTheta = (int) Math.round((maxtheta - mintheta) / thetaPerPixel);
@@ -189,9 +187,6 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 
 			ArrayList<double[]> points = new ArrayList<double[]>();
 
-			for (int index = 0; index < ReducedMinlist.size(); ++index)
-				MainMinlist.add(ReducedMinlist.get(index));
-
 			points = OverlayLines.GetRhoTheta(ReducedMinlist, sizes, min, max);
 
 			/**
@@ -217,91 +212,6 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 	}
 
 	
-
-	
-
-	public static long[] GetMaxcorners(RandomAccessibleInterval<IntType> inputimg, int label) {
-
-		Cursor<IntType> intCursor = Views.iterable(inputimg).localizingCursor();
-		int n = inputimg.numDimensions();
-		long[] maxVal = { Long.MIN_VALUE, Long.MIN_VALUE };
-
-		while (intCursor.hasNext()) {
-			intCursor.fwd();
-			int i = intCursor.get().get();
-			if (i == label) {
-
-				for (int d = 0; d < n; ++d) {
-
-					final long p = intCursor.getLongPosition(d);
-					if (p > maxVal[d])
-						maxVal[d] = p;
-
-				}
-
-			}
-		}
-
-		return maxVal;
-
-	}
-
-	public static long[] GetMincorners(RandomAccessibleInterval<IntType> inputimg, int label) {
-
-		Cursor<IntType> intCursor = Views.iterable(inputimg).localizingCursor();
-		int n = inputimg.numDimensions();
-		long[] minVal = { Long.MAX_VALUE, Long.MAX_VALUE };
-
-		while (intCursor.hasNext()) {
-			intCursor.fwd();
-			int i = intCursor.get().get();
-			if (i == label) {
-
-				for (int d = 0; d < n; ++d) {
-
-					final long p = intCursor.getLongPosition(d);
-					if (p < minVal[d])
-						minVal[d] = p;
-				}
-
-			}
-		}
-
-		return minVal;
-
-	}
-
-	public static double GetBoundingbox(RandomAccessibleInterval<IntType> inputimg, int label) {
-
-		Cursor<IntType> intCursor = Views.iterable(inputimg).localizingCursor();
-		int n = inputimg.numDimensions();
-		long[] position = new long[n];
-		long[] minVal = { Long.MAX_VALUE, Long.MAX_VALUE };
-		long[] maxVal = { Long.MIN_VALUE, Long.MIN_VALUE };
-
-		while (intCursor.hasNext()) {
-			intCursor.fwd();
-			int i = intCursor.get().get();
-			if (i == label) {
-
-				intCursor.localize(position);
-				for (int d = 0; d < n; ++d) {
-					if (position[d] < minVal[d]) {
-						minVal[d] = position[d];
-					}
-					if (position[d] > maxVal[d]) {
-						maxVal[d] = position[d];
-					}
-
-				}
-
-			}
-		}
-
-		double boxsize = Distance(minVal, maxVal);
-
-		return boxsize;
-	}
 
 	
 

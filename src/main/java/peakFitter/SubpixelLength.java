@@ -76,6 +76,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 			final double slope = simpleobject.get(index).slope;
 			final double intercept = simpleobject.get(index).intercept;
 			final double [] final_param = Getfinallineparam(Label, slope, intercept, psf, minlength);
+			if (final_param!= null)
 			final_paramlist.add(final_param);
 		}
 		
@@ -96,9 +97,14 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 		double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
 		double[] maxVal = { -Double.MIN_VALUE, -Double.MIN_VALUE };
 
-		RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImagesmall(intimg, source,
+		RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(intimg, source,
 				label);
+		long[] minCorner = Boundingboxes.GetMincorners(intimg, label);
+		long[] maxCorner = Boundingboxes.GetMaxcorners(intimg, label);
 
+		FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
+
+		currentimg = Views.interval(currentimg, intervalsmall);
 		double newintercept = intercept;
 
 
@@ -216,8 +222,14 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 				final double[] finalparamstart = start_param.clone();
 				// LM solver part
 
-				RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImagesmall(intimg, source,
+				RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(intimg, source,
 						label);
+				long[] minCorner = Boundingboxes.GetMincorners(intimg, label);
+				long[] maxCorner = Boundingboxes.GetMaxcorners(intimg, label);
+
+				FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
+
+				currentimg = Views.interval(currentimg, intervalsmall);
 
 				final double[] fixed_param = new double[ndims];
 
@@ -372,9 +384,14 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 		private PointSampleList<FloatType> gatherfullData(final int label) {
 			final PointSampleList<FloatType> datalist = new PointSampleList<FloatType>(ndims);
 
-			RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImagesmall(intimg, source,
+			RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(intimg, source,
 					label);
+			long[] minCorner = Boundingboxes.GetMincorners(intimg, label);
+			long[] maxCorner = Boundingboxes.GetMaxcorners(intimg, label);
 
+			FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
+
+			currentimg = Views.interval(currentimg, intervalsmall);
 			boolean outofbounds = false;
 
 			Cursor<FloatType> localcursor = Views.iterable(currentimg).localizingCursor();
