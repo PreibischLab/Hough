@@ -17,8 +17,10 @@ import getRoi.RoiforHough;
 import graphconstructs.Staticproperties;
 import houghandWatershed.HoughTransform2D;
 import houghandWatershed.WatershedDistimg;
+import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
+import ij.gui.Overlay;
 import ij.io.FileSaver;
 import labeledObjects.LabelledImg;
 import labeledObjects.Lineobjects;
@@ -40,7 +42,7 @@ import preProcessing.GlobalThresholding;
 import preProcessing.Kernels;
 import preProcessing.MedianFilter2D;
 
-public class Velocitydetector {
+public class VelocitydetectionMSER {
 
 	public static void main(String[] args) throws Exception {
 
@@ -123,30 +125,17 @@ public class Velocitydetector {
 			Roiobject.checkInput();
 			Roiobject.process();
 			ArrayList<LabelledImg> arrayimg = Roiobject.getResult();
-			for (int index = 0; index < arrayimg.size(); ++index ){
-				
-				ImageJFunctions.show(arrayimg.get(index).roiimg);
-				System.out.println(arrayimg.get(index).label);
-				
-			}
-			
-			
-			// Do watershedding and Hough
-			System.out.println("Doing Hough transform in labels: ");
-
-			HoughTransform2D Houghobject = new HoughTransform2D(inputimg, bitimg, minlength);
-			
-			Houghobject.checkInput();
-			Houghobject.process();
-			Pair<RandomAccessibleInterval<IntType>, ArrayList<Lineobjects>> linepair  = Houghobject.getResult();
-
-
+			Overlay ov = Roiobject.getOverlay();
+			ImageJFunctions.wrap(inputimg, "curr");
+			ImagePlus imp = IJ.getImage();
+			imp.setOverlay(ov);
 			// Overlay detected lines on the image
-			final ArrayList<Simpleobject> simpleobject = new ArrayList<Simpleobject>();
-			OverlayLines.GetAlllines(imgout,  linepair.fst, linepair.snd, simpleobject, radius);
+				final ArrayList<Simpleobject> simpleobject = new ArrayList<Simpleobject>();
+				OverlayLines.Getmserlines(imgout, arrayimg, simpleobject);
 
-			ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
-
+						ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
+			
+		/*	
 			// Input the image on which you want to do the fitting (original noisy image, along with the
 			// labelled image (watershedded image) 
 
@@ -158,7 +147,7 @@ public class Velocitydetector {
 			// Draw the detected lines
 			PushCurves.DrawallLine(gaussimg, final_paramlist, psf);
 			ImageJFunctions.show(gaussimg).setTitle("Exact-line");
-
+*/
 		}
 			
 		

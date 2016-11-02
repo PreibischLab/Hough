@@ -2,6 +2,8 @@ package drawandOverlay;
 
 import java.util.ArrayList;
 import houghandWatershed.TransformCordinates;
+import ij.gui.EllipseRoi;
+import labeledObjects.LabelledImg;
 import labeledObjects.Lineobjects;
 import labeledObjects.Simpleobject;
 import net.imglib2.Cursor;
@@ -93,9 +95,27 @@ public class OverlayLines {
 		return points;
 	}
 
+	
+	public static void Getmserlines(RandomAccessibleInterval<FloatType> imgout,
+			ArrayList<LabelledImg> imgslist,ArrayList<Simpleobject> lineobject){
+		
+		for (int index = 0; index < imgslist.size(); ++index){
+			
+			final int label = imgslist.get(index).label;
+			final double slope = imgslist.get(index).slopeandintercept[0];
+			final double intercept = imgslist.get(index).slopeandintercept[1];
+			final EllipseRoi ellipse = imgslist.get(index).roi;
+			final Simpleobject simpleobj = new Simpleobject(label, slope, intercept);
+			lineobject.add(simpleobj);
+			PushCurves.DrawRoiline(imgout, ellipse, slope, intercept);
+			
+		}
+		
+		
+	}
 	public static void GetAlllines(
 			RandomAccessibleInterval<FloatType> imgout,
-			RandomAccessibleInterval<FloatType> inputimg,
+			
 			RandomAccessibleInterval<IntType> intimg, 
 			ArrayList<Lineobjects> linelist,
 			ArrayList<Simpleobject> lineobject,
@@ -117,7 +137,7 @@ public class OverlayLines {
 			final Simpleobject simpleobj = new Simpleobject(label, slope, intercept);
 			lineobject.add(simpleobj);
 			
-			PushCurves.DrawTruncatedline(imgout, inputimg, intimg, slope, intercept, label);
+			PushCurves.DrawTruncatedline(imgout, intimg, slope, intercept, label);
 
 			}
 		}

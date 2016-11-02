@@ -1,5 +1,6 @@
 package getRoi;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -10,8 +11,8 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.gui.EllipseRoi;
+import ij.gui.Overlay;
 import labeledObjects.LabelledImg;
-import labeledObjects.LabelledRoi;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
@@ -39,9 +40,9 @@ public class RoiforHough extends BenchmarkAlgorithm
 	private final double maxVar;
 	private final double minDIversity;
 	private final boolean darktoBright;
+	private Overlay ov;
 	
 	private int Roiindex;
-	private ArrayList<LabelledRoi> rois;
 	private ArrayList<LabelledImg> imgs;
 
 	public RoiforHough(final RandomAccessibleInterval<FloatType> source, final double delta, final long minSize,
@@ -74,9 +75,9 @@ public class RoiforHough extends BenchmarkAlgorithm
 
 		final FloatType type = source.randomAccess().get().createVariable();
 		
-		rois = new ArrayList<LabelledRoi>();
 		imgs = new ArrayList<LabelledImg>();
 
+		ov = new Overlay();
 		ArrayList<double[]> ellipselist = new ArrayList<double[]>();
 		final Img<UnsignedByteType> newimg;
 
@@ -124,13 +125,13 @@ public class RoiforHough extends BenchmarkAlgorithm
 				final double[] mean = { ellipselist.get(index)[0], ellipselist.get(index)[1] };
 				final double[] covar = { ellipselist.get(index)[2], ellipselist.get(index)[3],
 						ellipselist.get(index)[4] };
-				EllipseRoi ellipseroi = createEllipse(mean, covar, 3);
-				LabelledRoi currentroi = new LabelledRoi(index, ellipseroi);
+				final EllipseRoi ellipseroi = createEllipse(mean, covar, 3);
+				ellipseroi.setStrokeColor(Color.green);
+				ov.add(ellipseroi);
 
 				
 				final double[] meanandintercept = LargestEigenvector(mean, covar);
 				Roiindex = index;
-				rois.add(currentroi);
 
 				Cursor<FloatType> sourcecursor = Views.iterable(source).localizingCursor();
 				RandomAccess<FloatType> ranac = Roiimg.randomAccess();
@@ -150,7 +151,7 @@ public class RoiforHough extends BenchmarkAlgorithm
 
 				}
 				
-				LabelledImg currentimg = new LabelledImg(Roiindex, Roiimg, meanandintercept);
+				LabelledImg currentimg = new LabelledImg(Roiindex, Roiimg, ellipseroi, meanandintercept);
 				imgs.add(currentimg);
 				
 				
@@ -167,11 +168,11 @@ public class RoiforHough extends BenchmarkAlgorithm
 		return imgs;
 	}
 	
-	public ArrayList<LabelledRoi> getLabelledRoilist() {
-
-		return rois;
-
+    public Overlay getOverlay() {
+		
+		return ov;
 	}
+	
 
 	/**
 	 * 2D correlated Gaussian
@@ -216,13 +217,9 @@ public class RoiforHough extends BenchmarkAlgorithm
 		final double c = cov[2];
 		final double d = Math.sqrt(a * a + 4 * b * b - 2 * a * c + c * c);
 		final double[] eigenvector1 = {2 * b, c - a + d};
-		final double[] eigenvector2 = {2 * b, c - a - d};
-		final double mageigenvec1 = eigenvector1[0] * eigenvector1[0] + eigenvector1[1] * eigenvector1[1];
-		final double mageigenvec2 = eigenvector2[0] * eigenvector2[0] + eigenvector2[1] * eigenvector2[1];
 		double[] LargerVec = new double[eigenvector1.length];
-		final double locationdiff = mageigenvec2 - mageigenvec1;
-		final boolean minVec = locationdiff > 0;
-        LargerVec= minVec ? eigenvector2 : eigenvector1;
+
+		LargerVec =  eigenvector1;
 		
         final double slope = LargerVec[1] / LargerVec[0];
         final double intercept = mean[1] - mean[0] * slope;

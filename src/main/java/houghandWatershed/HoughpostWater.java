@@ -86,7 +86,7 @@ public class HoughpostWater {
 
 		// Overlay detected lines on the image
 		final ArrayList<Simpleobject> simpleobject = new ArrayList<Simpleobject>();
-		OverlayLines.GetAlllines(imgout, biginputimg, linepair.fst, linepair.snd, simpleobject, radius);
+		OverlayLines.GetAlllines(imgout, linepair.fst, linepair.snd, simpleobject, radius);
 
 		ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
 
