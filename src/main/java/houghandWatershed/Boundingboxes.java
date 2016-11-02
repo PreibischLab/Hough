@@ -1,14 +1,21 @@
 package houghandWatershed;
 
+import java.util.ArrayList;
+
 import com.sun.tools.javac.util.Pair;
 
+import ij.gui.EllipseRoi;
+import labeledObjects.LabelledImg;
 import net.imglib2.Cursor;
+import net.imglib2.FinalInterval;
+import net.imglib2.Point;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.labeling.AllConnectedComponents;
 import net.imglib2.algorithm.labeling.Watershed;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.labeling.DefaultROIStrategyFactory;
 import net.imglib2.labeling.Labeling;
 import net.imglib2.labeling.LabelingROIStrategy;
@@ -159,6 +166,43 @@ public class Boundingboxes {
 
 	}
 
+	public static RandomAccessibleInterval<FloatType> CurrentLabelImage(ArrayList<LabelledImg> imgs,int label) {
+		
+		RandomAccessibleInterval<FloatType> currentimg = imgs.get(label).Actualroiimg;
+		int n = currentimg.numDimensions();
+		long[] position = new long[n];
+		long[] minVal = { Long.MAX_VALUE, Long.MAX_VALUE };
+		long[] maxVal = { Long.MIN_VALUE, Long.MIN_VALUE };
+		EllipseRoi roi = imgs.get(label).roi;
+		
+		Cursor<FloatType> localcursor = Views.iterable(currentimg).localizingCursor();
+
+		while (localcursor.hasNext()) {
+			localcursor.fwd();
+			int x = localcursor.getIntPosition(0);
+			int y = localcursor.getIntPosition(1);
+			if (roi.contains(x, y)){
+
+				localcursor.localize(position);
+				for (int d = 0; d < n; ++d) {
+					if (position[d] < minVal[d]) {
+						minVal[d] = position[d];
+					}
+					if (position[d] > maxVal[d]) {
+						maxVal[d] = position[d];
+					}
+
+				}
+				
+			}
+		}
+		
+		FinalInterval interval = new FinalInterval(minVal, maxVal);
+		RandomAccessibleInterval<FloatType> currentimgsmall = Views.interval(currentimg, interval);
+		return currentimgsmall;
+		
+	}
+	
 	public static RandomAccessibleInterval<FloatType> CurrentLabelImage(RandomAccessibleInterval<IntType> Intimg,
 			RandomAccessibleInterval<FloatType> originalimg, int currentLabel) {
 

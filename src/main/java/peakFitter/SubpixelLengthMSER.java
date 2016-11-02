@@ -2,6 +2,8 @@ package peakFitter;
 
 import java.util.ArrayList;
 
+import edu.mines.jtk.sgl.BoundingBox;
+import houghandWatershed.Boundingboxes;
 import ij.gui.EllipseRoi;
 import labeledObjects.LabelledImg;
 import labeledObjects.Simpleobject;
@@ -33,7 +35,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 	final double termepsilon = 1e-1;
 	//Mask fits iteration param
 	final int iterations = 500;
-	final double cutoffdistance = 50;
+	final double cutoffdistance = 20;
 	final boolean halfgaussian = false;
 	final double Intensityratio = 0.5;
 	
@@ -94,7 +96,8 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 		double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
 		double[] maxVal = { -Double.MIN_VALUE, -Double.MIN_VALUE };
 
-		RandomAccessibleInterval<FloatType> currentimg = imgs.get(label).Actualroiimg;
+		RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(imgs, label);
+				//imgs.get(label).Actualroiimg;
 		EllipseRoi roi = imgs.get(label).roi;
 
 
@@ -220,7 +223,8 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 				final double[] finalparamstart = start_param.clone();
 				// LM solver part
 
-				RandomAccessibleInterval<FloatType> currentimg = imgs.get(label).Actualroiimg;
+				RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(imgs, label);
+						//imgs.get(label).Actualroiimg;
 
 				final double[] fixed_param = new double[ndims];
 

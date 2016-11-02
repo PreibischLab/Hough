@@ -3,6 +3,7 @@ package peakFitter;
 import java.util.ArrayList;
 
 import graphconstructs.Staticproperties;
+import houghandWatershed.Boundingboxes;
 import ij.gui.EllipseRoi;
 import labeledObjects.LabelledImg;
 import net.imglib2.Cursor;
@@ -35,7 +36,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 	final double termepsilon = 1e-1;
 	//Mask fits iteration param
 	final int iterations = 1500;
-	final double cutoffdistance = 50;
+	final double cutoffdistance = 20;
 	final boolean halfgaussian = false;
 	final double Intensityratio = 0.5;
 	
@@ -125,7 +126,8 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 		double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
 		double[] maxVal = { -Double.MIN_VALUE, -Double.MIN_VALUE };
 
-		RandomAccessibleInterval<FloatType> currentimg = imgs.get(label).Actualroiimg;
+		RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(imgs, label);
+				//imgs.get(label).Actualroiimg;
 		final double[] cordone = { iniparam[0], iniparam[1] };
 		final double[] cordtwo = { iniparam[2], iniparam[3] };
 
@@ -237,7 +239,8 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 				return null;
 
 			else {
-				RandomAccessibleInterval<FloatType> currentimg = imgs.get(label).Actualroiimg;
+				RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(imgs, label);
+						//imgs.get(label).Actualroiimg;
 
 				final double[] fixed_param = new double[ndims];
 
@@ -369,31 +372,24 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 	
 
 	private PointSampleList<FloatType> gatherfullData(final int label) {
+
 		final PointSampleList<FloatType> datalist = new PointSampleList<FloatType>(ndims);
 
 		RandomAccessibleInterval<FloatType> currentimg = imgs.get(label).Actualroiimg;
-		boolean outofbounds = false;
 
+		EllipseRoi roi = imgs.get(label).roi;
+		
 		Cursor<FloatType> localcursor = Views.iterable(currentimg).localizingCursor();
 
 		while (localcursor.hasNext()) {
 			localcursor.fwd();
-
-			for (int d = 0; d < ndims; d++) {
-
-				if (localcursor.getDoublePosition(d) < 0 || localcursor.getDoublePosition(d) >= source.dimension(d)) {
-					outofbounds = true;
-					break;
-				}
-			}
-			if (outofbounds) {
-				outofbounds = false;
-				continue;
-			}
-
+			int x = localcursor.getIntPosition(0);
+			int y = localcursor.getIntPosition(1);
+			if (roi.contains(x, y)){
 			Point newpoint = new Point(localcursor);
 			datalist.add(newpoint, localcursor.get().copy());
 
+			}
 		}
 
 		return datalist;
