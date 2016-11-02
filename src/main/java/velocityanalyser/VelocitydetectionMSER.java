@@ -13,7 +13,7 @@ import drawandOverlay.DisplaysubGraphend;
 import drawandOverlay.DisplaysubGraphstart;
 import drawandOverlay.OverlayLines;
 import drawandOverlay.PushCurves;
-import getRoi.RoiforHough;
+import getRoi.RoiforMSER;
 import graphconstructs.Staticproperties;
 import houghandWatershed.HoughTransform2D;
 import houghandWatershed.WatershedDistimg;
@@ -36,6 +36,7 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 import peakFitter.SubpixelLength;
+import peakFitter.SubpixelLengthMSER;
 import peakFitter.SubpixelVelocity;
 import preProcessing.GetLocalmaxmin;
 import preProcessing.GlobalThresholding;
@@ -61,9 +62,12 @@ public class VelocitydetectionMSER {
 				.openAs32Bit(
 				//		new File("../res/10frame_moving.tif"),
 				//			new ArrayImgFactory<FloatType>());
-						
+					
 						new File("/Users/varunkapoor/Hough/src/main/resources/2015-01-14_Seeds-1.tiff"),
 						new ArrayImgFactory<FloatType>());
+						
+				//		new File("../res/small_mt.tif"),
+				//		new ArrayImgFactory<FloatType>());
 		int ndims = img.numDimensions();
 
 		// Normalize the intensity of the whole stack to be between min and max
@@ -121,7 +125,7 @@ public class VelocitydetectionMSER {
 			final long maxSize = Long.MAX_VALUE;
 			final double maxVar = 0.2;
 			final double minDiversity = 0;
-			RoiforHough Roiobject = new RoiforHough(inputimg, delta, minSize, maxSize, maxVar, minDiversity, false);
+			RoiforMSER Roiobject = new RoiforMSER(inputimg, img, delta, minSize, maxSize, maxVar, minDiversity, false);
 			Roiobject.checkInput();
 			Roiobject.process();
 			ArrayList<LabelledImg> arrayimg = Roiobject.getResult();
@@ -134,20 +138,17 @@ public class VelocitydetectionMSER {
 				OverlayLines.Getmserlines(imgout, arrayimg, simpleobject);
 
 						ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
+						
+						SubpixelLengthMSER MTline = new SubpixelLengthMSER(img, arrayimg, simpleobject, psf, minlength);
+						MTline.checkInput();
+						MTline.process();
+						ArrayList<double[]> final_paramlist = MTline.getResult();
+						
+						// Draw the detected lines
+						PushCurves.DrawallLine(gaussimg, final_paramlist, psf);
+						ImageJFunctions.show(gaussimg).setTitle("Exact-line");
 			
-		/*	
-			// Input the image on which you want to do the fitting (original noisy image, along with the
-			// labelled image (watershedded image) 
-
-			SubpixelLength MTline = new SubpixelLength(img, linepair.fst, simpleobject, psf, minlength);
-			MTline.checkInput();
-			MTline.process();
-			ArrayList<double[]> final_paramlist = MTline.getResult();
-			
-			// Draw the detected lines
-			PushCurves.DrawallLine(gaussimg, final_paramlist, psf);
-			ImageJFunctions.show(gaussimg).setTitle("Exact-line");
-*/
+		
 		}
 			
 		

@@ -3,6 +3,8 @@ package peakFitter;
 import java.util.ArrayList;
 
 import houghandWatershed.Boundingboxes;
+import ij.gui.EllipseRoi;
+import labeledObjects.LabelledImg;
 import labeledObjects.Simpleobject;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
@@ -12,18 +14,24 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.BenchmarkAlgorithm;
 import net.imglib2.algorithm.OutputAlgorithm;
+import net.imglib2.algorithm.region.hypersphere.HyperSphere;
+import net.imglib2.algorithm.region.hypersphere.HyperSphereCursor;
+import net.imglib2.img.ImgFactory;
+import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Util;
 import net.imglib2.view.Views;
-import peakFitter.GaussianMaskFit.Endfit;
+import peakFitter.GaussianMaskFitMSER.EndfitMSER;
 import preProcessing.GetLocalmaxmin;
 
-public class SubpixelLength extends BenchmarkAlgorithm
+public class SubpixelLengthMSER extends BenchmarkAlgorithm
 implements OutputAlgorithm<ArrayList<double[]>> {
 	
-	private static final String BASE_ERROR_MSG = "[SubpixelLine] ";
+	private static final String BASE_ERROR_MSG = "[SubpixelLineMSER] ";
 	private final RandomAccessibleInterval<FloatType> source;
-	private final RandomAccessibleInterval<IntType> intimg;
+	private final ArrayList<LabelledImg> imgs;
 	private final ArrayList<Simpleobject> simpleobject;
 	private final int ndims;
 	private ArrayList<double[]> final_paramlist;
@@ -34,25 +42,24 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 	final double lambda = 1e-3;
 	final double termepsilon = 1e-1;
 	//Mask fits iteration param
-	final int iterations = 1500;
-	final double cutoffdistance = 15;
+	final int iterations = 500;
+	final double cutoffdistance = 20;
 	final boolean halfgaussian = false;
 	final double Intensityratio = 0.5;
 	
 	
-	public SubpixelLength( final RandomAccessibleInterval<FloatType> source, 
-			             final RandomAccessibleInterval<IntType> intimg,
+	public SubpixelLengthMSER( final RandomAccessibleInterval<FloatType> source, 
+			             final ArrayList<LabelledImg> imgs,
 			             final ArrayList<Simpleobject> simpleobject,
 			             final double[] psf,
 			             final double minlength){
 		
 		this.source = source;
-		this.intimg = intimg;
+		this.imgs = imgs;
 		this.simpleobject = simpleobject;
 		this.psf = psf;
 		this.minlength = minlength;
 		this.ndims = source.numDimensions();
-		assert (source.numDimensions() == intimg.numDimensions());
 		
 	}
 
@@ -70,7 +77,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 	public boolean process() {
 		
 		final_paramlist = new ArrayList<double[]>();
-		for (int index = 0; index < simpleobject.size(); ++index) {
+		for (int index = 0; index < simpleobject.size() ; ++index) {
 			
 			final int Label = simpleobject.get(index).Label;
 			final double slope = simpleobject.get(index).slope;
@@ -97,46 +104,47 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 		double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
 		double[] maxVal = { -Double.MIN_VALUE, -Double.MIN_VALUE };
 
-		RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(intimg, source,
-				label);
-		long[] minCorner = Boundingboxes.GetMincorners(intimg, label);
-		long[] maxCorner = Boundingboxes.GetMaxcorners(intimg, label);
-
-		FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
-
-		currentimg = Views.interval(currentimg, intervalsmall);
-		double newintercept = intercept;
+		RandomAccessibleInterval<FloatType> currentimg = imgs.get(label).Actualroiimg;
+		EllipseRoi roi = imgs.get(label).roi;
 
 
-		final Cursor<FloatType> outcursor = Views.iterable(currentimg).localizingCursor();
+		final Cursor<FloatType> inputcursor = Views.iterable(currentimg).localizingCursor();
 
 		final double maxintensityline = GetLocalmaxmin.computeMaxIntensity(currentimg);
 
-		while (outcursor.hasNext()) {
+           while(inputcursor.hasNext()){
+			
+			inputcursor.fwd();
+			
+			final int x = inputcursor.getIntPosition(0);
+			final int y = inputcursor.getIntPosition(1);
+			
+			if (roi.contains(x, y)){
+				if (inputcursor.get().get() / maxintensityline > Intensityratio){
+				inputcursor.localize(newposition);
+				long pointonline = (long) (newposition[1] - slope * newposition[0] - intercept);
 
-			outcursor.fwd();
-
-			if (outcursor.get().get() / maxintensityline > Intensityratio) {
-				outcursor.localize(newposition);
-
-				long pointonline = (long) (newposition[1] - slope * newposition[0] - newintercept);
-
-				// To get the min and max co-rodinates along the line so we
-				// have starting points to
+				// To get the min and max co-rodinates along the line so we have
+				// starting points to
 				// move on the line smoothly
 
 				if (pointonline == 0) {
-					for (int d = 0; d < ndims; ++d) {
-						if (outcursor.getDoublePosition(d) <= minVal[d])
-							minVal[d] = outcursor.getDoublePosition(d);
 
-						if (outcursor.getDoublePosition(d) >= maxVal[d])
-							maxVal[d] = outcursor.getDoublePosition(d);
+					for (int d = 0; d < ndims; ++d) {
+						if (inputcursor.getDoublePosition(d) <= minVal[d])
+							minVal[d] = inputcursor.getDoublePosition(d);
+
+						if (inputcursor.getDoublePosition(d) >= maxVal[d])
+							maxVal[d] = inputcursor.getDoublePosition(d);
 
 					}
 
 				}
+
+			
+				}
 			}
+			
 		}
 
 		final double[] MinandMax = new double[2 * ndims + 3];
@@ -166,7 +174,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 		MinandMax[2 * ndims + 2] = 1; 
 		
 		
-		System.out.println("Label: " + label + " " + "Hough Detection: " + " StartX: " + MinandMax[0] + " StartY: "
+		System.out.println("Label: " + label + " " + "MSER Detection: " + " StartX: " + MinandMax[0] + " StartY: "
 				+ MinandMax[1] + " EndX: " + MinandMax[2] + " EndY: " + MinandMax[3]);
 
 		
@@ -222,14 +230,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 				final double[] finalparamstart = start_param.clone();
 				// LM solver part
 
-				RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(intimg, source,
-						label);
-				long[] minCorner = Boundingboxes.GetMincorners(intimg, label);
-				long[] maxCorner = Boundingboxes.GetMaxcorners(intimg, label);
-
-				FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
-
-				currentimg = Views.interval(currentimg, intervalsmall);
+				RandomAccessibleInterval<FloatType> currentimg = imgs.get(label).Actualroiimg;
 
 				final double[] fixed_param = new double[ndims];
 
@@ -277,21 +278,22 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 					double[] startfit = new double[ndims];
 					double[] endfit = new double[ndims];
 					final double maxintensityline = GetLocalmaxmin.computeMaxIntensity(currentimg);
+					final EllipseRoi roi = imgs.get(label).roi;
 
-					
 
 					System.out.println("Doing Mask Fits: ");
 					try {
-						startfit = peakFitter.GaussianMaskFit.sumofgaussianMaskFit(currentimg, startpos.clone(), psf,
-								iterations, dxvector, newslope, newintercept, maxintensityline, halfgaussian, Endfit.Start,
+								
+							startfit =	peakFitter.GaussianMaskFitMSER.sumofgaussianMaskFit(currentimg, roi, startpos.clone(), psf,
+								iterations, dxvector, newslope, newintercept, maxintensityline, halfgaussian, EndfitMSER.Start,
 								label);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
 
 					try {
-						endfit = peakFitter.GaussianMaskFit.sumofgaussianMaskFit(currentimg, endpos.clone(), psf,
-								iterations, dxvector, newslope, newintercept, maxintensityline,  halfgaussian, Endfit.End,
+						endfit = peakFitter.GaussianMaskFitMSER.sumofgaussianMaskFit(currentimg,roi, endpos.clone(), psf,
+								iterations, dxvector, newslope, newintercept, maxintensityline,  halfgaussian, EndfitMSER.End,
 								label);
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -371,10 +373,22 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 		}
 		public int Getlabel(final Point linepoint) {
 
-			RandomAccess<IntType> intranac = intimg.randomAccess();
-
-			intranac.setPosition(linepoint);
-			int currentlabel = intranac.get().get();
+			final int x = linepoint.getIntPosition(0);
+			final int y = linepoint.getIntPosition(1);
+			int currentlabel = Integer.MIN_VALUE;
+			for (int index = 0; index < imgs.size(); ++index){
+				
+				EllipseRoi ellipse = imgs.get(index).roi;
+				
+				if (ellipse.contains(x, y)){
+					
+					currentlabel = index;
+					break;
+				}
+				
+			}
+			
+		
 
 			return currentlabel;
 		}
@@ -385,36 +399,21 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 		private PointSampleList<FloatType> gatherfullData(final int label) {
 			final PointSampleList<FloatType> datalist = new PointSampleList<FloatType>(ndims);
 
-			RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(intimg, source,
-					label);
-			long[] minCorner = Boundingboxes.GetMincorners(intimg, label);
-			long[] maxCorner = Boundingboxes.GetMaxcorners(intimg, label);
+			RandomAccessibleInterval<FloatType> currentimg = imgs.get(label).Actualroiimg;
 
-			FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
-
-			currentimg = Views.interval(currentimg, intervalsmall);
-			boolean outofbounds = false;
-
+			EllipseRoi roi = imgs.get(label).roi;
+			
 			Cursor<FloatType> localcursor = Views.iterable(currentimg).localizingCursor();
 
 			while (localcursor.hasNext()) {
 				localcursor.fwd();
-
-				for (int d = 0; d < ndims; d++) {
-
-					if (localcursor.getDoublePosition(d) < 0 || localcursor.getDoublePosition(d) >= source.dimension(d)) {
-						outofbounds = true;
-						break;
-					}
-				}
-				if (outofbounds) {
-					outofbounds = false;
-					continue;
-				}
-
+				int x = localcursor.getIntPosition(0);
+				int y = localcursor.getIntPosition(1);
+				if (roi.contains(x, y)){
 				Point newpoint = new Point(localcursor);
 				datalist.add(newpoint, localcursor.get().copy());
 
+				}
 			}
 
 			return datalist;

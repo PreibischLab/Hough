@@ -628,7 +628,6 @@ public class PushCurves {
 			final double slope, final double intercept){
 		
 		int n = imgout.numDimensions();
-		final double[] realpos = new double[n];
 		double  sigma = 1.0;
 		
 		final Cursor<FloatType> inputcursor = Views.iterable(imgout).localizingCursor();
@@ -677,10 +676,9 @@ public class PushCurves {
 				steppos[d] = minVal[d];
 			while (true) {
 
-				AddGaussian.addGaussian(imgout, 1.0, steppos, new double[] { sigma, sigma });
+				AddGaussian.addGaussian(imgout, steppos, new double[] { sigma, sigma });
 				steppos[0] = minVal[0] + count * stepsize / Math.sqrt(1 + slope * slope);
 				steppos[1] = minVal[1] + count * stepsize * slope / Math.sqrt(1 + slope * slope);
-
 				
 
 				count++;
@@ -694,7 +692,7 @@ public class PushCurves {
 			steppos[0] = minVal[0];
 			steppos[1] = maxVal[1];
 			while (true) {
-				AddGaussian.addGaussian(imgout, 1.0, steppos, new double[] { sigma, sigma });
+				AddGaussian.addGaussian(imgout, steppos, new double[] { sigma, sigma });
 				steppos[0] = minVal[0] + negcount * stepsize / Math.sqrt(1 + slope * slope);
 				steppos[1] = maxVal[1] + negcount * stepsize * slope / Math.sqrt(1 + slope * slope);
 

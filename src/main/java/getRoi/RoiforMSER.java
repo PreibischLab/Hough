@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import com.sun.tools.javac.util.Pair;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -29,11 +28,12 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 
-public class RoiforHough extends BenchmarkAlgorithm
+public class RoiforMSER extends BenchmarkAlgorithm
 		implements OutputAlgorithm <ArrayList<LabelledImg>> {
 
-	private static final String BASE_ERROR_MSG = "[RoiforHough] ";
+	private static final String BASE_ERROR_MSG = "[RoiforMSER] ";
 	private final RandomAccessibleInterval<FloatType> source;
+	private final RandomAccessibleInterval<FloatType> Actualsource;
 	private final double delta;
 	private final long minSize;
 	private final long maxSize;
@@ -45,10 +45,12 @@ public class RoiforHough extends BenchmarkAlgorithm
 	private int Roiindex;
 	private ArrayList<LabelledImg> imgs;
 
-	public RoiforHough(final RandomAccessibleInterval<FloatType> source, final double delta, final long minSize,
+	public RoiforMSER(final RandomAccessibleInterval<FloatType> source, final RandomAccessibleInterval<FloatType> Actualsource,
+			final double delta, final long minSize,
 			final long maxSize, final double maxVar, final double minDiversity, final boolean darktoBright) {
 
 		this.source = source;
+		this.Actualsource = Actualsource;
 		this.delta = delta;
 		this.minSize = minSize;
 		this.maxSize = maxSize;
@@ -79,6 +81,7 @@ public class RoiforHough extends BenchmarkAlgorithm
 
 		ov = new Overlay();
 		ArrayList<double[]> ellipselist = new ArrayList<double[]>();
+		ArrayList<double[]> meanandcovlist = new ArrayList<double[]>();
 		final Img<UnsignedByteType> newimg;
 
 		try
@@ -109,18 +112,18 @@ public class RoiforHough extends BenchmarkAlgorithm
 
 				final double[] meanandcov = { rootmser.mean()[0], rootmser.mean()[1], rootmser.cov()[0],
 						rootmser.cov()[1], rootmser.cov()[2] };
-
+				meanandcovlist.add(meanandcov);
 				ellipselist.add(meanandcov);
 
 			}
 		}
-
+	
 			for (int index = 0; index < ellipselist.size(); ++index) {
 
 				
 				final ImgFactory<FloatType> factory = Util.getArrayOrCellImgFactory(source, type);
 				RandomAccessibleInterval<FloatType>  Roiimg = factory.create(source, type);
-				
+				RandomAccessibleInterval<FloatType>  ActualRoiimg = factory.create(Actualsource, type);
 				
 				final double[] mean = { ellipselist.get(index)[0], ellipselist.get(index)[1] };
 				final double[] covar = { ellipselist.get(index)[2], ellipselist.get(index)[3],
@@ -130,7 +133,7 @@ public class RoiforHough extends BenchmarkAlgorithm
 				ov.add(ellipseroi);
 
 				
-				final double[] meanandintercept = LargestEigenvector(mean, covar);
+				final double[] slopeandintercept = LargestEigenvector(mean, covar);
 				Roiindex = index;
 
 				Cursor<FloatType> sourcecursor = Views.iterable(source).localizingCursor();
@@ -150,8 +153,25 @@ public class RoiforHough extends BenchmarkAlgorithm
 					
 
 				}
-				
-				LabelledImg currentimg = new LabelledImg(Roiindex, Roiimg, ellipseroi, meanandintercept);
+				Cursor<FloatType> Actualsourcecursor = Views.iterable(Actualsource).localizingCursor();
+				RandomAccess<FloatType> Actualranac = ActualRoiimg.randomAccess();
+				while (Actualsourcecursor.hasNext()) {
+
+					Actualsourcecursor.fwd();
+
+					final int x = Actualsourcecursor.getIntPosition(0);
+					final int y = Actualsourcecursor.getIntPosition(1);
+					Actualranac.setPosition(Actualsourcecursor);
+					if (ellipseroi.contains(x, y)) {
+						
+						Actualranac.get().set(Actualsourcecursor.get());
+
+					}
+					
+
+				}
+				LabelledImg currentimg = new LabelledImg(Roiindex, Roiimg, ActualRoiimg, ellipseroi, slopeandintercept, mean, covar);
+				if(Math.abs(slopeandintercept[0])!=Double.POSITIVE_INFINITY || Math.abs(slopeandintercept[1])!=Double.POSITIVE_INFINITY  )
 				imgs.add(currentimg);
 				
 				
