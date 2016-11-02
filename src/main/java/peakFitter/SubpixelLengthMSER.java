@@ -2,26 +2,16 @@ package peakFitter;
 
 import java.util.ArrayList;
 
-import houghandWatershed.Boundingboxes;
 import ij.gui.EllipseRoi;
 import labeledObjects.LabelledImg;
 import labeledObjects.Simpleobject;
 import net.imglib2.Cursor;
-import net.imglib2.FinalInterval;
 import net.imglib2.Point;
 import net.imglib2.PointSampleList;
-import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.BenchmarkAlgorithm;
 import net.imglib2.algorithm.OutputAlgorithm;
-import net.imglib2.algorithm.region.hypersphere.HyperSphere;
-import net.imglib2.algorithm.region.hypersphere.HyperSphereCursor;
-import net.imglib2.img.ImgFactory;
-import net.imglib2.img.array.ArrayImgFactory;
-import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 import peakFitter.GaussianMaskFitMSER.EndfitMSER;
 import preProcessing.GetLocalmaxmin;
@@ -43,7 +33,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 	final double termepsilon = 1e-1;
 	//Mask fits iteration param
 	final int iterations = 500;
-	final double cutoffdistance = 20;
+	final double cutoffdistance = 50;
 	final boolean halfgaussian = false;
 	final double Intensityratio = 0.5;
 	

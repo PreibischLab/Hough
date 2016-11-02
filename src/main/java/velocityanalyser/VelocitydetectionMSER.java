@@ -38,6 +38,7 @@ import net.imglib2.view.Views;
 import peakFitter.SubpixelLength;
 import peakFitter.SubpixelLengthMSER;
 import peakFitter.SubpixelVelocity;
+import peakFitter.SubpixelVelocityMSER;
 import preProcessing.GetLocalmaxmin;
 import preProcessing.GlobalThresholding;
 import preProcessing.Kernels;
@@ -60,11 +61,11 @@ public class VelocitydetectionMSER {
 		// Load the stack of images
 		final RandomAccessibleInterval<FloatType> img = util.ImgLib2Util
 				.openAs32Bit(
-				//		new File("../res/10frame_moving.tif"),
-				//			new ArrayImgFactory<FloatType>());
+						new File("../res/10frame_moving.tif"),
+							new ArrayImgFactory<FloatType>());
 					
-						new File("/Users/varunkapoor/Hough/src/main/resources/2015-01-14_Seeds-1.tiff"),
-						new ArrayImgFactory<FloatType>());
+				//		new File("/Users/varunkapoor/Hough/src/main/resources/2015-01-14_Seeds-1.tiff"),
+				//		new ArrayImgFactory<FloatType>());
 						
 				//		new File("../res/small_mt.tif"),
 				//		new ArrayImgFactory<FloatType>());
@@ -80,18 +81,25 @@ public class VelocitydetectionMSER {
 
 		// Declare all the constants needed by the program here:
 
-		final double[] psf = { 1.65, 1.47 };
-		//final double[] psf = { 1.7, 1.8 };
+	//	final double[] psf = { 1.65, 1.47 };
+		final double[] psf = { 1.4, 1.5 };
 		
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
-		final int minlength = 4;
+		
+		// minimum length of the lines to be detected, the smallest possible number is 2.
+		final int minlength = 2;
 
 		// Show the stack
 		ImagePlus impstart = ImageJFunctions.show(img);
 		ImagePlus impend = ImageJFunctions.show(img);
 		ArrayList<ArrayList<Staticproperties>> Allstartandend = new ArrayList<ArrayList<Staticproperties>>();
-
+		final int delta = 10;
+		final long minSize = 10;
+		final long maxSize = Long.MAX_VALUE;
+		final double maxVar = 0.2;
+		final double minDiversity = 0;
 		
+
 		if (ndims == 2 ){
 			
 			
@@ -103,7 +111,6 @@ public class VelocitydetectionMSER {
 					new FloatType());
 			RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(img,
 					new FloatType());
-
 			
 			// Preprocess image using Median Filter and suppress background
 			final MedianFilter2D<FloatType> medfilter = new MedianFilter2D<FloatType>( img, 1 );
@@ -120,19 +127,22 @@ public class VelocitydetectionMSER {
 			RandomAccessibleInterval<BitType> bitimg = new ArrayImgFactory<BitType>().create(inputimg, new BitType());
 			GetLocalmaxmin.ThresholdingBit(inputimg, bitimg, ThresholdValue);
 
-			final int delta = 10;
-			final long minSize = 10;
-			final long maxSize = Long.MAX_VALUE;
-			final double maxVar = 0.2;
-			final double minDiversity = 0;
+			
 			RoiforMSER Roiobject = new RoiforMSER(inputimg, img, delta, minSize, maxSize, maxVar, minDiversity, false);
 			Roiobject.checkInput();
 			Roiobject.process();
 			ArrayList<LabelledImg> arrayimg = Roiobject.getResult();
 			Overlay ov = Roiobject.getOverlay();
-			ImageJFunctions.wrap(inputimg, "curr");
-			ImagePlus imp = IJ.getImage();
+			
+			ImagePlus imp = ImageJFunctions.wrap(inputimg, "curr");
 			imp.setOverlay(ov);
+			/**
+			 * To see the overlay 
+			 * 
+			 * ImageJFunctions.show(inputimg);
+			 * ImagePlus imp = IJ.getImage();
+			 * 
+			 */
 			// Overlay detected lines on the image
 				final ArrayList<Simpleobject> simpleobject = new ArrayList<Simpleobject>();
 				OverlayLines.Getmserlines(imgout, arrayimg, simpleobject);
@@ -158,9 +168,18 @@ public class VelocitydetectionMSER {
 		if (ndims > 2){
 		// Do Hough transform on the First seed image
 
+			
+			
+			
 		IntervalView<FloatType> groundframe = Views.hyperSlice(img, ndims - 1, 0);
 
+		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(groundframe,
+				new FloatType());
 		
+		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(groundframe,
+				new FloatType());
+		RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(groundframe,
+				new FloatType());
 		
 		
 		System.out.println("Applying Median filter to the first image.");
@@ -173,46 +192,43 @@ public class VelocitydetectionMSER {
 		
 		
 		// for thresholding extremly noisy data, if non noisy set the value to 1
-		RandomAccessibleInterval<FloatType> inputimg = Kernels.Supressthresh(groundframepre);
+		inputimg = Kernels.Supressthresh(groundframepre);
 				
 		ImageJFunctions.show(inputimg);
 		
-		final Float ThresholdValue = GlobalThresholding.AutomaticThresholding(inputimg);
-		RandomAccessibleInterval<BitType> bitimg = new ArrayImgFactory<BitType>().create(inputimg, new BitType());
-		GetLocalmaxmin.ThresholdingBit(inputimg, bitimg, ThresholdValue);
-		System.out.println("Doing Hough transform in labels: ");
+		System.out.println("Running MSER: ");
 
-        HoughTransform2D Houghobject = new HoughTransform2D(inputimg, bitimg, minlength);
-		Houghobject.checkInput();
-		Houghobject.process();
-		Pair<RandomAccessibleInterval<IntType>, ArrayList<Lineobjects>> linepair  = Houghobject.getResult();
-
+		RoiforMSER Roiobject = new RoiforMSER(inputimg, groundframe, delta, minSize, maxSize, maxVar, minDiversity, false);
+		Roiobject.checkInput();
+		Roiobject.process();
+		ArrayList<LabelledImg> arrayimg = Roiobject.getResult();
+		Overlay ov = Roiobject.getOverlay();
 		
-
-		// Display the Hough detection
-		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(groundframe,
-				new FloatType());
+		ImagePlus imp = ImageJFunctions.wrap(inputimg, "curr");
+		/**
+		 * To see the overlay 
+		 * 
+		 * ImageJFunctions.show(inputimg);
+		 * ImagePlus imp = IJ.getImage();
+		 * 
+		 */
+		
+		imp.setOverlay(ov);
+		// Overlay detected lines on the image
 		final ArrayList<Simpleobject> simpleobject = new ArrayList<Simpleobject>();
+		OverlayLines.Getmserlines(imgout, arrayimg, simpleobject);
 
-		OverlayLines.GetAlllines(imgout, linepair.fst, linepair.snd, simpleobject, radius);
-
-		ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
-
-
-		RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(groundframe,
-				new FloatType());
-
-		SubpixelLength MTline = new SubpixelLength(groundframe, linepair.fst, simpleobject, psf, minlength);
-		MTline.checkInput();
-		MTline.process();
-		ArrayList<double[]> final_paramlist = MTline.getResult();
-
-		
-
-		// Draw detected lines from the seed image
-		PushCurves.DrawallLine(gaussimg, final_paramlist, psf);
-		ImageJFunctions.show(gaussimg);
-		
+				ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
+				
+				SubpixelLengthMSER MTline = new SubpixelLengthMSER(groundframe, arrayimg, simpleobject, psf, minlength);
+				MTline.checkInput();
+				MTline.process();
+				ArrayList<double[]> final_paramlist = MTline.getResult();
+				
+				// Draw the detected lines
+				PushCurves.DrawallLine(gaussimg, final_paramlist, psf);
+				ImageJFunctions.show(gaussimg).setTitle("Exact-line");
+	
 
 		ArrayList<double[]> PrevFrameparam = final_paramlist;
 
@@ -233,19 +249,26 @@ public class VelocitydetectionMSER {
 		
 			
 			RandomAccessibleInterval<FloatType> inputimgpre = Kernels.Supressthresh(precurrent);
-					//Kernels.CannyEdge(precurrent, psf, true, Heavythresholdvalue);
-	
-			final Float currThresholdValue = GlobalThresholding.AutomaticThresholding(inputimgpre);
-			RandomAccessibleInterval<BitType> currbitimg = new ArrayImgFactory<BitType>().create(inputimgpre, new BitType());
-			GetLocalmaxmin.ThresholdingBit(inputimgpre, currbitimg, currThresholdValue);
-			
-			WatershedDistimg Watershedobject = new WatershedDistimg(inputimgpre, currbitimg);
-			Watershedobject.checkInput();
-			Watershedobject.process();
-			RandomAccessibleInterval<IntType> watershedimg = Watershedobject.getResult();
 			
 			
-			final SubpixelVelocity growthtracker = new SubpixelVelocity(currentframe, watershedimg, PrevFrameparam, psf, frame);
+			RoiforMSER Roiobjectframe = new RoiforMSER(inputimgpre, currentframe, delta, minSize, maxSize, maxVar, minDiversity, false);
+			Roiobjectframe.checkInput();
+			Roiobjectframe.process();
+			ArrayList<LabelledImg> arrayimgframe = Roiobjectframe.getResult();
+			Overlay ovframe = Roiobjectframe.getOverlay();
+			
+			ImagePlus impframe = ImageJFunctions.wrap(inputimgpre, "curr");
+			impframe.setOverlay(ovframe);
+			/**
+			 * To see the overlay 
+			 * 
+			 * ImageJFunctions.show(inputimgpre);
+			 * ImagePlus imp = IJ.getImage();
+			 * 
+			 */
+			
+			
+			final SubpixelVelocityMSER growthtracker = new SubpixelVelocityMSER(currentframe, arrayimgframe, PrevFrameparam, psf, frame);
 			growthtracker.checkInput();
 			growthtracker.process();
 			ArrayList<double[]> NewFrameparam = growthtracker.getResult();
@@ -261,7 +284,7 @@ public class VelocitydetectionMSER {
 			RandomAccessibleInterval<FloatType> newgaussimg = new ArrayImgFactory<FloatType>().create(groundframe,
 					new FloatType());
 			PushCurves.DrawallLine(newgaussimg, NewFrameparam, psf);
-			ImageJFunctions.show(newgaussimg);
+			ImageJFunctions.show(newgaussimg).setTitle("Exact-line");
 			
 
 		}

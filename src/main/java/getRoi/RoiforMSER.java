@@ -86,7 +86,6 @@ public class RoiforMSER extends BenchmarkAlgorithm
 
 		try
 		{
-		new ImageJ();
 		ImageJFunctions.wrap(source, "curr");
 		final ImagePlus currentimp = IJ.getImage();
 		IJ.run("8-bit");

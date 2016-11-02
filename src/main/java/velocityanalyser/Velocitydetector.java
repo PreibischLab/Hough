@@ -13,7 +13,6 @@ import drawandOverlay.DisplaysubGraphend;
 import drawandOverlay.DisplaysubGraphstart;
 import drawandOverlay.OverlayLines;
 import drawandOverlay.PushCurves;
-import getRoi.RoiforHough;
 import graphconstructs.Staticproperties;
 import houghandWatershed.HoughTransform2D;
 import houghandWatershed.WatershedDistimg;
@@ -114,21 +113,7 @@ public class Velocitydetector {
 			RandomAccessibleInterval<BitType> bitimg = new ArrayImgFactory<BitType>().create(inputimg, new BitType());
 			GetLocalmaxmin.ThresholdingBit(inputimg, bitimg, ThresholdValue);
 
-			final int delta = 10;
-			final long minSize = 10;
-			final long maxSize = Long.MAX_VALUE;
-			final double maxVar = 0.2;
-			final double minDiversity = 0;
-			RoiforHough Roiobject = new RoiforHough(inputimg, delta, minSize, maxSize, maxVar, minDiversity, false);
-			Roiobject.checkInput();
-			Roiobject.process();
-			ArrayList<LabelledImg> arrayimg = Roiobject.getResult();
-			for (int index = 0; index < arrayimg.size(); ++index ){
-				
-				ImageJFunctions.show(arrayimg.get(index).roiimg);
-				System.out.println(arrayimg.get(index).label);
-				
-			}
+		
 			
 			
 			// Do watershedding and Hough
