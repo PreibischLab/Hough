@@ -15,7 +15,6 @@ import drawandOverlay.OverlayLines;
 import drawandOverlay.PushCurves;
 import getRoi.RoiforMSER;
 import graphconstructs.Staticproperties;
-import houghandWatershed.HoughTransform2D;
 import houghandWatershed.WatershedDistimg;
 import ij.IJ;
 import ij.ImageJ;
@@ -61,14 +60,14 @@ public class VelocitydetectionMSER {
 		// Load the stack of images
 		final RandomAccessibleInterval<FloatType> img = util.ImgLib2Util
 				.openAs32Bit(
-						new File("../res/10frame_moving.tif"),
-							new ArrayImgFactory<FloatType>());
+					//	new File("../res/10frame_moving.tif"),
+					//		new ArrayImgFactory<FloatType>());
 					
-				//		new File("/Users/varunkapoor/Hough/src/main/resources/2015-01-14_Seeds-1.tiff"),
-				//		new ArrayImgFactory<FloatType>());
+					//	new File("../res/2015-01-14_Seeds-1.tiff"),
+					//	new ArrayImgFactory<FloatType>());
 						
-				//		new File("../res/small_mt.tif"),
-				//		new ArrayImgFactory<FloatType>());
+						new File("../res/Pnoise1snr15.tif"),
+						new ArrayImgFactory<FloatType>());
 		int ndims = img.numDimensions();
 
 		// Normalize the intensity of the whole stack to be between min and max
@@ -133,8 +132,9 @@ public class VelocitydetectionMSER {
 			Roiobject.process();
 			ArrayList<LabelledImg> arrayimg = Roiobject.getResult();
 			Overlay ov = Roiobject.getOverlay();
-			
-			ImagePlus imp = ImageJFunctions.wrap(inputimg, "curr");
+			ImageJFunctions.show(inputimg);
+			ImagePlus imp = IJ.getImage();
+			//ImagePlus imp = ImageJFunctions.wrap(inputimg, "curr");
 			imp.setOverlay(ov);
 			/**
 			 * To see the overlay 
@@ -203,8 +203,9 @@ public class VelocitydetectionMSER {
 		Roiobject.process();
 		ArrayList<LabelledImg> arrayimg = Roiobject.getResult();
 		Overlay ov = Roiobject.getOverlay();
-		
-		ImagePlus imp = ImageJFunctions.wrap(inputimg, "curr");
+		ImageJFunctions.show(inputimg);
+		ImagePlus imp = IJ.getImage();
+		//ImagePlus imp = ImageJFunctions.wrap(inputimg, "curr");
 		/**
 		 * To see the overlay 
 		 * 
@@ -256,8 +257,9 @@ public class VelocitydetectionMSER {
 			Roiobjectframe.process();
 			ArrayList<LabelledImg> arrayimgframe = Roiobjectframe.getResult();
 			Overlay ovframe = Roiobjectframe.getOverlay();
-			
-			ImagePlus impframe = ImageJFunctions.wrap(inputimgpre, "curr");
+			ImageJFunctions.show(inputimgpre);
+			ImagePlus impframe = IJ.getImage();
+			//ImagePlus impframe = ImageJFunctions.wrap(inputimgpre, "curr");
 			impframe.setOverlay(ovframe);
 			/**
 			 * To see the overlay 

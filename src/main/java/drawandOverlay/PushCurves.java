@@ -22,6 +22,8 @@ import simulateLines.Fakeline;
 
 public class PushCurves {
 
+	public static double slopethresh = 90;
+	
 	public static void drawCircle(Img<FloatType> imgout, double[] min, double[] max, double[] center, double radius) {
 		int n = imgout.numDimensions();
 		double[] realpos = new double[n];
@@ -190,8 +192,16 @@ public class PushCurves {
 		newpos[1] = position[1];
 		sigma[0] = 1;
 		sigma[1] = 1;
+		double dx = stepsize / (1 + slope * slope);
+		double dy = slope * dx;
+		if (Math.abs(Math.toDegrees(Math.atan2(dy, dx))) <= slopethresh && Math.abs(Math.toDegrees(Math.atan2(dy, dx))) > slopethresh - 1  ){
+			
+			dx = 0;
+			dy = stepsize* Math.signum(slope);
+			
+		}
 		while (true) {
-
+			 
 			for (int d = 0; d < n; ++d)
 				position[d] = newpos[d];
 
@@ -212,8 +222,8 @@ public class PushCurves {
 				outbound.setPosition(setpos);
 			// Increment from starting position (min) towards max
 
-			newpos[0] = position[0] + stepsize / (1 + slope * slope);
-			newpos[1] = position[1] + stepsize * slope / (1 + slope * slope);
+			newpos[0] = position[0] + dx;
+			newpos[1] = position[1] + dy;
 			// General Stopping criteria of moving along a curve, when we hit a
 			// boundary
 
@@ -310,10 +320,15 @@ public class PushCurves {
 		double steppos[] = {startline[0], startline[1]};
 		double dx = stepsize / Math.sqrt(1 + slope * slope);
 		double dy = slope * dx;
-		
+		if (Math.abs(Math.toDegrees(Math.atan2(dy, dx))) <= slopethresh && Math.abs(Math.toDegrees(Math.atan2(dy, dx))) > slopethresh - 1  ){
+			
+			dx = 0;
+			dy = stepsize* Math.signum(slope);
+			
+		}
 		while (true) {
 			
-			
+			AddGaussian.addGaussian(imgout, steppos, sigma);
 			
 			if (steppos[0] > endline[0] || steppos[1] > endline[1] && slope >= 0)
 				break;
@@ -321,11 +336,11 @@ public class PushCurves {
 				break;
 			steppos[0] += dx;
 			steppos[1] += dy;
-			AddGaussian.addGaussian(imgout, steppos, sigma);
+			
 		}
-		double acstartpos[] = {startline[0] + dx, startline[1] + dy};
+		double acstartpos[] = {startline[0] , startline[1] };
 		try {
-	        FileWriter writer = new FileWriter("../res/ActualP3.txt", true);
+	        FileWriter writer = new FileWriter("../res/ActualP2.txt", true);
 	        writer.write( "StartX: "  + (acstartpos[0])+  " " +
 	       		 "StartY: "+ (acstartpos[1]) + " " + "EndposX: " + steppos[0] +  
 	    		 " EndposY :" + steppos[1]+ "  Length " + Distance(acstartpos, steppos) );
@@ -350,6 +365,7 @@ public class PushCurves {
 
 		int ndims = imgout.numDimensions();
 
+		
 		double[] startline = new double[ndims];
 		double[] endline = new double[ndims];
 
@@ -359,44 +375,34 @@ public class PushCurves {
 		}
 
 		double slope = (endline[1] - startline[1]) / (endline[0] - startline[0]);
-		final double stepsize = 0.25 * (sigma[0] + sigma[1]);
+		 
 		final double[] steppos = new double[ndims];
+		double stepsize = 1;
+		double[] dxvector = {stepsize / Math.sqrt(1 + slope * slope),  stepsize * slope / Math.sqrt(1 + slope * slope) };
+		if (Math.abs(Math.toDegrees(Math.atan2(dxvector[1], dxvector[0]))) <= slopethresh && Math.abs(Math.toDegrees(Math.atan2(dxvector[1], dxvector[0]))) > slopethresh - 1  ){
+
+			dxvector[0] = 0;
+			dxvector[1] = stepsize* Math.signum(slope);
+			
+		}
+			for (int d  = 0; d < ndims ; ++d)
+				steppos[d] = startline[d];
+			while (true) {
+
+				AddGaussian.addGaussian(imgout, steppos, sigma);
+				steppos[0] +=  dxvector[0];
+				steppos[1] +=  dxvector[1];
+				
+
+
+				if (steppos[0] > endline[0] || steppos[1] > endline[1] && slope >= 0)
+					break;
+				if (steppos[0] > endline[0] || steppos[1] < endline[1] && slope < 0)
+					break;
+			}
 		
-		int count = 0;
-
-		if (slope >= 0) {
-			for (int d = 0; d < ndims; ++d)
-			steppos[d] = startline[d];
-			while (true) {
-				AddGaussian.addGaussian(imgout, steppos, sigma);
-				steppos[0] = startline[0] + count * stepsize / Math.sqrt(1 + slope * slope);
-				steppos[1] = startline[1] + count * stepsize * slope / Math.sqrt(1 + slope * slope);
-
-				
-
-				count++;
-
-				if (steppos[0] > endline[0] || steppos[1] > endline[1])
-					break;
-			}
-		}
-		int negcount = 0;
-		if (slope < 0) {
-			steppos[0] = startline[0];
-			steppos[1] = startline[1];
-			while (true) {
-				AddGaussian.addGaussian(imgout, steppos, sigma);
-				steppos[0] = startline[0] + negcount * stepsize / Math.sqrt(1 + slope * slope);
-				steppos[1] = startline[1] + negcount * stepsize * slope / Math.sqrt(1 + slope * slope);
-
-				
-
-				negcount++;
-
-				if (steppos[0] > endline[0] || steppos[1] < endline[1])
-					break;
-			}
-		}
+		
+		
 
 	}
 	// Draw a line between starting and end point
@@ -416,43 +422,33 @@ public class PushCurves {
 			}
 
 			double slope = (endline[1] - startline[1]) / (endline[0] - startline[0]);
-			final double stepsize = 0.25 * (sigma[0] + sigma[1]);
 			final double[] steppos = new double[ndims];
-			int count = 0;
-
-			if (slope >= 0) {
-				for (int d = 0; d < ndims; ++d)
+			double stepsize = 1;
+			double[] dxvector = {stepsize / Math.sqrt(1 + slope * slope),  stepsize * slope / Math.sqrt(1 + slope * slope) };
+			
+			if (Math.abs(Math.toDegrees(Math.atan2(dxvector[1], dxvector[0]))) <= slopethresh && Math.abs(Math.toDegrees(Math.atan2(dxvector[1], dxvector[0]))) > slopethresh - 1  ){
+				
+				dxvector[0] = 0;
+				dxvector[1] = stepsize* Math.signum(slope);
+				
+			}
+				for (int d  = 0; d < ndims ; ++d)
 					steppos[d] = startline[d];
 				while (true) {
-					AddGaussian.addGaussian(imgout, steppos, sigma);
-					steppos[0] = startline[0] + count * stepsize / Math.sqrt(1 + slope * slope);
-					steppos[1] = startline[1] + count * stepsize * slope / Math.sqrt(1 + slope * slope);
 
+					AddGaussian.addGaussian(imgout, steppos, sigma);
+					steppos[0] +=  dxvector[0];
+					steppos[1] +=  dxvector[1];
 					
 
-					count++;
 
-					if (steppos[0] > endline[0] || steppos[1] > endline[1])
+					if (steppos[0] > endline[0] || steppos[1] > endline[1] && slope >= 0)
+						break;
+					if (steppos[0] > endline[0] || steppos[1] < endline[1] && slope < 0)
 						break;
 				}
-			}
-			int negcount = 0;
-			if (slope < 0) {
-				steppos[0] = startline[0];
-				steppos[1] = startline[1];
-				while (true) {
-					AddGaussian.addGaussian(imgout, steppos, sigma);
-					steppos[0] = startline[0] + negcount * stepsize / Math.sqrt(1 + slope * slope);
-					steppos[1] = startline[1] + negcount * stepsize * slope / Math.sqrt(1 + slope * slope);
-
-					
-
-					negcount++;
-
-					if (steppos[0] > endline[0] || steppos[1] < endline[1])
-						break;
-				}
-			}
+			
+			
 			}
 		}
 
@@ -668,20 +664,28 @@ public class PushCurves {
 			
 		}
 		
-		final double[] steppos = new double[n];
-		int count = 0;
 		double stepsize = 1;
+		final double[] steppos = new double[n];
+		double dx = stepsize / Math.sqrt(1 + slope * slope);
+		double dy = slope * dx;
+		if (Math.abs(Math.toDegrees(Math.atan2(dy, dx))) <= slopethresh && Math.abs(Math.toDegrees(Math.atan2(dy, dx))) > slopethresh - 1  ){
+			
+			dx = 0;
+			dy = stepsize* Math.signum(slope);
+			
+		}
+		
 		if (slope >= 0) {
 			for (int d  = 0; d < n ; ++d)
 				steppos[d] = minVal[d];
 			while (true) {
 
 				AddGaussian.addGaussian(imgout, steppos, new double[] { sigma, sigma });
-				steppos[0] = minVal[0] + count * stepsize / Math.sqrt(1 + slope * slope);
-				steppos[1] = minVal[1] + count * stepsize * slope / Math.sqrt(1 + slope * slope);
+				steppos[0] +=  dx;
+				steppos[1] += dy;
 				
 
-				count++;
+				
 
 				if (steppos[0] > maxVal[0] || steppos[1] > maxVal[1])
 					break;

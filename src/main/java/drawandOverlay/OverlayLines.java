@@ -80,6 +80,65 @@ public class OverlayLines {
 		
 		return MainMinlist;
 	}
+	
+	public static RefinedPeak<Point> ReducedListsingle(RandomAccessibleInterval<FloatType> inputimg,
+			ArrayList<RefinedPeak<Point>> SubpixelMinlist, double[] sizes, double[] min, double[] max) {
+
+		RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(inputimg, new FloatType());
+		double[] points = new double[imgout.numDimensions()];
+		int maxcount = 0;
+		int maxindex = 0;
+		
+		for (int index = 0; index < SubpixelMinlist.size(); ++index) {
+			points = TransformCordinates.transformfwd(new double[] { SubpixelMinlist.get(index).getDoublePosition(0),
+					SubpixelMinlist.get(index).getDoublePosition(1) }, sizes, min, max);
+
+			double slope = -1.0 / Math.tan(Math.toRadians(points[0]));
+			double intercept = points[1] / Math.sin(Math.toRadians(points[0]));
+			
+			PushCurves.Drawexactline(imgout, slope, intercept, IntensityType.Gaussian);
+
+			RandomAccess<FloatType> inran = inputimg.randomAccess();
+			Cursor<FloatType> outcursor = Views.iterable(imgout).localizingCursor();
+			
+
+			int count = 0;
+			while (outcursor.hasNext()) {
+				outcursor.fwd();
+
+				if (outcursor.get().get() > 0) {
+					inran.setPosition(outcursor);
+
+					if (inran.get().get() > 0)
+						count++;
+
+					
+					if (count > maxcount) {
+						maxcount = count;
+						maxindex = index;
+
+					}
+
+				}
+
+			}
+		}
+		
+		
+		if (maxcount > 0)
+		
+		
+		
+		
+		return SubpixelMinlist.get(maxindex);
+		
+		else
+			
+			return null;
+	}
+	
+	
+
 
 	public static ArrayList<double[]> GetRhoTheta(ArrayList<RefinedPeak<Point>> MainMinlist, double[] sizes, double[] min,
 			double[] max) {
@@ -95,6 +154,16 @@ public class OverlayLines {
 		return points;
 	}
 
+	public static double[] GetRhoThetasingle(RefinedPeak<Point> MainMinlistsingle, double[] sizes, double[] min,
+			double[] max) {
+
+		ArrayList<double[]> points = new ArrayList<double[]>(); //[sizes.length];
+
+		final double[]	point = TransformCordinates.transformfwd(new double[] { MainMinlistsingle.getDoublePosition(0),
+					MainMinlistsingle.getDoublePosition(1) }, sizes, min, max);
+		
+		return point;
+	}
 	
 	public static void Getmserlines(RandomAccessibleInterval<FloatType> imgout,
 			ArrayList<LabelledImg> imgslist,ArrayList<Simpleobject> lineobject){

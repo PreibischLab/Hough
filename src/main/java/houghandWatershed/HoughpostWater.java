@@ -77,7 +77,7 @@ public class HoughpostWater {
 		// Do watershedding and Hough
 		System.out.println("Doing Hough transform in labels: ");
 
-		HoughTransform2D Houghobject = new HoughTransform2D(inputimg, bitimg, minlength);
+		HoughTransformandwatershed2D Houghobject = new HoughTransformandwatershed2D(inputimg, bitimg, minlength);
 		
 		Houghobject.checkInput();
 		Houghobject.process();

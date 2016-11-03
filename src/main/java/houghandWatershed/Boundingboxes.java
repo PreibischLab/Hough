@@ -197,7 +197,7 @@ public class Boundingboxes {
 			}
 		}
 		
-		FinalInterval interval = new FinalInterval(minVal, maxVal);
+		FinalInterval interval = new FinalInterval(minVal, maxVal) ;
 		RandomAccessibleInterval<FloatType> currentimgsmall = Views.interval(currentimg, interval);
 		return currentimgsmall;
 		

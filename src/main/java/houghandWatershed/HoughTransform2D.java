@@ -37,14 +37,12 @@ import preProcessing.GlobalThresholding;
  */
 
 public class HoughTransform2D extends BenchmarkAlgorithm
-		implements OutputAlgorithm<Pair<RandomAccessibleInterval<IntType>, ArrayList<Lineobjects>>> {
+		implements OutputAlgorithm<double[]> {
 
 	private static final String BASE_ERROR_MSG = "[HoughTransform2D] ";
 	private final RandomAccessibleInterval<FloatType> source;
-	private final RandomAccessibleInterval<BitType> bitimg;
-	private final double minlength;
-	private RandomAccessibleInterval<IntType> watershedimage;
-	private ArrayList<Lineobjects> linelist;
+	private final RandomAccessibleInterval<FloatType> Totalsource;
+	private double[] slopeandintercept;
 
 	/**
 	 * Instantiate a new Hough Transform object that does Hough Transform on 2D
@@ -63,24 +61,16 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 	 * 
 	 */
 
-	public HoughTransform2D(final RandomAccessibleInterval<FloatType> source,
-			final RandomAccessibleInterval<BitType> bitimg, final double minlength) {
+	public HoughTransform2D(final RandomAccessibleInterval<FloatType> source,final RandomAccessibleInterval<FloatType> Totalsource) {
 
 		this.source = source;
-		this.minlength = minlength;
-		this.bitimg = bitimg;
+		this.Totalsource = Totalsource;
 
 	}
 
-	public RandomAccessibleInterval<IntType> getWatershedimage() {
 
-		return watershedimage;
-	}
 
-	public ArrayList<Lineobjects> getLinelist() {
-
-		return linelist;
-	}
+	
 
 	@Override
 	public boolean checkInput() {
@@ -89,11 +79,7 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 					+ source.numDimensions() + "D.";
 			return false;
 		}
-		if (minlength < 2) {
-			errorMessage = BASE_ERROR_MSG + "minimum length of line to be detected cannot be smaller than 2. Got "
-					+ minlength + ".";
-			return false;
-		}
+		
 		return true;
 	}
 
@@ -101,49 +87,16 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 	public boolean process() {
 
 		
-		WatershedDistimg WaterafterDisttransform = new WatershedDistimg(source, bitimg);
-		WaterafterDisttransform.checkInput();
-		WaterafterDisttransform.process();
-		watershedimage = WaterafterDisttransform.getResult();
-		final int Maxlabel = WaterafterDisttransform.GetMaxlabelsseeded(watershedimage);
-		
-		
-
-		System.out.println("Total labels: " + Maxlabel);
 
 		final int ndims = source.numDimensions();
-		ArrayList<RefinedPeak<Point>> ReducedMinlist = new ArrayList<RefinedPeak<Point>>(
-				source.numDimensions());
+		
 
-		ImageJFunctions.show(watershedimage);
 		final double[] sizes = new double[ndims];
 
 		// Automatic threshold determination for doing the Hough transform
 		Float val = GlobalThresholding.AutomaticThresholding(source);
 
-		linelist = new ArrayList<Lineobjects>(source.numDimensions());
-
-		for (int label = 1; label < Maxlabel - 1; label++) {
-
-			System.out.println("Label Number:" + label);
-
-			RandomAccessibleInterval<FloatType> outimg =  Boundingboxes.CurrentLabelImage(watershedimage, source, label);
-			
-			long[] minCorner = Boundingboxes.GetMincorners(watershedimage, label);
-			long[] maxCorner = Boundingboxes.GetMaxcorners(watershedimage, label);
-
-			FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
-
-			 RandomAccessibleInterval<FloatType> outimgview = Views.interval(outimg, intervalsmall);
-			//ImageJFunctions.show(outimg);
-			
-			final double area = Distance(minCorner, maxCorner);
-			
-			if (area < minlength * minlength){
-			System.out.println("Skipping currentl label, not a real line here!");
-				continue;
-			}
-
+		slopeandintercept = new double[source.numDimensions()];
 
 
 			// Set size of pixels in Hough space
@@ -152,13 +105,13 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 			// Usually is 180 but to allow for detection of vertical
 			// lines,allowing a few more degrees
 
-			int maxtheta = 220;
+			int maxtheta = 240;
 			double size = Math
-					.sqrt((outimg.dimension(0) * outimg.dimension(0) + outimg.dimension(1) * outimg.dimension(1)));
+					.sqrt((Totalsource.dimension(0) * Totalsource.dimension(0) + Totalsource.dimension(1) * Totalsource.dimension(1)));
 			int minRho = (int) -Math.round(size);
 			int maxRho = -minRho;
-			double thetaPerPixel = 1;
-			double rhoPerPixel = 1;
+			double thetaPerPixel = 0.3;
+			double rhoPerPixel = 0.3;
 			double[] min = { mintheta, minRho };
 			double[] max = { maxtheta, maxRho };
 			int pixelsTheta = (int) Math.round((maxtheta - mintheta) / thetaPerPixel);
@@ -169,7 +122,7 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 			final RandomAccessibleInterval<FloatType> houghimage = new ArrayImgFactory<FloatType>().create(interval,
 					new FloatType());
 
-			HoughPushCurves.Houghspace(outimgview, houghimage, min, max, val);
+			HoughPushCurves.Houghspace(source, houghimage, min, max, val);
 
 			for (int d = 0; d < houghimage.numDimensions(); ++d)
 				sizes[d] = houghimage.dimension(d);
@@ -183,32 +136,32 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 
 			// Reduce the number of detections by picking One line per Label,
 			// using the best detection for each label
-			ReducedMinlist = OverlayLines.ReducedList(outimg, SubpixelMinlist, sizes, min, max);
+			RefinedPeak<Point> peak  = OverlayLines.ReducedListsingle(Totalsource, SubpixelMinlist, sizes, min, max);
 
-			ArrayList<double[]> points = new ArrayList<double[]>();
+			 double[] points = new double[source.numDimensions()];
 
-			points = OverlayLines.GetRhoTheta(ReducedMinlist, sizes, min, max);
-
-			/**
-			 * This object has rho, theta, min dimensions, max dimensions of the
-			 * label
-			 * 
-			 */
-			final Lineobjects line = new Lineobjects(label, points, minCorner, maxCorner);
-
-			linelist.add(line);
-		}
+			points = OverlayLines.GetRhoThetasingle(peak, sizes, min, max);
+			if (points!= null){
+				
+			double slope = -1.0 / (Math.tan(Math.toRadians(points[0])));
+			double intercept = points[1] / Math.sin(Math.toRadians(points[0]));
+			
+			
+			slopeandintercept[0] = slope;
+			slopeandintercept[1] = intercept;
+			
+			}
+		
 
 		return true;
 	}
 
 	@Override
-	public Pair<RandomAccessibleInterval<IntType>, ArrayList<Lineobjects>> getResult() {
+	public double[] getResult() {
 
-		Pair<RandomAccessibleInterval<IntType>, ArrayList<Lineobjects>> linepair = new Pair<RandomAccessibleInterval<IntType>, ArrayList<Lineobjects>>(
-				watershedimage, linelist);
+		
 
-		return linepair;
+		return slopeandintercept;
 	}
 
 	

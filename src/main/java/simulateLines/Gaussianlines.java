@@ -23,8 +23,8 @@ public class Gaussianlines {
 		final int n = outimg.numDimensions();
 		 // Pnoise1: (10, -10) Pnoise2: (20 , 10) Pnoise3:  (30, 18) Pnoise4: (15, 56) Pnoise5: (24, 44)
 		ArrayList<Fakeline> linearray = new ArrayList<Fakeline>();
-		final Random rnd = new Random(30);
-		final Random rndsec = new Random(18);
+		final Random rnd = new Random(20);
+		final Random rndsec = new Random(10);
 		
 		for (int lineindex = 0; lineindex < numlines; ++lineindex) {
 

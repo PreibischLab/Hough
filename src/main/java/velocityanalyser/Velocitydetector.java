@@ -14,7 +14,7 @@ import drawandOverlay.DisplaysubGraphstart;
 import drawandOverlay.OverlayLines;
 import drawandOverlay.PushCurves;
 import graphconstructs.Staticproperties;
-import houghandWatershed.HoughTransform2D;
+import houghandWatershed.HoughTransformandwatershed2D;
 import houghandWatershed.WatershedDistimg;
 import ij.ImageJ;
 import ij.ImagePlus;
@@ -119,7 +119,7 @@ public class Velocitydetector {
 			// Do watershedding and Hough
 			System.out.println("Doing Hough transform in labels: ");
 
-			HoughTransform2D Houghobject = new HoughTransform2D(inputimg, bitimg, minlength);
+			HoughTransformandwatershed2D Houghobject = new HoughTransformandwatershed2D(inputimg, bitimg, minlength);
 			
 			Houghobject.checkInput();
 			Houghobject.process();
@@ -177,7 +177,7 @@ public class Velocitydetector {
 		GetLocalmaxmin.ThresholdingBit(inputimg, bitimg, ThresholdValue);
 		System.out.println("Doing Hough transform in labels: ");
 
-        HoughTransform2D Houghobject = new HoughTransform2D(inputimg, bitimg, minlength);
+        HoughTransformandwatershed2D Houghobject = new HoughTransformandwatershed2D(inputimg, bitimg, minlength);
 		Houghobject.checkInput();
 		Houghobject.process();
 		Pair<RandomAccessibleInterval<IntType>, ArrayList<Lineobjects>> linepair  = Houghobject.getResult();

@@ -372,24 +372,19 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 	
 
 	private PointSampleList<FloatType> gatherfullData(final int label) {
-
 		final PointSampleList<FloatType> datalist = new PointSampleList<FloatType>(ndims);
 
-		RandomAccessibleInterval<FloatType> currentimg = imgs.get(label).Actualroiimg;
+		RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(imgs, label);
 
-		EllipseRoi roi = imgs.get(label).roi;
 		
 		Cursor<FloatType> localcursor = Views.iterable(currentimg).localizingCursor();
 
 		while (localcursor.hasNext()) {
 			localcursor.fwd();
-			int x = localcursor.getIntPosition(0);
-			int y = localcursor.getIntPosition(1);
-			if (roi.contains(x, y)){
+			
 			Point newpoint = new Point(localcursor);
 			datalist.add(newpoint, localcursor.get().copy());
 
-			}
 		}
 
 		return datalist;

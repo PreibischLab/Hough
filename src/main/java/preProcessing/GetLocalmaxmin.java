@@ -368,7 +368,7 @@ public class GetLocalmaxmin {
 			ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(houghimage.numDimensions());
 
 			// Get local Minima in scale space to get Max rho-theta points
-			double minPeakValue =   0.5* houghval; 
+			double minPeakValue =   0.5 * houghval; 
 			double smallsigma = 1;
 			double bigsigma = 1.1;
 			SubpixelMinlist = GetLocalmaxmin.ScalespaceMinima(houghimage, interval, thetaPerPixel, rhoPerPixel,
