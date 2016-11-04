@@ -48,14 +48,15 @@ public class RoiforMSER extends BenchmarkAlgorithm
 	private final double maxVar;
 	private final double minDIversity;
 	private final boolean darktoBright;
+	private final boolean DoHough;
 	private Overlay ov;
-	
+	private final int ndims;
 	private int Roiindex;
 	private ArrayList<LabelledImg> imgs;
 
 	public RoiforMSER(final RandomAccessibleInterval<FloatType> source, final RandomAccessibleInterval<FloatType> Actualsource,
 			final double delta, final long minSize,
-			final long maxSize, final double maxVar, final double minDiversity, final boolean darktoBright) {
+			final long maxSize, final double maxVar, final double minDiversity, final boolean darktoBright, final boolean DoHough) {
 
 		this.source = source;
 		this.Actualsource = Actualsource;
@@ -65,6 +66,8 @@ public class RoiforMSER extends BenchmarkAlgorithm
 		this.maxVar = maxVar;
 		this.minDIversity = minDiversity;
 		this.darktoBright = darktoBright;
+		this.DoHough = DoHough;
+		this.ndims = source.numDimensions();
 	}
 
 	@Override
@@ -132,7 +135,7 @@ public class RoiforMSER extends BenchmarkAlgorithm
 		}
 		
 		// We do this so the ROI remains attached the the same label and is not changed if the program is run again
-	SortListbyproperty.sortpointList(ellipselist);
+	       SortListbyproperty.sortpointList(ellipselist);
 		
 			for (int index = 0; index < ellipselist.size(); ++index) {
 				Roiindex = index;
@@ -187,16 +190,25 @@ public class RoiforMSER extends BenchmarkAlgorithm
 
 				}
 				
-				// Obtain the slope and intercept of the line by Hough Transform (slow but very accurate)
-				//final double[] slopeandintercept = LargestEigenvector(mean, covar, Roiimg, ellipseroi, Roiindex);
+				double[] slopeandintercept = new double[ndims];
 				
+				
+				
+				// Obtain the slope and intercept of the line by Hough Transform (slow but very accurate)
+				if (DoHough){
+				slopeandintercept = LargestEigenvector(mean, covar, Roiimg, ellipseroi, Roiindex);
+				}
 				// Obtain the slope and intercept of the line by obtaining the major axis of the ellipse (super fast but could be inaccurate)
-				final double[] slopeandintercept = LargestEigenvector(mean, covar);
+				else{
+				slopeandintercept = LargestEigenvector(mean, covar);
+				}
 				
 				
 				LabelledImg currentimg = new LabelledImg(Roiindex, Roiimg, ActualRoiimg, ellipseroi, slopeandintercept, mean, covar);
-				if(Math.abs(slopeandintercept[0])!=Double.POSITIVE_INFINITY || Math.abs(slopeandintercept[1])!=Double.POSITIVE_INFINITY  )
+				
+				if(slopeandintercept!=null )
 				imgs.add(currentimg);
+				
 				
 				
 			}
@@ -256,28 +268,37 @@ public class RoiforMSER extends BenchmarkAlgorithm
 	 */
 	public  double[] LargestEigenvector( final double[] mean, final double[] cov){
 		
+		// For inifinite slope lines support is provided
 		final double a = cov[0];
 		final double b = cov[1];
 		final double c = cov[2];
 		final double d = Math.sqrt(a * a + 4 * b * b - 2 * a * c + c * c);
 		final double[] eigenvector1 = {2 * b, c - a + d};
-		double[] LargerVec = new double[eigenvector1.length];
+		double[] LargerVec = new double[eigenvector1.length + 1];
 
 		LargerVec =  eigenvector1;
 		
-        final double slope = LargerVec[1] / LargerVec[0];
+        final double slope = LargerVec[1] / (LargerVec[0] );
         final double intercept = mean[1] - mean[0] * slope;
        
-        if (LargerVec[0]!= 0){
-        double[] pair = {slope, intercept};
+        if (Math.abs(slope) != Double.POSITIVE_INFINITY){
+        double[] pair = {slope, intercept, Double.MAX_VALUE};
         return pair;
         }
-        else{
-        	double[] pair = {Double.MAX_VALUE, Double.MAX_VALUE};
-        return pair;
+        
+        else {
+        	
+        	double[] prependicular = {Double.MAX_VALUE, Double.MAX_VALUE, mean[0]};
+        	return prependicular;
         }
+        
+        
+        
 		
 	}
+	
+	
+	
 	
 	/**
 	 * Returns the slope and the intercept of the line by doing Hough Transform
@@ -319,10 +340,10 @@ public class RoiforMSER extends BenchmarkAlgorithm
 		}
 		
 		FinalInterval interval = new FinalInterval(minVal, maxVal);
-		RandomAccessibleInterval<FloatType> currentimgsmall = Views.interval(currentimg, interval);
+		RandomAccessibleInterval<FloatType> currentimgsmall = Views.offsetInterval(currentimg, interval);
 	
 		
-		HoughTransform2D Houghonly = new HoughTransform2D(currentimgsmall, source);
+		HoughTransform2D Houghonly = new HoughTransform2D(currentimgsmall, interval);
 		Houghonly.checkInput();
 		Houghonly.process();
 		double[] pair = Houghonly.getResult();

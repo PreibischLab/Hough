@@ -41,7 +41,7 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 
 	private static final String BASE_ERROR_MSG = "[HoughTransform2D] ";
 	private final RandomAccessibleInterval<FloatType> source;
-	private final RandomAccessibleInterval<FloatType> Totalsource;
+	private final FinalInterval Realinterval;
 	private double[] slopeandintercept;
 
 	/**
@@ -61,10 +61,10 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 	 * 
 	 */
 
-	public HoughTransform2D(final RandomAccessibleInterval<FloatType> source,final RandomAccessibleInterval<FloatType> Totalsource) {
+	public HoughTransform2D(final RandomAccessibleInterval<FloatType> source,final FinalInterval Realinterval) {
 
 		this.source = source;
-		this.Totalsource = Totalsource;
+		this.Realinterval = Realinterval;
 
 	}
 
@@ -96,7 +96,7 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 		// Automatic threshold determination for doing the Hough transform
 		Float val = GlobalThresholding.AutomaticThresholding(source);
 
-		slopeandintercept = new double[source.numDimensions()];
+		slopeandintercept = new double[source.numDimensions() + 1];
 
 
 			// Set size of pixels in Hough space
@@ -107,11 +107,11 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 
 			int maxtheta = 240;
 			double size = Math
-					.sqrt((Totalsource.dimension(0) * Totalsource.dimension(0) + Totalsource.dimension(1) * Totalsource.dimension(1)));
+					.sqrt((source.dimension(0) * source.dimension(0) + source.dimension(1) * source.dimension(1)));
 			int minRho = (int) -Math.round(size);
 			int maxRho = -minRho;
-			double thetaPerPixel = 0.3;
-			double rhoPerPixel = 0.3;
+			double thetaPerPixel = 1;
+			double rhoPerPixel = 1;
 			double[] min = { mintheta, minRho };
 			double[] max = { maxtheta, maxRho };
 			int pixelsTheta = (int) Math.round((maxtheta - mintheta) / thetaPerPixel);
@@ -136,7 +136,7 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 
 			// Reduce the number of detections by picking One line per Label,
 			// using the best detection for each label
-			RefinedPeak<Point> peak  = OverlayLines.ReducedListsingle(Totalsource, SubpixelMinlist, sizes, min, max);
+			RefinedPeak<Point> peak  = OverlayLines.ReducedListsingle(source, SubpixelMinlist, sizes, min, max);
 
 			 double[] points = new double[source.numDimensions()];
 
@@ -146,10 +146,20 @@ public class HoughTransform2D extends BenchmarkAlgorithm
 			double slope = -1.0 / (Math.tan(Math.toRadians(points[0])));
 			double intercept = points[1] / Math.sin(Math.toRadians(points[0]));
 			
-			
+			// This step is for prependicular lines
+			if (Math.abs(slope) < 20){
 			slopeandintercept[0] = slope;
-			slopeandintercept[1] = intercept;
+			slopeandintercept[1] = intercept +  (Realinterval.realMin(1) - slope * Realinterval.realMin(0));
+			slopeandintercept[2] = Double.MAX_VALUE;
+			}
 			
+			else{
+				
+				System.out.println("rho:" + points[1] + Realinterval.realMin(0));
+				slopeandintercept[0] = Double.MAX_VALUE;
+				slopeandintercept[1] = Double.MAX_VALUE;
+				slopeandintercept[2] = points[1] +  Realinterval.realMin(0);	
+			}
 			}
 		
 

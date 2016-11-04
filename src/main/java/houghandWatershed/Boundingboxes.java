@@ -203,6 +203,43 @@ public class Boundingboxes {
 		
 	}
 	
+	public static Pair<RandomAccessibleInterval<FloatType>, FinalInterval> CurrentLabelImagepair(RandomAccessibleInterval<IntType> Intimg,
+			RandomAccessibleInterval<FloatType> originalimg, int currentLabel) {
+
+		RandomAccess<FloatType> inputRA = originalimg.randomAccess();
+
+		Cursor<IntType> intCursor = Views.iterable(Intimg).cursor();
+		final FloatType type = originalimg.randomAccess().get().createVariable();
+		final ImgFactory<FloatType> factory = Util.getArrayOrCellImgFactory(originalimg, type);
+		RandomAccessibleInterval<FloatType> outimg = factory.create(originalimg, type);
+		RandomAccess<FloatType> imageRA = outimg.randomAccess();
+
+		// Go through the whole image and add every pixel, that belongs to
+		// the currently processed label
+
+		while (intCursor.hasNext()) {
+			intCursor.fwd();
+			inputRA.setPosition(intCursor);
+			imageRA.setPosition(inputRA);
+			int i = intCursor.get().get();
+			if (i == currentLabel) {
+
+				imageRA.get().set(inputRA.get());
+
+			}
+
+		}
+		long[] minCorner = Boundingboxes.GetMincorners(Intimg, currentLabel);
+		long[] maxCorner = Boundingboxes.GetMaxcorners(Intimg, currentLabel);
+
+		FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
+		RandomAccessibleInterval<FloatType> outimgsmall = Views.offsetInterval(outimg, intervalsmall);
+
+		Pair<RandomAccessibleInterval<FloatType>, FinalInterval> pair = new Pair<RandomAccessibleInterval<FloatType>, FinalInterval>(outimgsmall, intervalsmall);
+		return pair;
+
+	}
+
 	public static RandomAccessibleInterval<FloatType> CurrentLabelImage(RandomAccessibleInterval<IntType> Intimg,
 			RandomAccessibleInterval<FloatType> originalimg, int currentLabel) {
 
@@ -229,11 +266,17 @@ public class Boundingboxes {
 			}
 
 		}
+		long[] minCorner = Boundingboxes.GetMincorners(Intimg, currentLabel);
+		long[] maxCorner = Boundingboxes.GetMaxcorners(Intimg, currentLabel);
 
-		return outimg;
+		FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
+		RandomAccessibleInterval<FloatType> outimgsmall = Views.interval(outimg, intervalsmall);
+
+		return outimgsmall;
 
 	}
-
+	
+	
 	public static double Distance(final long[] minCorner, final long[] maxCorner) {
 
 		double distance = 0;

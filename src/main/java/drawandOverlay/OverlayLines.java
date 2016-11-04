@@ -7,6 +7,7 @@ import labeledObjects.LabelledImg;
 import labeledObjects.Lineobjects;
 import labeledObjects.Simpleobject;
 import net.imglib2.Cursor;
+import net.imglib2.FinalInterval;
 import net.imglib2.Point;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
@@ -157,7 +158,6 @@ public class OverlayLines {
 	public static double[] GetRhoThetasingle(RefinedPeak<Point> MainMinlistsingle, double[] sizes, double[] min,
 			double[] max) {
 
-		ArrayList<double[]> points = new ArrayList<double[]>(); //[sizes.length];
 
 		final double[]	point = TransformCordinates.transformfwd(new double[] { MainMinlistsingle.getDoublePosition(0),
 					MainMinlistsingle.getDoublePosition(1) }, sizes, min, max);
@@ -171,12 +171,23 @@ public class OverlayLines {
 		for (int index = 0; index < imgslist.size(); ++index){
 			
 			final int label = imgslist.get(index).label;
+			final EllipseRoi ellipse = imgslist.get(index).roi;
 			final double slope = imgslist.get(index).slopeandintercept[0];
 			final double intercept = imgslist.get(index).slopeandintercept[1];
-			final EllipseRoi ellipse = imgslist.get(index).roi;
-			final Simpleobject simpleobj = new Simpleobject(label, slope, intercept);
+			final double ifprep = imgslist.get(index).slopeandintercept[2];
+
+			if (slope!= Double.MAX_VALUE && intercept!=Double.MAX_VALUE && ifprep==Double.MAX_VALUE){
+			final Simpleobject simpleobj = new Simpleobject(label, slope, intercept, ifprep);
 			lineobject.add(simpleobj);
+			
 			PushCurves.DrawRoiline(imgout, ellipse, slope, intercept);
+			}
+			
+			else if (ifprep!= Double.MAX_VALUE){
+				final Simpleobject simpleobj = new Simpleobject(label, Double.MAX_VALUE, Double.MAX_VALUE, ifprep);
+				lineobject.add(simpleobj);
+				PushCurves.DrawRoilineprep(imgout, ellipse, ifprep);
+			}
 			
 		}
 		
@@ -187,60 +198,43 @@ public class OverlayLines {
 			
 			RandomAccessibleInterval<IntType> intimg, 
 			ArrayList<Lineobjects> linelist,
-			ArrayList<Simpleobject> lineobject,
-			final long radius) {
+			ArrayList<Simpleobject> lineobject) {
 
 		for (int index = 0; index < linelist.size(); ++index) {
 
 			final int label = linelist.get(index).Label;
 			
-			ArrayList<double[]> rhothetalist = linelist.get(index).rhotheta;
+			double[] rhothetalist = linelist.get(index).singleslopeandintercept;
 			
-			for (int arrayindex = 0; arrayindex < rhothetalist.size(); ++arrayindex){
-			final double rho = rhothetalist.get(arrayindex)[1];
-			final double theta = rhothetalist.get(arrayindex)[0];
+		
 			
-			double slope = -1.0 / (Math.tan(Math.toRadians(theta)));
-			double intercept = rho / Math.sin(Math.toRadians(theta));
+			final double slope = rhothetalist[0];
+			final double intercept = rhothetalist[1];
+			final double ifprep = rhothetalist[2];
+			
+			
 
-			final Simpleobject simpleobj = new Simpleobject(label, slope, intercept);
+			if (slope!= Double.MAX_VALUE && intercept!=Double.MAX_VALUE && ifprep==Double.MAX_VALUE){
+			final Simpleobject simpleobj = new Simpleobject(label, slope, intercept, ifprep);
 			lineobject.add(simpleobj);
 			
+			
 			PushCurves.DrawTruncatedline(imgout, intimg, slope, intercept, label);
-
+			
 			}
+			else if (ifprep!= Double.MAX_VALUE){
+				final Simpleobject simpleobj = new Simpleobject(label, Double.MAX_VALUE, Double.MAX_VALUE, ifprep);
+				lineobject.add(simpleobj);
+				
+				PushCurves.DrawTruncatedprepline(imgout, intimg, ifprep, label);
+			}
+			
+
 		}
 		
 	}
-	public static void GetCurrentlines(
-			RandomAccessibleInterval<FloatType> imgout,
-			RandomAccessibleInterval<FloatType> maximgout,
-			Img<IntType> intimg, 
-			ArrayList<Lineobjects> linelist,
-			int currentlabel) {
-
-		for (int index = 0; index < linelist.size(); ++index) {
-
-			final int label = linelist.get(index).Label;
-			
-		ArrayList<double[]> rhothetalist = linelist.get(index).rhotheta;
+	
 		
-		for (int arrayindex = 0; arrayindex < rhothetalist.size(); ++arrayindex){
-			final double rho = linelist.get(index).rhotheta.get(arrayindex)[1];
-			final double theta = linelist.get(index).rhotheta.get(arrayindex)[0];
-		
-		if (label == currentlabel){
-			
-			double slope = -1.0 / Math.tan(Math.toRadians(theta));
-			double intercept = rho / Math.sin(Math.toRadians(theta));
-
-			PushCurves.Drawexactline(imgout,intimg, slope,intercept, label);
-			maximgout = GetLocalmaxmin.FindandDisplayLocalMaxima(imgout,
-					IntensityType.Original, new double[]{1,1});
-			
-		}
-		}
-		}
-	}
+	
 
 }

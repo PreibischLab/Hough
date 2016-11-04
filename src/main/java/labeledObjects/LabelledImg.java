@@ -14,6 +14,7 @@ public class LabelledImg {
 	public final double[] slopeandintercept;
 	public final double[] mean;
 	public final double[] covar;
+	public final double prepline;
 	
 	public LabelledImg(final int label, final RandomAccessibleInterval<FloatType> roiimg,
 			final RandomAccessibleInterval<FloatType> Actualroiimg,
@@ -27,8 +28,12 @@ public class LabelledImg {
 		this.Actualroiimg = Actualroiimg;
 		this.roi = roi;
 		this.slopeandintercept = slopeandintercept;
+		this.prepline = Double.NaN;
 		this.mean = mean;
 		this.covar = covar;
 	}
+	
+	
+	
 	
 }

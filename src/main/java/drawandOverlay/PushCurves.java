@@ -713,6 +713,76 @@ public class PushCurves {
 		
 	}
 	
+	public static void DrawRoilineprep(
+			final RandomAccessibleInterval<FloatType> imgout,
+			final EllipseRoi roi,
+			final double prepline){
+		
+		int n = imgout.numDimensions();
+		double  sigma = 1.0;
+		
+		final Cursor<FloatType> inputcursor = Views.iterable(imgout).localizingCursor();
+		double[] newposition = new double[n];
+		double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
+		double[] maxVal = { Double.MIN_VALUE, Double.MIN_VALUE };
+		while(inputcursor.hasNext()){
+			
+			inputcursor.fwd();
+			
+			final int x = inputcursor.getIntPosition(0);
+			final int y = inputcursor.getIntPosition(1);
+			
+			if (roi.contains(x, y)){
+				inputcursor.localize(newposition);
+				long pointonline = (long) (newposition[0] - prepline);
+
+				// To get the min and max co-rodinates along the line so we have
+				// starting points to
+				// move on the line smoothly
+
+				if (pointonline == 0) {
+
+					for (int d = 0; d < n; ++d) {
+						if (inputcursor.getDoublePosition(d) <= minVal[d])
+							minVal[d] = inputcursor.getDoublePosition(d);
+
+						if (inputcursor.getDoublePosition(d) >= maxVal[d])
+							maxVal[d] = inputcursor.getDoublePosition(d);
+
+					}
+
+				}
+			}
+			
+		}
+		
+		double stepsize = 1;
+		final double[] steppos = new double[n];
+		double dy = stepsize;
+		
+		
+			for (int d  = 0; d < n ; ++d)
+				steppos[d] = minVal[d];
+			while (true) {
+
+				AddGaussian.addGaussian(imgout, steppos, new double[] { sigma, sigma });
+				
+				steppos[1] += dy;
+				
+
+				
+
+				if (steppos[1] > maxVal[1])
+					break;
+			}
+		
+
+		
+		
+	}
+	
+	
+	
 	public static void DrawTruncatedline(RandomAccessibleInterval<FloatType> imgout,
 			RandomAccessibleInterval<IntType> intimg, double slope, double intercept,
 			int label) {
@@ -799,6 +869,76 @@ public class PushCurves {
 
 	}
 
+	public static void DrawTruncatedprepline(RandomAccessibleInterval<FloatType> imgout,
+			RandomAccessibleInterval<IntType> intimg, double ifprep,
+			int label) {
+
+		int n = imgout.numDimensions();
+		final double[] realpos = new double[n];
+		double  sigma = 1.0;
+		
+		final Cursor<FloatType> inputcursor = Views.iterable(imgout).localizingCursor();
+		double[] newposition = new double[n];
+		RandomAccess<IntType> ranac = intimg.randomAccess();
+		double[] minVal = { Double.MAX_VALUE, Double.MAX_VALUE };
+		double[] maxVal = { Double.MIN_VALUE, Double.MIN_VALUE };
+		while (inputcursor.hasNext()) {
+
+			inputcursor.fwd();
+			inputcursor.localize(realpos);
+
+			ranac.setPosition(inputcursor);
+			int i = ranac.get().get();
+
+			if (i == label) {
+				inputcursor.localize(newposition);
+				long pointonline = (long) (newposition[1] - ifprep);
+
+				// To get the min and max co-rodinates along the line so we have
+				// starting points to
+				// move on the line smoothly
+
+				if (pointonline == 0) {
+
+					for (int d = 0; d < n; ++d) {
+						if (inputcursor.getDoublePosition(d) <= minVal[d])
+							minVal[d] = inputcursor.getDoublePosition(d);
+
+						if (inputcursor.getDoublePosition(d) >= maxVal[d])
+							maxVal[d] = inputcursor.getDoublePosition(d);
+
+					}
+
+				}
+
+			}
+
+		}
+
+		double stepsize = 1;
+		final double[] steppos = new double[n];
+		double dy = stepsize;
+		
+		
+			for (int d  = 0; d < n ; ++d)
+				steppos[d] = minVal[d];
+			while (true) {
+
+				AddGaussian.addGaussian(imgout, steppos, new double[] { sigma, sigma });
+				
+				steppos[1] += dy;
+				
+
+				
+
+				if (steppos[1] > maxVal[1])
+					break;
+			}
+		
+
+	}
+	
+	
 	public static void Drawexactline(RandomAccessibleInterval<FloatType> imgout, Img<IntType> intimg, double slope,
 			double intercept, int label) {
 

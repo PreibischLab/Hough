@@ -59,7 +59,7 @@ public class Velocitydetector {
 				//		new File("../res/10frame_moving.tif"),
 				//			new ArrayImgFactory<FloatType>());
 						
-						new File("/Users/varunkapoor/Hough/src/main/resources/2015-01-14_Seeds-1.tiff"),
+						new File("../res/small_MT.tif"),
 						new ArrayImgFactory<FloatType>());
 		int ndims = img.numDimensions();
 
@@ -73,11 +73,11 @@ public class Velocitydetector {
 
 		// Declare all the constants needed by the program here:
 
-		final double[] psf = { 1.65, 1.47 };
-		//final double[] psf = { 1.7, 1.8 };
+		//final double[] psf = { 1.65, 1.47 };
+		final double[] psf = { 1.4, 1.5 };
 		
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
-		final int minlength = 4;
+		final int minlength = 2;
 
 		// Show the stack
 		ImagePlus impstart = ImageJFunctions.show(img);
@@ -128,7 +128,7 @@ public class Velocitydetector {
 
 			// Overlay detected lines on the image
 			final ArrayList<Simpleobject> simpleobject = new ArrayList<Simpleobject>();
-			OverlayLines.GetAlllines(imgout,  linepair.fst, linepair.snd, simpleobject, radius);
+			OverlayLines.GetAlllines(imgout,  linepair.fst, linepair.snd, simpleobject);
 
 			ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
 
@@ -189,7 +189,7 @@ public class Velocitydetector {
 				new FloatType());
 		final ArrayList<Simpleobject> simpleobject = new ArrayList<Simpleobject>();
 
-		OverlayLines.GetAlllines(imgout, linepair.fst, linepair.snd, simpleobject, radius);
+		OverlayLines.GetAlllines(imgout, linepair.fst, linepair.snd, simpleobject);
 
 		ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
 

@@ -60,7 +60,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 	@Override
 	public boolean checkInput() {
 		if (source.numDimensions() > 2) {
-			errorMessage = BASE_ERROR_MSG + " Can only operate on 1D, 2D, make slices of your stack . Got "
+			errorMessage = BASE_ERROR_MSG + " Can only operate on 2D, make slices of your stack . Got "
 					+ source.numDimensions() + "D.";
 			return false;
 		}
@@ -99,7 +99,6 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 		double[] maxVal = { -Double.MIN_VALUE, -Double.MIN_VALUE };
 
 		RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(imgs, label);
-				//imgs.get(label).Actualroiimg;
 
 
 		final Cursor<FloatType> inputcursor = Views.iterable(currentimg).localizingCursor();
@@ -349,8 +348,8 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 							+ returnparam[2] + "EndY: " + returnparam[3] + " " + "ds: " + finalparamstart[4] );
 
 					System.out.println("Length: " + Distance(new double[]{returnparam[0],  returnparam[1]},new double[]{returnparam[2],  returnparam[3]} ));
-					Testerrorone(returnparam, label, Distance(new double[] { returnparam[0], returnparam[1] },
-							new double[] { returnparam[2], returnparam[3] }));
+			//		Testerrorone(returnparam, label, Distance(new double[] { returnparam[0], returnparam[1] },
+			//				new double[] { returnparam[2], returnparam[3] }));
 					
 					returnparam[2 * ndims] = finalparamstart[4];
 					returnparam[2 * ndims + 1] = finalparamstart[5];

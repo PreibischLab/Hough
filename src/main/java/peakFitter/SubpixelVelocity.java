@@ -131,12 +131,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 
 		RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(intimg, source,
 				label);
-		long[] minCorner = Boundingboxes.GetMincorners(intimg, label);
-		long[] maxCorner = Boundingboxes.GetMaxcorners(intimg, label);
-
-		FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
-
-		currentimg = Views.interval(currentimg, intervalsmall);
+		
 		final double[] cordone = { iniparam[0], iniparam[1] };
 		final double[] cordtwo = { iniparam[2], iniparam[3] };
 
@@ -250,12 +245,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 			else {
 				RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(intimg,
 						source, label);
-				long[] minCorner = Boundingboxes.GetMincorners(intimg, label);
-				long[] maxCorner = Boundingboxes.GetMaxcorners(intimg, label);
-
-				FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
-
-				currentimg = Views.interval(currentimg, intervalsmall);
+				
 
 				final double[] fixed_param = new double[ndims];
 
@@ -391,12 +381,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 
 		RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(intimg, source,
 				label);
-		long[] minCorner = Boundingboxes.GetMincorners(intimg, label);
-		long[] maxCorner = Boundingboxes.GetMaxcorners(intimg, label);
-
-		FinalInterval intervalsmall = new FinalInterval(minCorner, maxCorner);
-
-		currentimg = Views.interval(currentimg, intervalsmall);
+		
 		boolean outofbounds = false;
 
 		Cursor<FloatType> localcursor = Views.iterable(currentimg).localizingCursor();

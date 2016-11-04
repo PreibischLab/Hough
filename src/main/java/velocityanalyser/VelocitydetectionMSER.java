@@ -66,7 +66,7 @@ public class VelocitydetectionMSER {
 					//	new File("../res/2015-01-14_Seeds-1.tiff"),
 					//	new ArrayImgFactory<FloatType>());
 						
-						new File("../res/Pnoise1snr15.tif"),
+						new File("../res/small_MT.tif"),
 						new ArrayImgFactory<FloatType>());
 		int ndims = img.numDimensions();
 
@@ -74,16 +74,16 @@ public class VelocitydetectionMSER {
 		// value specified here
 		new Normalize();
 
+		final boolean DoHough = true;
+		final boolean darktoBright = false;
 		FloatType minval = new FloatType(0);
 		FloatType maxval = new FloatType(1);
 		Normalize.normalize(Views.iterable(img), minval, maxval);
 
 		// Declare all the constants needed by the program here:
 
-	//	final double[] psf = { 1.65, 1.47 };
+		//final double[] psf = { 1.65, 1.47 };
 		final double[] psf = { 1.4, 1.5 };
-		
-		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		
 		// minimum length of the lines to be detected, the smallest possible number is 2.
 		final int minlength = 2;
@@ -121,13 +121,8 @@ public class VelocitydetectionMSER {
 
 			ImageJFunctions.show(inputimg).setTitle("Preprocessed image");
 
-			// Create the Bit image for distance transform and seed image for watershedding
-			final Float ThresholdValue = GlobalThresholding.AutomaticThresholding(inputimg);
-			RandomAccessibleInterval<BitType> bitimg = new ArrayImgFactory<BitType>().create(inputimg, new BitType());
-			GetLocalmaxmin.ThresholdingBit(inputimg, bitimg, ThresholdValue);
-
 			
-			RoiforMSER Roiobject = new RoiforMSER(inputimg, img, delta, minSize, maxSize, maxVar, minDiversity, false);
+			RoiforMSER Roiobject = new RoiforMSER(inputimg, img, delta, minSize, maxSize, maxVar, minDiversity, darktoBright, DoHough);
 			Roiobject.checkInput();
 			Roiobject.process();
 			ArrayList<LabelledImg> arrayimg = Roiobject.getResult();
@@ -198,7 +193,7 @@ public class VelocitydetectionMSER {
 		
 		System.out.println("Running MSER: ");
 
-		RoiforMSER Roiobject = new RoiforMSER(inputimg, groundframe, delta, minSize, maxSize, maxVar, minDiversity, false);
+		RoiforMSER Roiobject = new RoiforMSER(inputimg, groundframe, delta, minSize, maxSize, maxVar, minDiversity, false, false);
 		Roiobject.checkInput();
 		Roiobject.process();
 		ArrayList<LabelledImg> arrayimg = Roiobject.getResult();
@@ -252,7 +247,7 @@ public class VelocitydetectionMSER {
 			RandomAccessibleInterval<FloatType> inputimgpre = Kernels.Supressthresh(precurrent);
 			
 			
-			RoiforMSER Roiobjectframe = new RoiforMSER(inputimgpre, currentframe, delta, minSize, maxSize, maxVar, minDiversity, false);
+			RoiforMSER Roiobjectframe = new RoiforMSER(inputimgpre, currentframe, delta, minSize, maxSize, maxVar, minDiversity, false, false);
 			Roiobjectframe.checkInput();
 			Roiobjectframe.process();
 			ArrayList<LabelledImg> arrayimgframe = Roiobjectframe.getResult();

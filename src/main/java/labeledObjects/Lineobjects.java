@@ -6,24 +6,40 @@ import java.util.ArrayList;
 	public  final class Lineobjects {
 		public final int Label;
 		
-        public final ArrayList<double[]> rhotheta;  		
+        public ArrayList<double[]> slopeandintercept;  		
 		public final long [] boxmin;
 		public final long [] boxmax;
-		
+		public double[] singleslopeandintercept;
 		
 
 		public Lineobjects(
 				final int Label,
-				final ArrayList<double[]> rhotheta,
+				final ArrayList<double[]> slopeandintercept,
 				
 				final long[] minCorner, 
 				final long[] maxCorner
 				) {
 			this.Label = Label;
-		    this.rhotheta = rhotheta;
+		    this.slopeandintercept = slopeandintercept;
 			this.boxmin = minCorner;
 			this.boxmax = maxCorner;
 			
 			
 		}
+		
+		public Lineobjects(
+				final int Label,
+				double[] singleslopeandintercept,
+				
+				final long[] minCorner, 
+				final long[] maxCorner
+				) {
+			this.Label = Label;
+		    this.singleslopeandintercept = singleslopeandintercept;
+			this.boxmin = minCorner;
+			this.boxmax = maxCorner;
+			
+			
+		}
+		
 	}
