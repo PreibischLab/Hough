@@ -2,6 +2,7 @@ package preProcessing;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import com.sun.tools.javac.util.Pair;
 
@@ -41,6 +42,7 @@ import net.imglib2.Point;
 import net.imglib2.PointSampleList;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
+import net.imglib2.type.Type;
 import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -459,12 +461,12 @@ public class GetLocalmaxmin {
 	
 	
 	public static double computeMaxIntensity(final RandomAccessibleInterval<FloatType> inputimg) {
+		final int ndims = inputimg.numDimensions();
 		// create a cursor for the image (the order does not matter)
 		final Cursor<FloatType> cursor = Views.iterable(inputimg).cursor();
 
 		// initialize min and max with the first image value
 		double maxVal =  Double.MIN_VALUE;
-
 		// loop over the rest of the data and determine min and max value
 		while (cursor.hasNext()) {
 			// we need this type more than once
@@ -473,14 +475,63 @@ public class GetLocalmaxmin {
 			
 
 			if (cursor.get().get() > maxVal) {
-				maxVal = cursor.get().getRealDouble();
+				maxVal = cursor.get().get();
 
 			}
 		}
 		
 		return maxVal;
 	}
+	
+	public static double computeMinIntensity(final RandomAccessibleInterval<FloatType> inputimg) {
+		final int ndims = inputimg.numDimensions();
+		// create a cursor for the image (the order does not matter)
+		final Cursor<FloatType> cursor = Views.iterable(inputimg).cursor();
 
+		// initialize min and max with the first image value
+		double minVal =  Double.MAX_VALUE;
+		// loop over the rest of the data and determine min and max value
+		while (cursor.hasNext()) {
+			// we need this type more than once
+			cursor.fwd();
+
+			
+
+			if (cursor.get().get() < minVal) {
+				minVal = cursor.get().get();
+
+			}
+		}
+		
+		return minVal;
+	}
+
+	public < T extends Comparable< T > & Type< T > > void computeMinMax(
+	        final Iterable< T > input, final T min, final T max )
+	    {
+	        // create a cursor for the image (the order does not matter)
+	        final Iterator< T > iterator = input.iterator();
+	 
+	        // initialize min and max with the first image value
+	        T type = iterator.next();
+	 
+	        min.set( type );
+	        max.set( type );
+	 
+	        // loop over the rest of the data and determine min and max value
+	        while ( iterator.hasNext() )
+	        {
+	            // we need this type more than once
+	            type = iterator.next();
+	 
+	            if ( type.compareTo( min ) < 0 )
+	                min.set( type );
+	 
+	            if ( type.compareTo( max ) > 0 )
+	                max.set( type );
+	        }
+	    }
+	
 	public static double computeMaxIntensityinlabel(final RandomAccessibleInterval<FloatType> inputimg, 
 			final RandomAccessibleInterval<IntType> intimg, final int label ) {
 		// create a cursor for the image (the order does not matter)

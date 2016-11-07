@@ -79,11 +79,21 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 			
 			
 			
-			 int currentlabel = Getlabel(linepoint);
+			 int label = Getlabel(linepoint);
 			
+			 Point secondlinepoint = new Point(ndims);
+				secondlinepoint.setPosition(
+						new long[] { (long) PrevFrameparam.get(index)[2], (long) PrevFrameparam.get(index)[3] });
+				
+				
+				
+				 int secondlabel = Getlabel(secondlinepoint);
+			 int currentlabel = Math.min(label, secondlabel);
+				 
+			 
 			 double[] paramnextframe =Getfinaltrackparam(PrevFrameparam.get(index),
 							currentlabel, psf, framenumber);
-			 if (paramnextframe!= null)
+			 if (paramnextframe!=null)
 			 final_paramlist.add(paramnextframe);
 			 
 			 
@@ -212,7 +222,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 	}
 	public double[] Getfinaltrackparam(final double[] iniparam, final int label, final double[] psf, final int rate)  {
 
-		if (iniparam == null)
+		if (iniparam == null || label == Integer.MIN_VALUE)
 			return null;
 
 		else {

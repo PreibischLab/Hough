@@ -119,7 +119,7 @@ public class HoughTransformandwatershed2D extends BenchmarkAlgorithm
 
 		for (int label = 1; label < Maxlabel - 1; label++) {
 
-			System.out.println("Label Number:" + label);
+			System.out.println("Doing Hough Transform in Label Number:" + label);
 
 			Pair<RandomAccessibleInterval<FloatType>, FinalInterval> pair =  Boundingboxes.CurrentLabelImagepair(watershedimage, source, label);
 			RandomAccessibleInterval<FloatType> outimgview = pair.fst;
@@ -162,16 +162,18 @@ public class HoughTransformandwatershed2D extends BenchmarkAlgorithm
 			// Reduce the number of detections by picking One line per Label,
 			// using the best detection for each label
 			RefinedPeak<Point> ReducedMinlistsingle =  OverlayLines.ReducedListsingle(outimgview, SubpixelMinlist, sizes, min, max);
-
+			
+			double slopeandintercept[] = new double[ndims + 1];
+			if (ReducedMinlistsingle!= null){
 			double[] points  = OverlayLines.GetRhoThetasingle(ReducedMinlistsingle, sizes, min, max);
  
-			double slopeandintercept[] = new double[ndims + 1];
+			
 			
 			RefinedPeak<Point> peak  = OverlayLines.ReducedListsingle(outimgview, SubpixelMinlist, sizes, min, max);
 
 
 			points = OverlayLines.GetRhoThetasingle(peak, sizes, min, max);
-			if (points!= null){
+			
 				
 			double slope = -1.0 / (Math.tan(Math.toRadians(points[0])));
 			double intercept = points[1] / Math.sin(Math.toRadians(points[0]));

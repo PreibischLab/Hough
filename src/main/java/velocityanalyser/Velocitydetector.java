@@ -58,9 +58,10 @@ public class Velocitydetector {
 				.openAs32Bit(
 				//		new File("../res/10frame_moving.tif"),
 				//			new ArrayImgFactory<FloatType>());
-						
-						new File("../res/small_MT.tif"),
+						new File("../res/2016-09-28_bovine_cy5seeds_cy3tub_6uM_seeds.tif"),
 						new ArrayImgFactory<FloatType>());
+					//	new File("../res/small_MT.tif"),
+					//	new ArrayImgFactory<FloatType>());
 		int ndims = img.numDimensions();
 
 		// Normalize the intensity of the whole stack to be between min and max
@@ -73,8 +74,8 @@ public class Velocitydetector {
 
 		// Declare all the constants needed by the program here:
 
-		//final double[] psf = { 1.65, 1.47 };
-		final double[] psf = { 1.4, 1.5 };
+		final double[] psf = { 1.65, 1.47 };
+		//final double[] psf = { 1.4, 1.5 };
 		
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		final int minlength = 2;

@@ -89,6 +89,7 @@ public class MedianFilter2D< T extends RealType< T > & NativeType< T >> extends 
 			{
 				final IntervalView< T > slice = Views.hyperSlice( source, 2, z );
 				final IntervalView< T > outputSlice = Views.hyperSlice( output, 2, z );
+			   
 				processSlice( slice, outputSlice );
 			}
 		}

@@ -4,7 +4,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import edu.mines.jtk.sgl.BoundingBox;
 import houghandWatershed.Boundingboxes;
 import ij.gui.EllipseRoi;
 import labeledObjects.LabelledImg;
@@ -76,9 +75,12 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 			final int Label = simpleobject.get(index).Label;
 			final double slope = simpleobject.get(index).slope;
 			final double intercept = simpleobject.get(index).intercept;
+			final double ifprep = simpleobject.get(index).ifprep;
+			if ( slope!= Double.MAX_VALUE && intercept!= Double.MAX_VALUE){
 			final double [] final_param = Getfinallineparam(Label, slope, intercept, psf, minlength);
-			if (final_param!= null)
+			if (final_param!= null )
 			final_paramlist.add(final_param);
+			}
 		}
 		
 		
@@ -100,6 +102,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 
 		RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(imgs, label);
 
+		final EllipseRoi roi = imgs.get(label).roi;
 
 		final Cursor<FloatType> inputcursor = Views.iterable(currentimg).localizingCursor();
 
@@ -181,6 +184,12 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 			}
 		
 
+			if (roi.getLength() < 3.14 * minlength ){
+			
+				System.out.println("violation");
+				return null;
+				
+			}
 		
 
 		
@@ -195,6 +204,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 				final double minlength)  {
 
 			PointSampleList<FloatType> datalist = gatherfullData(label);
+			if (datalist!= null){
 			final Cursor<FloatType> listcursor = datalist.localizingCursor();
 			double[][] X = new double[(int) datalist.size()][ndims];
 			double[] I = new double[(int) datalist.size()];
@@ -362,6 +372,10 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 					return null;
 
 			}
+			}
+			
+			else 
+				return null;
 		}
 		public int Getlabel(final Point linepoint) {
 
@@ -392,7 +406,6 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 			final PointSampleList<FloatType> datalist = new PointSampleList<FloatType>(ndims);
 
 			RandomAccessibleInterval<FloatType> currentimg = Boundingboxes.CurrentLabelImage(imgs, label);
-
 			
 			Cursor<FloatType> localcursor = Views.iterable(currentimg).localizingCursor();
 
@@ -405,6 +418,8 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 			}
 
 			return datalist;
+          
+          
 		}
 
 		public double Distance(final double[] cordone, final double[] cordtwo) {

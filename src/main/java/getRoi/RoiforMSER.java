@@ -10,8 +10,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import com.sun.tools.javac.util.Pair;
+
 import houghandWatershed.Boundingboxes;
-import houghandWatershed.HoughTransform2D;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
@@ -35,6 +36,7 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 import peakFitter.SortListbyproperty;
+import preProcessing.GetLocalmaxmin;
 
 public class RoiforMSER extends BenchmarkAlgorithm
 		implements OutputAlgorithm <ArrayList<LabelledImg>> {
@@ -48,15 +50,14 @@ public class RoiforMSER extends BenchmarkAlgorithm
 	private final double maxVar;
 	private final double minDIversity;
 	private final boolean darktoBright;
-	private final boolean DoHough;
 	private Overlay ov;
 	private final int ndims;
 	private int Roiindex;
 	private ArrayList<LabelledImg> imgs;
 
 	public RoiforMSER(final RandomAccessibleInterval<FloatType> source, final RandomAccessibleInterval<FloatType> Actualsource,
-			final double delta, final long minSize,
-			final long maxSize, final double maxVar, final double minDiversity, final boolean darktoBright, final boolean DoHough) {
+			final double delta, final long minSize, 
+			final long maxSize, final double maxVar, final double minDiversity,  final boolean darktoBright) {
 
 		this.source = source;
 		this.Actualsource = Actualsource;
@@ -66,7 +67,6 @@ public class RoiforMSER extends BenchmarkAlgorithm
 		this.maxVar = maxVar;
 		this.minDIversity = minDiversity;
 		this.darktoBright = darktoBright;
-		this.DoHough = DoHough;
 		this.ndims = source.numDimensions();
 	}
 
@@ -148,7 +148,11 @@ public class RoiforMSER extends BenchmarkAlgorithm
 				final double[] covar = { ellipselist.get(index)[2], ellipselist.get(index)[3],
 						ellipselist.get(index)[4] };
 				final EllipseRoi ellipseroi = createEllipse(mean, covar, 3);
+				
+			
+				
 				ellipseroi.setStrokeColor(Color.green);
+				
 				ov.add(ellipseroi);
 
 				
@@ -190,28 +194,25 @@ public class RoiforMSER extends BenchmarkAlgorithm
 
 				}
 				
-				double[] slopeandintercept = new double[ndims];
+				double[] slopeandintercept = new double[ndims + 1];
 				
 				
 				
-				// Obtain the slope and intercept of the line by Hough Transform (slow but very accurate)
-				if (DoHough){
-				slopeandintercept = LargestEigenvector(mean, covar, Roiimg, ellipseroi, Roiindex);
-				}
-				// Obtain the slope and intercept of the line by obtaining the major axis of the ellipse (super fast but could be inaccurate)
-				else{
+				
+				// Obtain the slope and intercept of the line by obtaining the major axis of the ellipse (super fast and accurate)
+				
 				slopeandintercept = LargestEigenvector(mean, covar);
-				}
+				
 				
 				
 				LabelledImg currentimg = new LabelledImg(Roiindex, Roiimg, ActualRoiimg, ellipseroi, slopeandintercept, mean, covar);
 				
-				if(slopeandintercept!=null )
+				if(slopeandintercept!=null  )
 				imgs.add(currentimg);
 				
+				}
 				
-				
-			}
+			
 
 		
 
@@ -284,13 +285,17 @@ public class RoiforMSER extends BenchmarkAlgorithm
         if (Math.abs(slope) != Double.POSITIVE_INFINITY){
         double[] pair = {slope, intercept, Double.MAX_VALUE};
         return pair;
+      
         }
         
         else {
         	
         	double[] prependicular = {Double.MAX_VALUE, Double.MAX_VALUE, mean[0]};
         	return prependicular;
-        }
+        	}
+        	 
+       
+      
         
         
         
@@ -299,60 +304,6 @@ public class RoiforMSER extends BenchmarkAlgorithm
 	
 	
 	
-	
-	/**
-	 * Returns the slope and the intercept of the line by doing Hough Transform
-	 * 
-	 * 
-	 *@param mean
-	 *            (x,y) components of mean vector
-	 * @param cov
-	 *            (xx, xy, yy) components of covariance matrix
-	 * @return slope and intercept of the line along the major axis
-	 */
-	public  double[] LargestEigenvector( final double[] mean, final double[] cov, RandomAccessibleInterval<FloatType> currentimg, final EllipseRoi roi, final int label){
-		System.out.println("Doing Hough Transform in Label: " + label);
-		int n = currentimg.numDimensions();
-		long[] position = new long[n];
-		long[] minVal = { Long.MAX_VALUE, Long.MAX_VALUE };
-		long[] maxVal = { Long.MIN_VALUE, Long.MIN_VALUE };
-		
-		Cursor<FloatType> localcursor = Views.iterable(currentimg).localizingCursor();
-
-		while (localcursor.hasNext()) {
-			localcursor.fwd();
-			int x = localcursor.getIntPosition(0);
-			int y = localcursor.getIntPosition(1);
-			if (roi.contains(x, y)){
-
-				localcursor.localize(position);
-				for (int d = 0; d < n; ++d) {
-					if (position[d] < minVal[d]) {
-						minVal[d] = position[d];
-					}
-					if (position[d] > maxVal[d]) {
-						maxVal[d] = position[d];
-					}
-
-				}
-				
-			}
-		}
-		
-		FinalInterval interval = new FinalInterval(minVal, maxVal);
-		RandomAccessibleInterval<FloatType> currentimgsmall = Views.offsetInterval(currentimg, interval);
-	
-		
-		HoughTransform2D Houghonly = new HoughTransform2D(currentimgsmall, interval);
-		Houghonly.checkInput();
-		Houghonly.process();
-		double[] pair = Houghonly.getResult();
-		
-		
-        
-        return pair;
-		
-	}
 	
 	
 	

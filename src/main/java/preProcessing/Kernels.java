@@ -3,12 +3,14 @@ package preProcessing;
 
 import java.util.Random;
 
+import drawandOverlay.AddGaussian;
 import fftMethods.FFTConvolution;
 import net.imglib2.Cursor;
 import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.algorithm.gauss3.Gauss3;
 import net.imglib2.algorithm.region.hypersphere.HyperSphere;
 import net.imglib2.algorithm.region.hypersphere.HyperSphereCursor;
 import net.imglib2.img.Img;
@@ -427,7 +429,6 @@ public static void addBackground(final IterableInterval<FloatType> iterable, fin
 				 Float threshold = Lowthreshold;
 				Cursor<FloatType> inputcursor = Views.iterable(inputimg).localizingCursor();
 				RandomAccess<FloatType> outputran = Threshimg.randomAccess();
-				final double[] sigma = { 1, 1 };
 				while(inputcursor.hasNext()){
 					inputcursor.fwd();
 					inputcursor.localize(position);
@@ -435,7 +436,33 @@ public static void addBackground(final IterableInterval<FloatType> iterable, fin
 					if (inputcursor.get().get()<= threshold)
 						outputran.get().setZero();
 					else
-					//	AddGaussian.addGaussian(Threshimg, position, sigma, false);
+						outputran.get().set(inputcursor.get());
+				}
+			return Threshimg;	
+				
+				
+	}
+	
+
+	
+	public static RandomAccessibleInterval<FloatType> SupressHeavythresh(RandomAccessibleInterval<FloatType> inputimg){
+		RandomAccessibleInterval<FloatType> Threshimg = new ArrayImgFactory<FloatType>().create(inputimg,
+				new FloatType());
+		//Supress values below the low threshold
+		int n = inputimg.numDimensions();
+		double[] position = new double[n];
+				final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(inputimg);
+				 Float threshold = Lowthreshold;
+				 Float Highthreshold = new Float(1.0 * threshold);
+				Cursor<FloatType> inputcursor = Views.iterable(inputimg).localizingCursor();
+				RandomAccess<FloatType> outputran = Threshimg.randomAccess();
+				while(inputcursor.hasNext()){
+					inputcursor.fwd();
+					inputcursor.localize(position);
+					outputran.setPosition(inputcursor);
+					if (inputcursor.get().get()<= Highthreshold)
+						outputran.get().setZero();
+					else
 						outputran.get().set(inputcursor.get());
 				}
 			return Threshimg;	

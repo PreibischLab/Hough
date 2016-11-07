@@ -34,7 +34,7 @@ public class Boundingboxes {
 
 		Cursor<IntType> intCursor = Views.iterable(inputimg).localizingCursor();
 		int n = inputimg.numDimensions();
-		long[] maxVal = { Long.MIN_VALUE, Long.MIN_VALUE };
+		long[] maxVal = { inputimg.min(0), inputimg.min(1) };
 
 		while (intCursor.hasNext()) {
 			intCursor.fwd();
@@ -60,8 +60,7 @@ public class Boundingboxes {
 
 		Cursor<IntType> intCursor = Views.iterable(inputimg).localizingCursor();
 		int n = inputimg.numDimensions();
-		long[] minVal = { Long.MAX_VALUE, Long.MAX_VALUE };
-
+		long[] minVal = { inputimg.max(0), inputimg.max(1) };
 		while (intCursor.hasNext()) {
 			intCursor.fwd();
 			int i = intCursor.get().get();
@@ -86,8 +85,8 @@ public class Boundingboxes {
 		Cursor<IntType> intCursor = Views.iterable(inputimg).localizingCursor();
 		int n = inputimg.numDimensions();
 		long[] position = new long[n];
-		long[] minVal = { Long.MAX_VALUE, Long.MAX_VALUE };
-		long[] maxVal = { Long.MIN_VALUE, Long.MIN_VALUE };
+		long[] minVal = { inputimg.max(0), inputimg.max(1) };
+		long[] maxVal = { inputimg.min(0), inputimg.min(1) };
 
 		while (intCursor.hasNext()) {
 			intCursor.fwd();
@@ -166,13 +165,49 @@ public class Boundingboxes {
 
 	}
 
+	public static Pair<RandomAccessibleInterval<FloatType>, FinalInterval>  CurrentLabelImage(RandomAccessibleInterval<FloatType> img, EllipseRoi roi){
+		
+		int n = img.numDimensions();
+		long[] position = new long[n];
+		long[] minVal = { img.max(0), img.max(1) };
+		long[] maxVal = { img.min(0), img.min(1) };
+		
+		Cursor<FloatType> localcursor = Views.iterable(img).localizingCursor();
+		
+		while (localcursor.hasNext()) {
+			localcursor.fwd();
+			int x = localcursor.getIntPosition(0);
+			int y = localcursor.getIntPosition(1);
+			if (roi.contains(x, y)){
+
+				localcursor.localize(position);
+				for (int d = 0; d < n; ++d) {
+					if (position[d] < minVal[d]) {
+						minVal[d] = position[d];
+					}
+					if (position[d] > maxVal[d]) {
+						maxVal[d] = position[d];
+					}
+
+				}
+				
+			}
+		}
+		FinalInterval interval = new FinalInterval(minVal, maxVal);
+		RandomAccessibleInterval<FloatType> currentimgsmall = Views.offsetInterval(img, interval);
+		
+		Pair<RandomAccessibleInterval<FloatType>, FinalInterval> pair = new Pair<RandomAccessibleInterval<FloatType>, FinalInterval>(currentimgsmall, interval);
+		
+		return pair;
+	}
+	
 	public static RandomAccessibleInterval<FloatType> CurrentLabelImage(ArrayList<LabelledImg> imgs,int label) {
 		
 		RandomAccessibleInterval<FloatType> currentimg = imgs.get(label).Actualroiimg;
 		int n = currentimg.numDimensions();
 		long[] position = new long[n];
-		long[] minVal = { Long.MAX_VALUE, Long.MAX_VALUE };
-		long[] maxVal = { Long.MIN_VALUE, Long.MIN_VALUE };
+		long[] minVal = { currentimg.max(0), currentimg.max(1) };
+		long[] maxVal = { currentimg.min(0), currentimg.min(1) };
 		EllipseRoi roi = imgs.get(label).roi;
 		
 		Cursor<FloatType> localcursor = Views.iterable(currentimg).localizingCursor();
