@@ -98,7 +98,7 @@ public class GaussianMaskFitMSER {
 				}
 			for (int d = 0; d < n; ++d)
 				location[d] = sumLocSN[d] / sumSN;
-
+				
 			N = sumSN / sumSS;
 
 			++i;
@@ -107,6 +107,15 @@ public class GaussianMaskFitMSER {
 		restoreBackground(signalIterable, bg);
 
 		// ImageJFunctions.show(gaussianMask);
+		switch (startorend) {
+
+		case Start:
+			for (int d = 0; d < n; ++d)
+			location[d] += -dxvector[d];
+		case End:
+			for (int d = 0; d < n; ++d)
+			location[d] +=  dxvector[d];
+		}
 	
 		
 		

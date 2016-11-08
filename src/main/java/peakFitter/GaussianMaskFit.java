@@ -104,7 +104,15 @@ public class GaussianMaskFit {
 
 		// ImageJFunctions.show(gaussianMask);
 	
-		
+		switch (startorend) {
+
+		case Start:
+			for (int d = 0; d < n; ++d)
+			location[d] += -dxvector[d];
+		case End:
+			for (int d = 0; d < n; ++d)
+			location[d] +=  dxvector[d];
+		}
 		
 		return location;
 

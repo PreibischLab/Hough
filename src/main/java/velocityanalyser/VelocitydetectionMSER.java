@@ -29,6 +29,7 @@ import net.imglib2.view.Views;
 import peakFitter.SubpixelLengthMSER;
 import peakFitter.SubpixelVelocityMSER;
 import preProcessing.Biggify;
+import preProcessing.Kernels;
 import preProcessing.MedianFilter2D;
 
 public class VelocitydetectionMSER {
@@ -48,14 +49,14 @@ public class VelocitydetectionMSER {
 		// Load the stack of images
 		 RandomAccessibleInterval<FloatType> img = util.ImgLib2Util
 				.openAs32Bit(
-						new File("../res/2016-09-28_bovine_cy5seeds_cy3tub_6uM_seeds.tif"),
-							new ArrayImgFactory<FloatType>());
+					//	new File("../res/2016-09-28_bovine_cy5seeds_cy3tub_6uM_seeds.tif"),
+						//	new ArrayImgFactory<FloatType>());
 					
 					//	new File("../res/2015-01-14_Seeds-1.tiff"),
 					//	new ArrayImgFactory<FloatType>());
 						
-					//	new File("../res/10frame_moving.tif"),
-					//	new ArrayImgFactory<FloatType>());
+						new File("../res/Pnoise3snr45.tif"),
+						new ArrayImgFactory<FloatType>());
 		int ndims = img.numDimensions();
 		
 		// Normalize the intensity of the whole stack to be between min and max
@@ -66,22 +67,23 @@ public class VelocitydetectionMSER {
 		FloatType minval = new FloatType(0);
 		FloatType maxval = new FloatType(1);
 		Normalize.normalize(Views.iterable(img), minval, maxval);
-		final double[] psf = { 1.65, 1.47 };
-		final int extendBorderpixels = 10;
+		//final double[] psf = { 1.65, 1.47 };
+		final int extendBorderpixels = 0;
 		img = Biggify.biggifyimage(img, extendBorderpixels);
 		// Declare all the constants needed by the program here:
 
 		
-		//final double[] psf = { 1.4, 1.5 };
+		final double[] psf = { 1.4, 1.5 };
 		
 		// minimum length of the lines to be detected, the smallest possible number is 2.
-		final double minlength = 5;
+		final double minlength = 2;
 
 		// Show the stack
 		ImagePlus impstart = ImageJFunctions.show(img);
 		ImagePlus impend = ImageJFunctions.show(img);
 		ArrayList<ArrayList<Staticproperties>> Allstartandend = new ArrayList<ArrayList<Staticproperties>>();
-		final int delta = 5;
+		// For low noise images a low value of delta such as 10 and for high noise images a value such as 100
+		final int delta = 200;
 		final long minSize = 10;
 		final long maxSize = Long.MAX_VALUE;
 		final double maxVar = 0.2;
@@ -93,17 +95,11 @@ public class VelocitydetectionMSER {
 			
 			RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(img,
 					new FloatType());
-			RandomAccessibleInterval<FloatType> preinputimg = new ArrayImgFactory<FloatType>().create(img,
-					new FloatType());
-			
-			
-			    
 			
 			// Preprocess image using Median Filter and suppress background
-			final MedianFilter2D<FloatType> medfilter = new MedianFilter2D<FloatType>( img, 2 );
+			final MedianFilter2D<FloatType> medfilter = new MedianFilter2D<FloatType>( img, 1 );
 			medfilter.process();
 			inputimg = medfilter.getResult();
-		
 			Normalize.normalize(Views.iterable(inputimg), minval, maxval);
 			
 			 

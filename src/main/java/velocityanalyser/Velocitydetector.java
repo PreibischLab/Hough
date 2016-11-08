@@ -34,6 +34,7 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 import peakFitter.SubpixelLength;
 import peakFitter.SubpixelVelocity;
+import preProcessing.Biggify;
 import preProcessing.GetLocalmaxmin;
 import preProcessing.GlobalThresholding;
 import preProcessing.Kernels;
@@ -54,11 +55,11 @@ public class Velocitydetector {
 		new ImageJ();
 
 		// Load the stack of images
-		final RandomAccessibleInterval<FloatType> img = util.ImgLib2Util
+		 RandomAccessibleInterval<FloatType> img = util.ImgLib2Util
 				.openAs32Bit(
 				//		new File("../res/10frame_moving.tif"),
 				//			new ArrayImgFactory<FloatType>());
-						new File("../res/2016-09-28_bovine_cy5seeds_cy3tub_6uM_seeds.tif"),
+						new File("../res/Pnoise2snr15.tif"),
 						new ArrayImgFactory<FloatType>());
 					//	new File("../res/small_MT.tif"),
 					//	new ArrayImgFactory<FloatType>());
@@ -74,8 +75,12 @@ public class Velocitydetector {
 
 		// Declare all the constants needed by the program here:
 
-		final double[] psf = { 1.65, 1.47 };
-		//final double[] psf = { 1.4, 1.5 };
+		//final double[] psf = { 1.65, 1.47 };
+		final int extendBorderpixels = 0;
+		img = Biggify.biggifyimage(img, extendBorderpixels);
+		
+		
+		final double[] psf = { 1.4, 1.5 };
 		
 		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		final int minlength = 2;

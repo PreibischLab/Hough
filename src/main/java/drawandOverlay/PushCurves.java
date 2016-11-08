@@ -320,12 +320,7 @@ public class PushCurves {
 		double steppos[] = {startline[0], startline[1]};
 		double dx = stepsize / Math.sqrt(1 + slope * slope);
 		double dy = slope * dx;
-		if (Math.abs(Math.toDegrees(Math.atan2(dy, dx))) <= slopethresh && Math.abs(Math.toDegrees(Math.atan2(dy, dx))) > slopethresh - 1  ){
-			
-			dx = 0;
-			dy = stepsize* Math.signum(slope);
-			
-		}
+		
 		while (true) {
 			
 			AddGaussian.addGaussian(imgout, steppos, sigma);
@@ -340,7 +335,7 @@ public class PushCurves {
 		}
 		double acstartpos[] = {startline[0] , startline[1] };
 		try {
-	        FileWriter writer = new FileWriter("../res/ActualP2.txt", true);
+	        FileWriter writer = new FileWriter("../res/ActualP3.txt", true);
 	        writer.write( "StartX: "  + (acstartpos[0])+  " " +
 	       		 "StartY: "+ (acstartpos[1]) + " " + "EndposX: " + steppos[0] +  
 	    		 " EndposY :" + steppos[1]+ "  Length " + Distance(acstartpos, steppos) );
