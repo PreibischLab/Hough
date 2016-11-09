@@ -22,7 +22,7 @@ public class MovingLines {
 	public static void main (String[] args) throws IncompatibleTypeException{
         new ImageJ();
 		
-		final FinalInterval range = new FinalInterval(512, 512);
+		final FinalInterval range = new FinalInterval(612, 612);
 		final FinalInterval smallrange = new FinalInterval(412, 412);
 		
 		
@@ -35,7 +35,7 @@ public class MovingLines {
 			Ci[d] = 1.0 / Math.pow(sigma[d],2);
 		
 		final int numframes = 25;
-		final int numlines = 4;
+		final int numlines = 10;
 
 		for (int frame = 0; frame < numframes; ++frame){
 			

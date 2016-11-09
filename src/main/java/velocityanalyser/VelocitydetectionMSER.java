@@ -22,8 +22,11 @@ import labeledObjects.Subgraphs;
 import mserMethods.GetDelta;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.stats.Normalize;
+import net.imglib2.img.ImagePlusAdapter;
+import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
@@ -70,12 +73,12 @@ public class VelocitydetectionMSER {
 		FloatType maxval = new FloatType(1);
 		final int skipframes = 0;
 		Normalize.normalize(Views.iterable(img), minval, maxval);
-		final double[] psf = { 1.65, 1.47 };
+		//final double[] psf = { 1.65, 1.47 };
 		
 		// Declare all the constants needed by the program here:
 
 		
-		//final double[] psf = { 1.4, 1.5 };
+		final double[] psf = { 1.4, 1.5 };
 		
 		// minimum length of the lines to be detected, the smallest possible number is 2.
 		final int minlength = 2;
@@ -88,9 +91,9 @@ public class VelocitydetectionMSER {
 		final double delta = 20;
 		final long minSize = 10;
 		final long maxSize = Long.MAX_VALUE;
-		final double maxVar = 0.2;
+		final double maxVar = 0.4;
 		final double minDiversity = 0;
-		final int maxlines = 5;
+		final int maxlines = 10;
 		final int maxdeltaini = 50;
 		final int maxdeltanext = 10;
 		
@@ -117,8 +120,19 @@ public class VelocitydetectionMSER {
 					new FloatType());
 			RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(img,
 					new FloatType());
+			final Img<UnsignedByteType> newimg;
+
 			
-			double bestdelta = GetDelta.Bestdeltaparam(inputimg, delta, minSize, maxSize, maxVar, minDiversity, minlength, maxlines, maxdeltaini, darktoBright);
+			ImageJFunctions.wrap(inputimg, "curr");
+			final ImagePlus currentimp = IJ.getImage();
+			IJ.run("8-bit");
+
+			newimg = ImagePlusAdapter.wrapByte(currentimp);
+
+			
+			
+			
+			double bestdelta = GetDelta.Bestdeltaparam(newimg, delta, minSize, maxSize, maxVar, minDiversity, minlength, maxlines, maxdeltaini, darktoBright);
 			System.out.println(bestdelta);
 			RoiforMSER Roiobject = new RoiforMSER(inputimg, img, bestdelta, minSize, maxSize, maxVar, minDiversity, darktoBright);
 			Roiobject.checkInput();
@@ -189,10 +203,18 @@ public class VelocitydetectionMSER {
 		
 		System.out.println("Running MSER: ");
 
+		Img<UnsignedByteType> newimg;
+		
+		ImageJFunctions.wrap(inputimg, "curr");
+		final ImagePlus currentimp = IJ.getImage();
+		IJ.run("8-bit");
+
+		newimg = ImagePlusAdapter.wrapByte(currentimp);
+
 		
 		
-		double bestdelta = GetDelta.Bestdeltaparam(inputimg, delta, minSize, maxSize, maxVar, minDiversity, minlength, maxlines, maxdeltanext, darktoBright);
-System.out.println(bestdelta);
+		double bestdelta = GetDelta.Bestdeltaparam(newimg, delta, minSize, maxSize, maxVar, minDiversity, minlength, maxlines, maxdeltaini, darktoBright);
+        System.out.println(bestdelta);
 		RoiforMSER Roiobject = new RoiforMSER(inputimg, groundframe, bestdelta, minSize, maxSize, maxVar, minDiversity, false);
 		Roiobject.checkInput();
 		Roiobject.process();
@@ -248,9 +270,17 @@ System.out.println(bestdelta);
 			System.out.println("Median Filter applied sucessfully.");
 		
 			
+			ImageJFunctions.wrap(inputimgpre, "curr");
+			final ImagePlus currentimpnew = IJ.getImage();
+			IJ.run("8-bit");
+
+			newimg = ImagePlusAdapter.wrapByte(currentimpnew);
+
 			
 			
-			double nextbestdelta = GetDelta.Bestdeltaparam(inputimg, bestdelta, minSize, maxSize, maxVar, minDiversity, minlength, maxlines, maxdeltanext, darktoBright);
+			
+			
+			double nextbestdelta = GetDelta.Bestdeltaparam(newimg, bestdelta, minSize, maxSize, maxVar, minDiversity, minlength, maxlines, maxdeltanext, darktoBright);
 
 			RoiforMSER Roiobjectframe = new RoiforMSER(inputimgpre, currentframe, nextbestdelta, minSize, maxSize, maxVar, minDiversity, false);
 			Roiobjectframe.checkInput();

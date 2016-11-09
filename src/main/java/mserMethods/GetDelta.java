@@ -21,13 +21,12 @@ import net.imglib2.type.numeric.real.FloatType;
 public class GetDelta {
 
 	
-	public static double Bestdeltaparam(RandomAccessibleInterval<FloatType> img,final double delta, final long minSize, 
+	public static double Bestdeltaparam(final Img<UnsignedByteType> newimg,final double delta, final long minSize, 
 			final long maxSize, final double maxVar, final double minDiversity, final int minlength, final int maxlines, final int maxdelta,  final boolean darktoBright){
 	
 		
 		
-		try
-		{
+		
 			int stepdelta = 2;
 			
 			
@@ -45,13 +44,9 @@ public class GetDelta {
 			int ellipsecount = 0;
 			
 			
-			final Img<UnsignedByteType> newimg;
 			ArrayList<double[]> ellipselist = new ArrayList<double[]>();
-			ImageJFunctions.wrap(img, "curr");
-			final ImagePlus currentimp = IJ.getImage();
-		    IJ.run("8-bit");
+			
 
-		newimg = ImagePlusAdapter.wrapByte(currentimp);
 		MserTree<UnsignedByteType> newtree = MserTree.buildMserTree(newimg, bestdelta, minSize, maxSize, maxVar,
 				minDiversity, darktoBright);
 		final HashSet<Mser<UnsignedByteType>> rootset = newtree.roots();
@@ -117,12 +112,7 @@ public class GetDelta {
 				}
 		
 			return frequdelta;
-		}
-		catch ( final Exception e )
-		{
-			e.printStackTrace();
-			return delta;
-		}
+		
 		
 		}
 		

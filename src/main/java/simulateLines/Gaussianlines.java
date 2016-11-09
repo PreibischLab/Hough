@@ -127,7 +127,7 @@ public class Gaussianlines {
 				
 			double startpos[] = new double[n];
 			double endpos[] = new double[n];
-			double MaxLength = 115.82;
+			double MaxLength = 55.82;
 			
 			for (int d = 0; d < range.numDimensions(); ++d) {
 				startpos[d] = (rnd.nextDouble() * (range.max(d) - range.min(d)) + range.min(d));

@@ -22,7 +22,7 @@ public class Biggify {
 		
 		FinalInterval interval = new FinalInterval(min, max);
 		 
-		RandomAccessibleInterval<FloatType> outimg  = Views.offsetInterval(Views.extendZero(inputimg), interval);
+		RandomAccessibleInterval<FloatType> outimg  = Views.offsetInterval(Views.extendBorder(inputimg), interval);
 		
 		return outimg;
 	}
@@ -41,7 +41,7 @@ public class Biggify {
 		
 		FinalInterval interval = new FinalInterval(min, max);
 		 
-		IntervalView<FloatType> outimg  = Views.offsetInterval(Views.extendZero(inputimg), interval);
+		IntervalView<FloatType> outimg  = Views.offsetInterval(Views.extendBorder(inputimg), interval);
 		
 		return outimg;
 	}

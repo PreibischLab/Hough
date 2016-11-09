@@ -35,8 +35,8 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 	final double lambda = 1e-3;
 	final double termepsilon = 1e-1;
 	//Mask fits iteration param
-	final int iterations = 1500;
-	final double cutoffdistance = 20;
+	final int iterations = 500;
+	final double cutoffdistance = 10;
 	final boolean halfgaussian = false;
 	final double Intensityratio = 0.5;
 	
