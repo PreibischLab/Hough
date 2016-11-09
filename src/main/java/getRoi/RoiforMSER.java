@@ -19,6 +19,7 @@ import ij.ImagePlus;
 import ij.gui.EllipseRoi;
 import ij.gui.Overlay;
 import labeledObjects.LabelledImg;
+import mserMethods.GetDelta;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccess;
@@ -136,9 +137,9 @@ public class RoiforMSER extends BenchmarkAlgorithm
 		
 		// We do this so the ROI remains attached the the same label and is not changed if the program is run again
 	       SortListbyproperty.sortpointList(ellipselist);
-		
+		int count = 0;
 			for (int index = 0; index < ellipselist.size(); ++index) {
-				Roiindex = index;
+				
 				
 				final ImgFactory<FloatType> factory = Util.getArrayOrCellImgFactory(source, type);
 				RandomAccessibleInterval<FloatType>  Roiimg = factory.create(source, type);
@@ -147,16 +148,20 @@ public class RoiforMSER extends BenchmarkAlgorithm
 				final double[] mean = { ellipselist.get(index)[0], ellipselist.get(index)[1] };
 				final double[] covar = { ellipselist.get(index)[2], ellipselist.get(index)[3],
 						ellipselist.get(index)[4] };
-				final EllipseRoi ellipseroi = createEllipse(mean, covar, 3);
+				final EllipseRoi ellipseroi = GetDelta.createEllipse(mean, covar, 3);
 				
+	    		final double perimeter = ellipseroi.getLength();
 			
-				
+	    		if (perimeter > 50){
+	    			
+	    			Roiindex = count;
+	    			count++;
 				ellipseroi.setStrokeColor(Color.green);
 				
 				ov.add(ellipseroi);
 
 				
-				
+	    		
 				
 
 				Cursor<FloatType> sourcecursor = Views.iterable(source).localizingCursor();
@@ -212,7 +217,7 @@ public class RoiforMSER extends BenchmarkAlgorithm
 				
 				}
 				
-			
+			}
 
 		
 
@@ -222,6 +227,14 @@ public class RoiforMSER extends BenchmarkAlgorithm
 	@Override
 	public ArrayList<LabelledImg> getResult() {
 		
+		
+		//ArrayList<LabelledImg> reducedimgs = Overlappingregions(imgs);
+		return imgs;
+	}
+	
+	public ArrayList<LabelledImg> getAllResult() {
+		
+		
 		return imgs;
 	}
 	
@@ -230,31 +243,9 @@ public class RoiforMSER extends BenchmarkAlgorithm
 		return ov;
 	}
 	
+   
 
-	/**
-	 * 2D correlated Gaussian
-	 * 
-	 * @param mean
-	 *            (x,y) components of mean vector
-	 * @param cov
-	 *            (xx, xy, yy) components of covariance matrix
-	 * @return ImageJ roi
-	 */
-	public static EllipseRoi createEllipse(final double[] mean, final double[] cov, final double nsigmas) {
-		final double a = cov[0];
-		final double b = cov[1];
-		final double c = cov[2];
-		final double d = Math.sqrt(a * a + 4 * b * b - 2 * a * c + c * c);
-		final double scale1 = Math.sqrt(0.5 * (a + c + d)) * nsigmas;
-		final double scale2 = Math.sqrt(0.5 * (a + c - d)) * nsigmas;
-		final double theta = 0.5 * Math.atan2((2 * b), (a - c));
-		final double x = mean[0];
-		final double y = mean[1];
-		final double dx = scale1 * Math.cos(theta);
-		final double dy = scale1 * Math.sin(theta);
-		final EllipseRoi ellipse = new EllipseRoi(x - dx, y - dy, x + dx, y + dy, scale2 / scale1);
-		return ellipse;
-	}
+	
 
 	
 	/**
@@ -295,10 +286,6 @@ public class RoiforMSER extends BenchmarkAlgorithm
         	}
         	 
        
-      
-        
-        
-        
 		
 	}
 	

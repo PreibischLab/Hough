@@ -19,6 +19,7 @@ import ij.gui.Overlay;
 import labeledObjects.LabelledImg;
 import labeledObjects.Simpleobject;
 import labeledObjects.Subgraphs;
+import mserMethods.GetDelta;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.array.ArrayImgFactory;
@@ -52,11 +53,12 @@ public class VelocitydetectionMSER {
 					//	new File("../res/2016-09-28_bovine_cy5seeds_cy3tub_6uM_seeds.tif"),
 						//	new ArrayImgFactory<FloatType>());
 					
-					//	new File("../res/2015-01-14_Seeds-1.tiff"),
-					//	new ArrayImgFactory<FloatType>());
-						
-						new File("../res/Pnoise3snr45.tif"),
+						new File("../res/10frame_moving.tif"),
 						new ArrayImgFactory<FloatType>());
+					//	new File("../res/Pnoise1snr15.tif"),
+					//		new ArrayImgFactory<FloatType>());
+					//	new File("../res/23-09-16-laevis-6uM-25Cdup-1.tif"),
+					//	new ArrayImgFactory<FloatType>());
 		int ndims = img.numDimensions();
 		
 		// Normalize the intensity of the whole stack to be between min and max
@@ -66,33 +68,37 @@ public class VelocitydetectionMSER {
 		final boolean darktoBright = false;
 		FloatType minval = new FloatType(0);
 		FloatType maxval = new FloatType(1);
+		final int skipframes = 0;
 		Normalize.normalize(Views.iterable(img), minval, maxval);
-		//final double[] psf = { 1.65, 1.47 };
-		final int extendBorderpixels = 0;
-		img = Biggify.biggifyimage(img, extendBorderpixels);
+		final double[] psf = { 1.65, 1.47 };
+		
 		// Declare all the constants needed by the program here:
 
 		
-		final double[] psf = { 1.4, 1.5 };
+		//final double[] psf = { 1.4, 1.5 };
 		
 		// minimum length of the lines to be detected, the smallest possible number is 2.
-		final double minlength = 2;
+		final int minlength = 2;
 
 		// Show the stack
 		ImagePlus impstart = ImageJFunctions.show(img);
 		ImagePlus impend = ImageJFunctions.show(img);
 		ArrayList<ArrayList<Staticproperties>> Allstartandend = new ArrayList<ArrayList<Staticproperties>>();
 		// For low noise images a low value of delta such as 10 and for high noise images a value such as 100
-		final int delta = 200;
+		final double delta = 20;
 		final long minSize = 10;
 		final long maxSize = Long.MAX_VALUE;
 		final double maxVar = 0.2;
 		final double minDiversity = 0;
+		final int maxlines = 5;
+		final int maxdeltaini = 50;
+		final int maxdeltanext = 10;
 		
-
+		final int extendBorderpixels = 0;
 		if (ndims == 2 ){
 			
 			
+			img = Biggify.biggifyimage(img, extendBorderpixels);
 			RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(img,
 					new FloatType());
 			
@@ -112,8 +118,9 @@ public class VelocitydetectionMSER {
 			RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(img,
 					new FloatType());
 			
-			
-			RoiforMSER Roiobject = new RoiforMSER(inputimg, img, delta, minSize, maxSize, maxVar, minDiversity, darktoBright);
+			double bestdelta = GetDelta.Bestdeltaparam(inputimg, delta, minSize, maxSize, maxVar, minDiversity, minlength, maxlines, maxdeltaini, darktoBright);
+			System.out.println(bestdelta);
+			RoiforMSER Roiobject = new RoiforMSER(inputimg, img, bestdelta, minSize, maxSize, maxVar, minDiversity, darktoBright);
 			Roiobject.checkInput();
 			Roiobject.process();
 			ArrayList<LabelledImg> arrayimg = Roiobject.getResult();
@@ -156,7 +163,7 @@ public class VelocitydetectionMSER {
 
 			
 		IntervalView<FloatType> groundframe = Views.hyperSlice(img, ndims - 1, 0);
-
+		groundframe = Biggify.biggifyimage(groundframe, extendBorderpixels);
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(groundframe,
 				new FloatType());
 		
@@ -182,7 +189,11 @@ public class VelocitydetectionMSER {
 		
 		System.out.println("Running MSER: ");
 
-		RoiforMSER Roiobject = new RoiforMSER(inputimg, groundframe, delta, minSize, maxSize, maxVar, minDiversity, false);
+		
+		
+		double bestdelta = GetDelta.Bestdeltaparam(inputimg, delta, minSize, maxSize, maxVar, minDiversity, minlength, maxlines, maxdeltanext, darktoBright);
+System.out.println(bestdelta);
+		RoiforMSER Roiobject = new RoiforMSER(inputimg, groundframe, bestdelta, minSize, maxSize, maxVar, minDiversity, false);
 		Roiobject.checkInput();
 		Roiobject.process();
 		ArrayList<LabelledImg> arrayimg = Roiobject.getResult();
@@ -221,11 +232,11 @@ public class VelocitydetectionMSER {
 		// Now start tracking the moving ends of the Microtubule and make
 		// seperate graph for both ends
 
-		for (int frame = 1; frame < img.dimension(ndims - 1); ++frame) {
+		for (int frame = 1; frame < img.dimension(ndims - 1); frame+=skipframes+1) {
 
 			IntervalView<FloatType> currentframe = Views.hyperSlice(img, ndims - 1, frame);
 			
-			
+			currentframe = Biggify.biggifyimage(currentframe, extendBorderpixels);
 			System.out.println("Applying Median filter to current frame.");
 			// Preprocess image using Median Filter and suppress background
 					final MedianFilter2D<FloatType> medfiltercurr = new MedianFilter2D<FloatType>( currentframe, 1);
@@ -239,8 +250,9 @@ public class VelocitydetectionMSER {
 			
 			
 			
-			
-			RoiforMSER Roiobjectframe = new RoiforMSER(inputimgpre, currentframe, delta, minSize, maxSize, maxVar, minDiversity, false);
+			double nextbestdelta = GetDelta.Bestdeltaparam(inputimg, bestdelta, minSize, maxSize, maxVar, minDiversity, minlength, maxlines, maxdeltanext, darktoBright);
+
+			RoiforMSER Roiobjectframe = new RoiforMSER(inputimgpre, currentframe, nextbestdelta, minSize, maxSize, maxVar, minDiversity, false);
 			Roiobjectframe.checkInput();
 			Roiobjectframe.process();
 			ArrayList<LabelledImg> arrayimgframe = Roiobjectframe.getResult();

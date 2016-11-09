@@ -59,7 +59,7 @@ public class Velocitydetector {
 				.openAs32Bit(
 				//		new File("../res/10frame_moving.tif"),
 				//			new ArrayImgFactory<FloatType>());
-						new File("../res/Pnoise2snr15.tif"),
+						new File("../res/23-09-16-laevis-6uM-25Cdup-1.tif"),
 						new ArrayImgFactory<FloatType>());
 					//	new File("../res/small_MT.tif"),
 					//	new ArrayImgFactory<FloatType>());
@@ -76,9 +76,8 @@ public class Velocitydetector {
 		// Declare all the constants needed by the program here:
 
 		//final double[] psf = { 1.65, 1.47 };
-		final int extendBorderpixels = 0;
-		img = Biggify.biggifyimage(img, extendBorderpixels);
 		
+		final int missedframes = 10;
 		
 		final double[] psf = { 1.4, 1.5 };
 		
@@ -93,7 +92,8 @@ public class Velocitydetector {
 		
 		if (ndims == 2 ){
 			
-			
+			final int extendBorderpixels = 10;
+			img = Biggify.biggifyimage(img, extendBorderpixels);
 			RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(img,
 					new FloatType());
 			RandomAccessibleInterval<FloatType> preinputimg = new ArrayImgFactory<FloatType>().create(img,
@@ -108,7 +108,7 @@ public class Velocitydetector {
 			final MedianFilter2D<FloatType> medfilter = new MedianFilter2D<FloatType>( img, 1 );
 			medfilter.process();
 			preinputimg = medfilter.getResult();
-			inputimg = Kernels.Supressthresh(preinputimg);
+			inputimg = Kernels.SupressHeavythresh(preinputimg);
 			Normalize.normalize(Views.iterable(inputimg), minval, maxval);
 			
 
@@ -162,7 +162,8 @@ public class Velocitydetector {
 		IntervalView<FloatType> groundframe = Views.hyperSlice(img, ndims - 1, 0);
 
 		
-		
+		final int extendBorderpixels = 10;
+		groundframe = Biggify.biggifyimage(groundframe, extendBorderpixels);
 		
 		System.out.println("Applying Median filter to the first image.");
 		// Preprocess image using Median Filter and suppress background
@@ -174,7 +175,7 @@ public class Velocitydetector {
 		
 		
 		// for thresholding extremly noisy data, if non noisy set the value to 1
-		RandomAccessibleInterval<FloatType> inputimg = Kernels.Supressthresh(groundframepre);
+		RandomAccessibleInterval<FloatType> inputimg = Kernels.SupressHeavythresh(groundframepre);
 				
 		ImageJFunctions.show(inputimg);
 		
@@ -220,10 +221,10 @@ public class Velocitydetector {
 		// Now start tracking the moving ends of the Microtubule and make
 		// seperate graph for both ends
 
-		for (int frame = 1; frame < img.dimension(ndims - 1); ++frame) {
+		for (int frame = 1; frame < img.dimension(ndims - 1); frame+=missedframes) {
 
 			IntervalView<FloatType> currentframe = Views.hyperSlice(img, ndims - 1, frame);
-			
+			groundframe = Biggify.biggifyimage(currentframe, extendBorderpixels);
 			System.out.println("Applying Median filter to current frame.");
 			// Preprocess image using Median Filter and suppress background
 					final MedianFilter2D<FloatType> medfiltercurr = new MedianFilter2D<FloatType>( currentframe, 1);

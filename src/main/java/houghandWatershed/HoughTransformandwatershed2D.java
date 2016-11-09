@@ -119,11 +119,17 @@ public class HoughTransformandwatershed2D extends BenchmarkAlgorithm
 
 		for (int label = 1; label < Maxlabel - 1; label++) {
 
-			System.out.println("Doing Hough Transform in Label Number:" + label);
+			
 
 			Pair<RandomAccessibleInterval<FloatType>, FinalInterval> pair =  Boundingboxes.CurrentLabelImagepair(watershedimage, source, label);
 			RandomAccessibleInterval<FloatType> outimgview = pair.fst;
+			
+			
 			FinalInterval Realinterval = pair.snd;
+			
+			long intervalsize =(long) Math.sqrt(Realinterval.dimension(0) * Realinterval.dimension(0) + Realinterval.dimension(1) * Realinterval.dimension(1));
+			if (intervalsize > minlength){
+				System.out.println("Doing Hough Transform in Label Number:" + label);
 			// Set size of pixels in Hough space
 			int mintheta = 0;
 
@@ -191,6 +197,7 @@ public class HoughTransformandwatershed2D extends BenchmarkAlgorithm
 				slopeandintercept[1] = Double.MAX_VALUE;
 				slopeandintercept[2] = points[1] +  Realinterval.realMin(0);	
 			}
+			
 			}
 			/**
 			 * This object has rho, theta, min dimensions, max dimensions of the
@@ -200,6 +207,7 @@ public class HoughTransformandwatershed2D extends BenchmarkAlgorithm
 			final Lineobjects line = new Lineobjects(label, slopeandintercept, new long[] {Realinterval.min(0), Realinterval.min(1)}, new long[] {Realinterval.max(0), Realinterval.max(1)} );
 
 			linelist.add(line);
+			}
 		}
 
 		return true;

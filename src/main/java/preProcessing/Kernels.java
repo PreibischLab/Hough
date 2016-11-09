@@ -453,7 +453,7 @@ public static void addBackground(final IterableInterval<FloatType> iterable, fin
 		double[] position = new double[n];
 				final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(inputimg);
 				 Float threshold = Lowthreshold;
-				 Float Highthreshold = new Float(1.0 * threshold);
+				 Float Highthreshold = new Float(2.5 * threshold);
 				Cursor<FloatType> inputcursor = Views.iterable(inputimg).localizingCursor();
 				RandomAccess<FloatType> outputran = Threshimg.randomAccess();
 				while(inputcursor.hasNext()){

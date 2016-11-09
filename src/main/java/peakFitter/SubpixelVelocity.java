@@ -112,6 +112,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 
 					startandendinframe.add(edge);	
 		}
+		
 		return false;
 	}
 

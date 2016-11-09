@@ -80,16 +80,21 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 			
 			
 			 int label = Getlabel(linepoint);
-			
+			 int currentlabel = label;
+			if (label == Integer.MIN_VALUE){
 			 Point secondlinepoint = new Point(ndims);
 				secondlinepoint.setPosition(
 						new long[] { (long) PrevFrameparam.get(index)[2], (long) PrevFrameparam.get(index)[3] });
 				
 				
-				
 				 int secondlabel = Getlabel(secondlinepoint);
-			 int currentlabel = Math.min(label, secondlabel);
+				 currentlabel = secondlabel;
+				 System.out.println(currentlabel + " " + secondlabel);
+			}
 				 
+				 System.out.println(currentlabel + " " + label);
+				 
+				 if (currentlabel != Integer.MIN_VALUE){
 			 
 			 double[] paramnextframe =Getfinaltrackparam(PrevFrameparam.get(index),
 							currentlabel, psf, framenumber);
@@ -118,6 +123,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 			
 
 					startandendinframe.add(edge);	
+				 }
 		}
 		return false;
 	}
