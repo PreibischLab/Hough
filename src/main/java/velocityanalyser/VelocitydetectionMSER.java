@@ -20,7 +20,11 @@ import labeledObjects.LabelledImg;
 import labeledObjects.Simpleobject;
 import labeledObjects.Subgraphs;
 import mserMethods.GetDelta;
+import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.algorithm.gauss3.Gauss3;
+import net.imglib2.algorithm.stats.Histogram;
+import net.imglib2.algorithm.stats.IntBinMapper;
 import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.ImagePlusAdapter;
 import net.imglib2.img.Img;
@@ -56,12 +60,12 @@ public class VelocitydetectionMSER {
 					//	new File("../res/2016-09-28_bovine_cy5seeds_cy3tub_6uM_seeds.tif"),
 						//	new ArrayImgFactory<FloatType>());
 					
-						new File("../res/10frame_moving.tif"),
-						new ArrayImgFactory<FloatType>());
-					//	new File("../res/Pnoise1snr15.tif"),
-					//		new ArrayImgFactory<FloatType>());
-					//	new File("../res/23-09-16-laevis-6uM-25Cdup-1.tif"),
+					//	new File("../res/10frame_moving.tif"),
 					//	new ArrayImgFactory<FloatType>());
+						//new File("../res/multiple-lines.tif"),
+						//	new ArrayImgFactory<FloatType>());
+						new File("../res/Bovine_12uM_37Cdup-2.tif"),
+						new ArrayImgFactory<FloatType>());
 		int ndims = img.numDimensions();
 		
 		// Normalize the intensity of the whole stack to be between min and max
@@ -73,49 +77,57 @@ public class VelocitydetectionMSER {
 		FloatType maxval = new FloatType(1);
 		final int skipframes = 0;
 		Normalize.normalize(Views.iterable(img), minval, maxval);
-		//final double[] psf = { 1.65, 1.47 };
-		
+		final double[] psf = { 1.65, 1.47 };
+		final double[] sigma = {1,1};
 		// Declare all the constants needed by the program here:
 
 		
-		final double[] psf = { 1.4, 1.5 };
+		//final double[] psf = { 1.4, 1.5 };
 		
 		// minimum length of the lines to be detected, the smallest possible number is 2.
 		final int minlength = 2;
-
+		final long radius =  (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		// Show the stack
 		ImagePlus impstart = ImageJFunctions.show(img);
 		ImagePlus impend = ImageJFunctions.show(img);
 		ArrayList<ArrayList<Staticproperties>> Allstartandend = new ArrayList<ArrayList<Staticproperties>>();
 		// For low noise images a low value of delta such as 10 and for high noise images a value such as 100
-		final double delta = 20;
-		final long minSize = 10;
+		final double delta = 10;
+		final long minSize = 0;
 		final long maxSize = Long.MAX_VALUE;
-		final double maxVar = 0.4;
-		final double minDiversity = 0;
-		final int maxlines = 10;
+		final double maxVar = 0.8;
+		final double minDiversity = 0.4;
+		final int maxlines = 70;
 		final int maxdeltaini = 50;
-		final int maxdeltanext = 10;
+		final int maxdeltanext = 20;
 		
 		final int extendBorderpixels = 0;
 		if (ndims == 2 ){
 			
 			
-			img = Biggify.biggifyimage(img, extendBorderpixels);
 			RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(img,
 					new FloatType());
 			
+			 // first extend the image to infinity, zeropad and do Gaussian blur with a chosen sigma
+	    //    RandomAccessible< FloatType > infiniteImg = Views.extendValue( img, new FloatType() );
+	 
+	       
+	      //  Gauss3.gauss( sigma, infiniteImg, img );
+	 
+	       
 			// Preprocess image using Median Filter and suppress background
 			final MedianFilter2D<FloatType> medfilter = new MedianFilter2D<FloatType>( img, 1 );
 			medfilter.process();
-			inputimg = medfilter.getResult();
+			RandomAccessibleInterval<FloatType>   cannyimg = medfilter.getResult();
+			 inputimg = cannyimg;
+//					 Kernels.CannyEdgeandMean(cannyimg, radius);
 			Normalize.normalize(Views.iterable(inputimg), minval, maxval);
 			
 			 
 			
 	        
 			ImageJFunctions.show(inputimg).setTitle("Preprocessed extended image");
-	        
+			
 			RandomAccessibleInterval<FloatType> imgout = new ArrayImgFactory<FloatType>().create(img,
 					new FloatType());
 			RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(img,
@@ -129,8 +141,7 @@ public class VelocitydetectionMSER {
 
 			newimg = ImagePlusAdapter.wrapByte(currentimp);
 
-			
-			
+		//	IntensityHistogram.Npeaks(inputimg);
 			
 			double bestdelta = GetDelta.Bestdeltaparam(newimg, delta, minSize, maxSize, maxVar, minDiversity, minlength, maxlines, maxdeltaini, darktoBright);
 			System.out.println(bestdelta);
@@ -177,19 +188,23 @@ public class VelocitydetectionMSER {
 
 			
 		IntervalView<FloatType> groundframe = Views.hyperSlice(img, ndims - 1, 0);
-		groundframe = Biggify.biggifyimage(groundframe, extendBorderpixels);
 		RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(groundframe,
 				new FloatType());
 		
-		
-		
+
+		 // first extend the image to infinity, zeropad and do Gaussian blur with the psf 
+    //   RandomAccessible< FloatType > infiniteImg = Views.extendValue( groundframe, new FloatType() );
+
+      
+      // Gauss3.gauss( sigma, infiniteImg, groundframe );
 	
-		
 		System.out.println("Applying Median filter to the first image.");
 		// Preprocess image using Median Filter and suppress background
 				final MedianFilter2D<FloatType> medfilter = new MedianFilter2D<FloatType>( groundframe, 1);
 				medfilter.process();
-				inputimg = medfilter.getResult();
+				RandomAccessibleInterval<FloatType>   cannyimg = medfilter.getResult();
+				inputimg = cannyimg;
+					//	Kernels.CannyEdgeandMean(cannyimg, radius);
 				Normalize.normalize(Views.iterable(inputimg), minval, maxval);
 				
 		System.out.println("Median Filter applied sucessfully.");
@@ -254,16 +269,24 @@ public class VelocitydetectionMSER {
 		// Now start tracking the moving ends of the Microtubule and make
 		// seperate graph for both ends
 
-		for (int frame = 1; frame < img.dimension(ndims - 1); frame+=skipframes+1) {
+		for (int frame = 1; frame < img.dimension(ndims - 1); ++frame) {
 
 			IntervalView<FloatType> currentframe = Views.hyperSlice(img, ndims - 1, frame);
 			
-			currentframe = Biggify.biggifyimage(currentframe, extendBorderpixels);
+
+			 // first extend the image to infinity, zeropad and do Gaussian blur with the psf 
+	     //   RandomAccessible< FloatType > infiniteImgcurr = Views.extendValue( currentframe, new FloatType() );
+	 
+	       
+	      //  Gauss3.gauss( sigma, infiniteImgcurr, currentframe );
 			System.out.println("Applying Median filter to current frame.");
 			// Preprocess image using Median Filter and suppress background
 					final MedianFilter2D<FloatType> medfiltercurr = new MedianFilter2D<FloatType>( currentframe, 1);
 					medfiltercurr.process();
-					RandomAccessibleInterval<FloatType> inputimgpre = medfiltercurr.getResult();
+					RandomAccessibleInterval<FloatType>   cannyimgcurr = medfiltercurr.getResult();
+					RandomAccessibleInterval<FloatType> inputimgpre =cannyimgcurr;
+							//Kernels.CannyEdgeandMean(cannyimgcurr, radius);
+					
 					Normalize.normalize(Views.iterable(inputimgpre), minval, maxval);
 
 					ImageJFunctions.show(inputimgpre);

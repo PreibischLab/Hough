@@ -1,6 +1,9 @@
 package peakFitter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 import graphconstructs.Staticproperties;
 import houghandWatershed.Boundingboxes;
@@ -79,26 +82,32 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 			
 			
 			
-			 int label = Getlabel(linepoint);
-			 int currentlabel = label;
-			if (label == Integer.MIN_VALUE){
+			 ArrayList<Integer> label = Getlabel(linepoint);
+			 Set<Integer> multilabel = new HashSet<Integer>(label);
+			 
+			
 			 Point secondlinepoint = new Point(ndims);
 				secondlinepoint.setPosition(
 						new long[] { (long) PrevFrameparam.get(index)[2], (long) PrevFrameparam.get(index)[3] });
 				
 				
-				 int secondlabel = Getlabel(secondlinepoint);
-				 currentlabel = secondlabel;
-				 System.out.println(currentlabel + " " + secondlabel);
-			}
 				 
-				 System.out.println(currentlabel + " " + label);
+				 ArrayList<Integer> seclabel = Getlabel(secondlinepoint);
+				 Set<Integer> secmultilabel = new HashSet<Integer>(seclabel);
+				 
+				secmultilabel.retainAll(multilabel);
+				Iterator<Integer> iter = secmultilabel.iterator();
+				while(iter.hasNext()){
+				int currentlabel = iter.next();
+				 
+			
+				 
 				 
 				 if (currentlabel != Integer.MIN_VALUE){
-			 
+					 System.out.println(currentlabel);
 			 double[] paramnextframe =Getfinaltrackparam(PrevFrameparam.get(index),
 							currentlabel, psf, framenumber);
-			 if (paramnextframe!=null)
+			 if (paramnextframe!=null){
 			 final_paramlist.add(paramnextframe);
 			 
 			 
@@ -106,10 +115,18 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 			 
 			 final double[] oldendpoint = {PrevFrameparam.get(index)[2], PrevFrameparam.get(index)[3]};
 			 
-			 final double[] newstartpoint = {paramnextframe[0], paramnextframe[1]};
+			 final double[] newstartpoint = oldstartpoint;
 			 
-			 final double[] newendpoint = {paramnextframe[2], paramnextframe[3]};
-			 
+			 final double[] newendpoint = oldendpoint;
+			
+			 if (paramnextframe!=null){
+			 for (int d = 0; d < ndims; ++d){
+				 
+				 newstartpoint[d] = paramnextframe[d];
+				 newendpoint[d] = paramnextframe[d + ndims];
+			 }
+			 }
+				
 			 final double[] directionstart = {newstartpoint[0] - oldstartpoint[0] , newstartpoint[1] - oldstartpoint[1] };
 			 
 			 final double[] directionend = {newendpoint[0] - oldendpoint[0] , newendpoint[1] - oldendpoint[1] };
@@ -124,6 +141,25 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 
 					startandendinframe.add(edge);	
 				 }
+				 }
+				 // The line is missing in the current frame
+				 else{
+					 final double[] oldstartpoint = {PrevFrameparam.get(index)[0], PrevFrameparam.get(index)[1]};
+					 
+					 final double[] oldendpoint = {PrevFrameparam.get(index)[2], PrevFrameparam.get(index)[3]};
+					 final double[] newstartpoint = oldstartpoint;
+					 
+					 final double[] newendpoint = oldendpoint;
+					 final double[] directionstart = {newstartpoint[0] - oldstartpoint[0] , newstartpoint[1] - oldstartpoint[1] };
+					 
+					 final double[] directionend = {newendpoint[0] - oldendpoint[0] , newendpoint[1] - oldendpoint[1] };
+
+						final Staticproperties edge = 
+					   new Staticproperties(currentlabel, oldstartpoint, oldendpoint, newstartpoint, newendpoint, directionstart , directionend );
+						
+					 startandendinframe.add(edge);
+				 }
+		}
 		}
 		return false;
 	}
@@ -405,19 +441,18 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 
 		return datalist;
 	}
-	public int Getlabel(final Point linepoint) {
+	public ArrayList<Integer> Getlabel(final Point linepoint) {
 
 		final int x = linepoint.getIntPosition(0);
 		final int y = linepoint.getIntPosition(1);
-		int currentlabel = Integer.MIN_VALUE;
+		ArrayList<Integer> currentlabel = new ArrayList<Integer>();
 		for (int index = 0; index < imgs.size(); ++index){
 			
 			EllipseRoi ellipse = imgs.get(index).roi;
 			
 			if (ellipse.contains(x, y)){
 				
-				currentlabel = index;
-				break;
+				currentlabel.add(index);
 			}
 			
 		}

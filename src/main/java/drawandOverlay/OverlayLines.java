@@ -1,7 +1,11 @@
 package drawandOverlay;
 
 import java.util.ArrayList;
+
+import houghandWatershed.Boundingboxes;
 import houghandWatershed.TransformCordinates;
+import ij.IJ;
+import ij.ImagePlus;
 import ij.gui.EllipseRoi;
 import labeledObjects.LabelledImg;
 import labeledObjects.Lineobjects;
@@ -12,9 +16,14 @@ import net.imglib2.Point;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.localextrema.RefinedPeak;
+import net.imglib2.algorithm.stats.Histogram;
+import net.imglib2.algorithm.stats.IntBinMapper;
+import net.imglib2.img.ImagePlusAdapter;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.integer.IntType;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 import preProcessing.GetLocalmaxmin;
@@ -176,6 +185,29 @@ public class OverlayLines {
 			final double intercept = imgslist.get(index).slopeandintercept[1];
 			final double ifprep = imgslist.get(index).slopeandintercept[2];
 
+			RandomAccessibleInterval<FloatType> currimg = Boundingboxes.CurrentLabeloffsetImage(imgslist, label);
+           final Img<UnsignedByteType> newimg;
+
+			
+			ImageJFunctions.wrap(currimg, "curr");
+			final ImagePlus currentimp = IJ.getImage();
+			IJ.run("8-bit");
+
+			newimg = ImagePlusAdapter.wrapByte(currentimp);
+
+			//ImageJFunctions.show(currimg);
+			Histogram<UnsignedByteType> hist;
+			hist = new Histogram<UnsignedByteType>(
+					new IntBinMapper<UnsignedByteType>(new UnsignedByteType() ), newimg);
+			
+			hist.process();
+			/*
+			for(int i = 0; i < hist.getNumBins(); ++i)
+			{
+				if (hist.getHistogram()[i] > 10)
+				System.out.println("" + hist.getHistogram()[i] );
+			}
+			*/
 			if (slope!= Double.MAX_VALUE && intercept!=Double.MAX_VALUE && ifprep==Double.MAX_VALUE){
 			final Simpleobject simpleobj = new Simpleobject(label, slope, intercept, ifprep);
 			lineobject.add(simpleobj);

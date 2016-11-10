@@ -238,6 +238,42 @@ public class Boundingboxes {
 		
 	}
 	
+public static RandomAccessibleInterval<FloatType> CurrentLabeloffsetImage(ArrayList<LabelledImg> imgs,int label) {
+		
+		RandomAccessibleInterval<FloatType> currentimg = imgs.get(label).Actualroiimg;
+		int n = currentimg.numDimensions();
+		long[] position = new long[n];
+		long[] minVal = { currentimg.max(0), currentimg.max(1) };
+		long[] maxVal = { currentimg.min(0), currentimg.min(1) };
+		EllipseRoi roi = imgs.get(label).roi;
+		
+		Cursor<FloatType> localcursor = Views.iterable(currentimg).localizingCursor();
+
+		while (localcursor.hasNext()) {
+			localcursor.fwd();
+			int x = localcursor.getIntPosition(0);
+			int y = localcursor.getIntPosition(1);
+			if (roi.contains(x, y)){
+
+				localcursor.localize(position);
+				for (int d = 0; d < n; ++d) {
+					if (position[d] < minVal[d]) {
+						minVal[d] = position[d];
+					}
+					if (position[d] > maxVal[d]) {
+						maxVal[d] = position[d];
+					}
+
+				}
+				
+			}
+		}
+		
+		FinalInterval interval = new FinalInterval(minVal, maxVal) ;
+		RandomAccessibleInterval<FloatType> currentimgsmall = Views.offsetInterval(currentimg, interval);
+		return currentimgsmall;
+		
+	}
 	public static Pair<RandomAccessibleInterval<FloatType>, FinalInterval> CurrentLabelImagepair(RandomAccessibleInterval<IntType> Intimg,
 			RandomAccessibleInterval<FloatType> originalimg, int currentLabel) {
 

@@ -87,7 +87,7 @@ public class GetDelta {
 			
 			Maxellipsecount = ellipsecount;
 			MaxBestdelta = bestdelta;
-			System.out.println(rootset.size() + " " + MaxBestdelta);
+		//	System.out.println(rootset.size() + " " + MaxBestdelta);
 		}
 		
 
@@ -101,7 +101,7 @@ public class GetDelta {
 			
 			for(Double s: mySet){
 
-				 System.out.println(s + " " +Collections.frequency(Bestdelta,s));
+				 System.out.println( "Best delta:" + s + " " + "Stable over iterations: " + Collections.frequency(Bestdelta,s));
 
 				 
 				 if (Collections.frequency(Bestdelta,s) > maxcollection){

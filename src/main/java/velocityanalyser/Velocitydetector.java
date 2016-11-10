@@ -23,7 +23,9 @@ import labeledObjects.LabelledImg;
 import labeledObjects.Lineobjects;
 import labeledObjects.Simpleobject;
 import labeledObjects.Subgraphs;
+import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.algorithm.gauss3.Gauss3;
 import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
@@ -57,9 +59,9 @@ public class Velocitydetector {
 		// Load the stack of images
 		 RandomAccessibleInterval<FloatType> img = util.ImgLib2Util
 				.openAs32Bit(
-				//		new File("../res/10frame_moving.tif"),
-				//			new ArrayImgFactory<FloatType>());
-						new File("../res/23-09-16-laevis-6uM-25Cdup-1.tif"),
+					//	new File("../res/10frame_moving.tif"),
+					//	new ArrayImgFactory<FloatType>());
+						new File("../res/Bovine_12uM_37Cdup-2.tif"),
 						new ArrayImgFactory<FloatType>());
 					//	new File("../res/small_MT.tif"),
 					//	new ArrayImgFactory<FloatType>());
@@ -77,11 +79,11 @@ public class Velocitydetector {
 
 		//final double[] psf = { 1.65, 1.47 };
 		
-		final int missedframes = 10;
+		final int missedframes = 0;
 		
-		final double[] psf = { 1.4, 1.5 };
-		
-		final long radius = (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
+		final double[] psf = { 1.65, 1.47 };
+		final double[] sigma = { 2, 2 };
+		final long radius =  (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		final int minlength = 2;
 
 		// Show the stack
@@ -92,8 +94,9 @@ public class Velocitydetector {
 		
 		if (ndims == 2 ){
 			
-			final int extendBorderpixels = 10;
-			img = Biggify.biggifyimage(img, extendBorderpixels);
+			final int extendBorderpixels = 0;
+			
+			
 			RandomAccessibleInterval<FloatType> inputimg = new ArrayImgFactory<FloatType>().create(img,
 					new FloatType());
 			RandomAccessibleInterval<FloatType> preinputimg = new ArrayImgFactory<FloatType>().create(img,
@@ -103,12 +106,15 @@ public class Velocitydetector {
 			RandomAccessibleInterval<FloatType> gaussimg = new ArrayImgFactory<FloatType>().create(img,
 					new FloatType());
 
-			
+			// RandomAccessible< FloatType > infiniteImg = Views.extendValue( img, new FloatType() );
+			 
+		       
+		   //     Gauss3.gauss( sigma, infiniteImg, img );
 			// Preprocess image using Median Filter and suppress background
 			final MedianFilter2D<FloatType> medfilter = new MedianFilter2D<FloatType>( img, 1 );
 			medfilter.process();
 			preinputimg = medfilter.getResult();
-			inputimg = Kernels.SupressHeavythresh(preinputimg);
+			inputimg = Kernels.CannyEdgeandMean(preinputimg, radius);
 			Normalize.normalize(Views.iterable(inputimg), minval, maxval);
 			
 
@@ -161,9 +167,10 @@ public class Velocitydetector {
 
 		IntervalView<FloatType> groundframe = Views.hyperSlice(img, ndims - 1, 0);
 
-		
-		final int extendBorderpixels = 10;
-		groundframe = Biggify.biggifyimage(groundframe, extendBorderpixels);
+	//	RandomAccessible< FloatType > infiniteImg = Views.extendValue( groundframe, new FloatType() );
+		 
+	       
+      //  Gauss3.gauss( sigma, infiniteImg, groundframe );
 		
 		System.out.println("Applying Median filter to the first image.");
 		// Preprocess image using Median Filter and suppress background
@@ -175,7 +182,7 @@ public class Velocitydetector {
 		
 		
 		// for thresholding extremly noisy data, if non noisy set the value to 1
-		RandomAccessibleInterval<FloatType> inputimg = Kernels.SupressHeavythresh(groundframepre);
+		RandomAccessibleInterval<FloatType> inputimg = Kernels.CannyEdgeandMean(groundframepre, radius);
 				
 		ImageJFunctions.show(inputimg);
 		
@@ -221,11 +228,17 @@ public class Velocitydetector {
 		// Now start tracking the moving ends of the Microtubule and make
 		// seperate graph for both ends
 
-		for (int frame = 1; frame < img.dimension(ndims - 1); frame+=missedframes) {
+		for (int frame = 1; frame < img.dimension(ndims - 1); ++frame) {
 
 			IntervalView<FloatType> currentframe = Views.hyperSlice(img, ndims - 1, frame);
-			groundframe = Biggify.biggifyimage(currentframe, extendBorderpixels);
-			System.out.println("Applying Median filter to current frame.");
+
+
+		//	RandomAccessible< FloatType > infiniteImgcurr = Views.extendValue( currentframe, new FloatType() );
+			 
+		       
+	     //   Gauss3.gauss( sigma, infiniteImgcurr, currentframe );
+			
+			System.out.println("Applying Median filter to current frame:" + " " + frame);
 			// Preprocess image using Median Filter and suppress background
 					final MedianFilter2D<FloatType> medfiltercurr = new MedianFilter2D<FloatType>( currentframe, 1);
 					medfiltercurr.process();
@@ -234,7 +247,7 @@ public class Velocitydetector {
 			System.out.println("Median Filter applied sucessfully.");
 		
 			
-			RandomAccessibleInterval<FloatType> inputimgpre = Kernels.Supressthresh(precurrent);
+			RandomAccessibleInterval<FloatType> inputimgpre = Kernels.CannyEdgeandMean(precurrent, radius);
 					//Kernels.CannyEdge(precurrent, psf, true, Heavythresholdvalue);
 	
 			final Float currThresholdValue = GlobalThresholding.AutomaticThresholding(inputimgpre);

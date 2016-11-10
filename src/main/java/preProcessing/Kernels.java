@@ -377,6 +377,266 @@ public static void addBackground(final IterableInterval<FloatType> iterable, fin
 		
 		return Threshcannyimg;
 	}
+	public static RandomAccessibleInterval<FloatType> CannyEdgenosupress(RandomAccessibleInterval<FloatType> inputimg) {
+		int n = inputimg.numDimensions();
+		RandomAccessibleInterval<FloatType> cannyimage = new ArrayImgFactory<FloatType>().create(inputimg,
+				new FloatType());
+		RandomAccessibleInterval<FloatType> gradientimage = new ArrayImgFactory<FloatType>().create(inputimg,
+				new FloatType());
+		RandomAccessibleInterval<FloatType> Threshcannyimg = new ArrayImgFactory<FloatType>().create(inputimg,
+				new FloatType());
+		
+	    // We will create local neighbourhood on this image
+		gradientimage = GradientmagnitudeImage(inputimg);
+	    
+		// This is the intended output image so set up a cursor on it
+		Cursor<FloatType> cursor = Views.iterable(cannyimage).localizingCursor();
+		
+		// Extend the input image for gradient computation
+		RandomAccessible<FloatType> view = Views.extendMirrorSingle(inputimg);
+		RandomAccess<FloatType> randomAccess = view.randomAccess();
+
+		RandomAccessible<FloatType> gradientview = Views.extendMirrorSingle(gradientimage);
+
+		final double[] direction = new double[n];
+		final double[] left = new double[n];
+		final double[] right = new double[n];
+
+		// iterate over all pixels
+		while (cursor.hasNext()) {
+			// Initialize a point
+			cursor.fwd();
+			// compute gradient and its direction in each dimension and move
+			// along the direction
+			double gradient = 0;
+			for (int d = 0; d < inputimg.numDimensions(); ++d) {
+				randomAccess.setPosition(cursor);
+				// move one pixel back in dimension d
+				randomAccess.bck(d);
+				
+				// get the value
+				double Back = randomAccess.get().getRealDouble();
+
+				// move twice forward in dimension d, i.e.
+				// one pixel above the location of the cursor
+				randomAccess.fwd(d);
+				randomAccess.fwd(d);
+
+				// get the value
+				double Fwd = randomAccess.get().getRealDouble();
+
+				gradient += ((Fwd - Back) * (Fwd - Back)) / 4;
+
+				direction[d] = (Fwd - Back) / 2;
+
+			}
+			// Normalize the gradient direction
+			
+			for (int d = 0; d < inputimg.numDimensions(); ++d) {
+				if (gradient != 0)
+					direction[d] = direction[d] / gradient;
+				else
+					direction[d] = Double.MAX_VALUE;
+			}
+
+			
+			cursor.get().setReal(Math.sqrt(gradient));
+		
+            // A 5*5*5.. neighbourhood for span = 2, a 3*3*3.. neighbourhood for span = 1.
+			final int span = 1;
+           // Create a hypersphere at the current point in the gradient image
+			final HyperSphere<FloatType> localsphere = new HyperSphere<FloatType>(gradientview, cursor, span);
+            // To get only the points which are along the gradient direction create left and right in d dimensions
+			Cursor<FloatType> localcursor = localsphere.localizingCursor();
+			for (int d = 0; d < n; ++d) {
+				left[d] = cursor.getDoublePosition(d) - direction[d];
+				right[d] = cursor.getDoublePosition(d) + direction[d];
+			}
+			boolean isMaximum = true;
+            final double tolerance = 20;
+        	final RandomAccess<FloatType> outbound = Threshcannyimg.randomAccess();
+			while (localcursor.hasNext()) {
+				localcursor.fwd();
+			
+				for (int d = 0; d < n; ++d)
+					// Before computing maxima check if it is along the gradient direction
+					if(localcursor.getDoublePosition(d)-left[d]==0 || localcursor.getDoublePosition(d)-right[d]==0){
+				    if (cursor.get().compareTo(localcursor.get()) < 0 ) {
+					isMaximum = false;
+				    	
+					break;
+				}
+			}
+				
+				    if (cursor.get().compareTo(localcursor.get()) >= 0 ) {
+				    	for (int d = 0; d < n; ++d)
+							// If it is a maxima but not near the gradient direction, reject it
+							if(Math.abs(localcursor.getDoublePosition(d)-left[d])>tolerance ||
+									Math.abs(localcursor.getDoublePosition(d)-right[d])>tolerance){
+				    	
+					isMaximum = false;
+								
+					break;
+				}
+			}
+				
+			
+			
+			if (isMaximum) {
+				
+				
+				outbound.setPosition(cursor);
+				outbound.get().set(cursor.get());
+				
+			}
+			}
+		}
+		
+
+	
+		
+	
+		
+		
+		return Threshcannyimg;
+	}
+	
+	public static RandomAccessibleInterval<FloatType> CannyEdgeandMean(RandomAccessibleInterval<FloatType> inputimg,
+			final double sigma) {
+		int n = inputimg.numDimensions();
+		RandomAccessibleInterval<FloatType> cannyimage = new ArrayImgFactory<FloatType>().create(inputimg,
+				new FloatType());
+		RandomAccessibleInterval<FloatType> gradientimage = new ArrayImgFactory<FloatType>().create(inputimg,
+				new FloatType());
+		RandomAccessibleInterval<FloatType> Threshcannyimg = new ArrayImgFactory<FloatType>().create(inputimg,
+				new FloatType());
+		
+	    // We will create local neighbourhood on this image
+		gradientimage = GradientmagnitudeImage(inputimg);
+	    
+		// This is the intended output image so set up a cursor on it
+		Cursor<FloatType> cursor = Views.iterable(cannyimage).localizingCursor();
+		
+		// Extend the input image for gradient computation
+		RandomAccessible<FloatType> view = Views.extendMirrorSingle(inputimg);
+		RandomAccess<FloatType> randomAccess = view.randomAccess();
+
+		RandomAccessible<FloatType> gradientview = Views.extendMirrorSingle(gradientimage);
+
+		final double[] direction = new double[n];
+		final double[] left = new double[n];
+		final double[] right = new double[n];
+
+		// iterate over all pixels
+		while (cursor.hasNext()) {
+			// Initialize a point
+			cursor.fwd();
+			// compute gradient and its direction in each dimension and move
+			// along the direction
+			double gradient = 0;
+			for (int d = 0; d < inputimg.numDimensions(); ++d) {
+				randomAccess.setPosition(cursor);
+				// move one pixel back in dimension d
+				randomAccess.bck(d);
+				
+				// get the value
+				double Back = randomAccess.get().getRealDouble();
+
+				// move twice forward in dimension d, i.e.
+				// one pixel above the location of the cursor
+				randomAccess.fwd(d);
+				randomAccess.fwd(d);
+
+				// get the value
+				double Fwd = randomAccess.get().getRealDouble();
+
+				gradient += ((Fwd - Back) * (Fwd - Back)) / 4;
+
+				direction[d] = (Fwd - Back) / 2;
+
+			}
+			// Normalize the gradient direction
+			
+			for (int d = 0; d < inputimg.numDimensions(); ++d) {
+				if (gradient != 0)
+					direction[d] = direction[d] / gradient;
+				else
+					direction[d] = Double.MAX_VALUE;
+			}
+
+			
+			cursor.get().setReal(Math.sqrt(gradient));
+		
+            // A 5*5*5.. neighbourhood for span = 2, a 3*3*3.. neighbourhood for span = 1.
+			final int span = 1;
+           // Create a hypersphere at the current point in the gradient image
+			final HyperSphere<FloatType> localsphere = new HyperSphere<FloatType>(gradientview, cursor, span);
+            // To get only the points which are along the gradient direction create left and right in d dimensions
+			Cursor<FloatType> localcursor = localsphere.localizingCursor();
+			for (int d = 0; d < n; ++d) {
+				left[d] = cursor.getDoublePosition(d) - direction[d];
+				right[d] = cursor.getDoublePosition(d) + direction[d];
+			}
+			boolean isMaximum = true;
+            final double tolerance = 20;
+        	final RandomAccess<FloatType> outbound = Threshcannyimg.randomAccess();
+			while (localcursor.hasNext()) {
+				localcursor.fwd();
+			
+				for (int d = 0; d < n; ++d)
+					// Before computing maxima check if it is along the gradient direction
+					if(localcursor.getDoublePosition(d)-left[d]==0 || localcursor.getDoublePosition(d)-right[d]==0){
+				    if (cursor.get().compareTo(localcursor.get()) < 0 ) {
+					isMaximum = false;
+				    	
+					break;
+				}
+			}
+				
+				    if (cursor.get().compareTo(localcursor.get()) >= 0 ) {
+				    	for (int d = 0; d < n; ++d)
+							// If it is a maxima but not near the gradient direction, reject it
+							if(Math.abs(localcursor.getDoublePosition(d)-left[d])>tolerance ||
+									Math.abs(localcursor.getDoublePosition(d)-right[d])>tolerance){
+				    	
+					isMaximum = false;
+								
+					break;
+				}
+			}
+				
+			
+			
+			if (isMaximum) {
+				
+				
+				outbound.setPosition(cursor);
+				outbound.get().set(cursor.get());
+				
+			}
+			}
+		}
+		
+
+		//Supress values below the low threshold
+		final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(Threshcannyimg);
+		Cursor<FloatType> cannycursor = Views.iterable(Threshcannyimg).localizingCursor();
+		 Float threshold = Lowthreshold;
+		
+		
+		while(cannycursor.hasNext()){
+			cannycursor.fwd();
+			if (cannycursor.get().get()<= threshold)
+				cannycursor.get().setZero();
+			else
+				cannycursor.get().set(cannycursor.get());
+		}
+		
+		RandomAccessibleInterval<FloatType> meanimg = new ArrayImgFactory<FloatType>().create(inputimg,
+				new FloatType());
+		MeanFilter(Threshcannyimg, meanimg, sigma);
+		return meanimg;
+	}
 	
 	public static RandomAccessibleInterval<FloatType> Meanfilterandsupress(RandomAccessibleInterval<FloatType> inputimg, double sigma){
 		// Mean filtering for a given sigma
