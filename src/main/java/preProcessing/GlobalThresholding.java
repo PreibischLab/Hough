@@ -52,6 +52,37 @@ public class GlobalThresholding {
 
 	}
 
+	
+public static Float AutomaticThresholdingSec(RandomAccessibleInterval<FloatType> inputimg) {
+		
+		FloatType min = new FloatType();
+		FloatType max = new FloatType();
+
+		Float ThresholdNew, Thresholdupdate;
+
+		Pair<FloatType, FloatType> pair = new Pair<FloatType, FloatType>(min, max);
+		pair = GetLocalmaxmin.computesecondMinMaxIntensity(inputimg);
+
+		ThresholdNew = (pair.snd.get() - pair.fst.get()) / 2;
+
+		// Get the new threshold value after segmenting the inputimage with thresholdnew
+		Thresholdupdate = SegmentbyThresholding(Views.iterable(inputimg), ThresholdNew);
+
+		while (true) {
+
+			ThresholdNew = SegmentbyThresholding(Views.iterable(inputimg), Thresholdupdate);
+
+			// Check if the new threshold value is close to the previous value
+			if (Math.abs(Thresholdupdate - ThresholdNew) < 1.0E-2)
+				break;
+			Thresholdupdate = ThresholdNew;
+		}
+		
+
+		return ThresholdNew;
+
+	}
+
 	// Segment image by thresholding, used to determine automatic thresholding
 	// level
 	public static Float SegmentbyThresholding(IterableInterval<FloatType> inputimg, Float Threshold) {

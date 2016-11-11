@@ -111,16 +111,17 @@ implements OutputAlgorithm<ArrayList<double[]>> {
            while(inputcursor.hasNext()){
 			
 			inputcursor.fwd();
+			int x = inputcursor.getIntPosition(0);
+			int y = inputcursor.getIntPosition(1);
+			if (roi.contains(x, y)){
 			
-			
-				if (inputcursor.get().get() / maxintensityline > Intensityratio){
 				inputcursor.localize(newposition);
 				long pointonline = (long) (newposition[1] - slope * newposition[0] - intercept);
 
 				// To get the min and max co-rodinates along the line so we have
 				// starting points to
 				// move on the line smoothly
-
+				if (inputcursor.get().get()/maxintensityline > Intensityratio){
 				if (pointonline == 0) {
 
 					for (int d = 0; d < ndims; ++d) {
@@ -135,10 +136,9 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 				}
 
 			
-				}
 			}
-			
-		
+			}
+           }
 
 		final double[] MinandMax = new double[2 * ndims + 3];
 

@@ -83,36 +83,29 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 			
 			
 			 int currentlabel = Getlabel(linepoint);
-			if (currentlabel!=Integer.MIN_VALUE){
+			
 			 double[] paramnextframe =Getfinaltrackparam(PrevFrameparam.get(index),
 							currentlabel, psf, framenumber);
 			 if (paramnextframe!= null)
 			 final_paramlist.add(paramnextframe);
-			 
+			 if (paramnextframe==null)
+				 paramnextframe = PrevFrameparam.get(index);
 			 
 			 final double[] oldstartpoint = {PrevFrameparam.get(index)[0], PrevFrameparam.get(index)[1]};
 			 
 			 final double[] oldendpoint = {PrevFrameparam.get(index)[2], PrevFrameparam.get(index)[3]};
 			 
-			 final double[] newstartpoint = oldstartpoint;
-			 final double[] newendpoint = oldendpoint;
-			
-			 if (paramnextframe!=null){
-			 for (int d = 0; d < ndims; ++d){
-				 
-				 newstartpoint[d] = paramnextframe[d];
-				 newendpoint[d] = paramnextframe[d + ndims];
-			 }
-			 }
-				
+			 final double[] newstartpoint = {paramnextframe[0], paramnextframe[1]};
+			 
+			 final double[] newendpoint = {paramnextframe[2], paramnextframe[3]};
 			 
 			 final double[] directionstart = {newstartpoint[0] - oldstartpoint[0] , newstartpoint[1] - oldstartpoint[1] };
 			 
 			 final double[] directionend = {newendpoint[0] - oldendpoint[0] , newendpoint[1] - oldendpoint[1] };
 			 
-			System.out.println("Frame:" + framenumber + " " +  "Fits :" + currentlabel + " "+ "StartX:" + newstartpoint[0] 
-					+ " StartY:" + newstartpoint[1] + " " + "EndX:"
-					+ newendpoint[0] + "EndY: " + newendpoint[1]);
+			System.out.println("Frame:" + framenumber + " " +  "Fits :" + currentlabel + " "+ "StartX:" + paramnextframe[0] 
+					+ " StartY:" + paramnextframe[1] + " " + "EndX:"
+					+ paramnextframe[2] + "EndY: " + paramnextframe[3]);
 			
 			final Staticproperties edge = 
 		   new Staticproperties(currentlabel, oldstartpoint, oldendpoint, newstartpoint, newendpoint, directionstart , directionend );
@@ -120,26 +113,6 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 
 					startandendinframe.add(edge);	
 		}
-			
-			// The line is missing in the current frame
-			 else{
-				 final double[] oldstartpoint = {PrevFrameparam.get(index)[0], PrevFrameparam.get(index)[1]};
-				 
-				 final double[] oldendpoint = {PrevFrameparam.get(index)[2], PrevFrameparam.get(index)[3]};
-				 final double[] newstartpoint = oldstartpoint;
-				 
-				 final double[] newendpoint = oldendpoint;
-				 final double[] directionstart = {newstartpoint[0] - oldstartpoint[0] , newstartpoint[1] - oldstartpoint[1] };
-				 
-				 final double[] directionend = {newendpoint[0] - oldendpoint[0] , newendpoint[1] - oldendpoint[1] };
-
-					final Staticproperties edge = 
-				   new Staticproperties(currentlabel, oldstartpoint, oldendpoint, newstartpoint, newendpoint, directionstart , directionend );
-					
-				 startandendinframe.add(edge);
-			 }
-		}
-		 
 		
 		return false;
 	}
@@ -170,18 +143,19 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 
 
 		final Cursor<FloatType> outcursor = Views.iterable(currentimg).localizingCursor();
-
+		final RandomAccess<IntType> intcursor = intimg.randomAccess();
 		final double maxintensityline = GetLocalmaxmin.computeMaxIntensity(currentimg);
 
 		while (outcursor.hasNext()) {
 
 			outcursor.fwd();
-
-			if (outcursor.get().get() / maxintensityline > Intensityratio) {
+			intcursor.setPosition(outcursor);
+            if (intcursor.get().get() == label) {
 				outcursor.localize(newposition);
 
 				long pointonline = (long) (outcursor.getLongPosition(1) - slope * outcursor.getLongPosition(0) - newintercept);
 
+				if (outcursor.get().get()/maxintensityline > Intensityratio){
 				// To get the min and max co-rodinates along the line so we
 				// have starting points to
 				// move on the line smoothly
@@ -198,6 +172,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 
 				}
 			}
+            }
 		}
 
 		final double[] MinandMax = new double[2 * ndims + 3];
@@ -442,14 +417,9 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 		RandomAccess<IntType> intranac = intimg.randomAccess();
 
 		intranac.setPosition(linepoint);
-		if(linepoint.getDoublePosition(0) < intimg.dimension(0) && linepoint.getDoublePosition(1) < intimg.dimension(1)
-				&& linepoint.getDoublePosition(0) >= 0 && linepoint.getDoublePosition(1) >= 0){
 		int currentlabel = intranac.get().get();
 
 		return currentlabel;
-		}
-		else
-		return Integer.MIN_VALUE;
 	}
 	public double Distance(final double[] cordone, final double[] cordtwo) {
 

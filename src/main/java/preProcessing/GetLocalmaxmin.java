@@ -458,7 +458,38 @@ public class GetLocalmaxmin {
 		Pair<FloatType, FloatType> pair = new Pair<FloatType, FloatType>(min, max);
 		return pair;
 	}
-	
+	public static Pair<FloatType, FloatType> computesecondMinMaxIntensity(final RandomAccessibleInterval<FloatType> inputimg) {
+		// create a cursor for the image (the order does not matter)
+		final Cursor<FloatType> cursor = Views.iterable(inputimg).cursor();
+
+		// initialize min and max with the first image value
+		FloatType type = cursor.next();
+		FloatType min = type.copy();
+		FloatType secondmin = type.copy();
+		FloatType max = type.copy();
+
+		// loop over the rest of the data and determine min and max value
+		while (cursor.hasNext()) {
+			// we need this type more than once
+			type = cursor.next();
+
+			if (type.compareTo(min) < 0) {
+				min.set(type);
+
+			}
+			if (type.compareTo(secondmin) < 0 && secondmin.compareTo(min)>0) {
+				secondmin.set(type);
+
+			}
+			
+			if (type.compareTo(max) > 0) {
+				max.set(type);
+
+			}
+		}
+		Pair<FloatType, FloatType> pair = new Pair<FloatType, FloatType>(secondmin, max);
+		return pair;
+	}
 	
 	public static double computeMaxIntensity(final RandomAccessibleInterval<FloatType> inputimg) {
 		final int ndims = inputimg.numDimensions();

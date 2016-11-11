@@ -94,39 +94,43 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 				 
 				 ArrayList<Integer> seclabel = Getlabel(secondlinepoint);
 				 Set<Integer> secmultilabel = new HashSet<Integer>(seclabel);
-				 
+				 Set<Integer> finallabel = new HashSet<Integer>();
+				 if (multilabel.size() > 0 && secmultilabel.size() > 0){
 				secmultilabel.retainAll(multilabel);
-				Iterator<Integer> iter = secmultilabel.iterator();
-				while(iter.hasNext()){
-				int currentlabel = iter.next();
+				finallabel = secmultilabel;
+				 }
+				 else if (multilabel.size() == 0 &&secmultilabel.size() > 0 ){
+					 finallabel = secmultilabel;
+				 }
+				 else if (secmultilabel.size() == 0 && multilabel.size() > 0){
+					 finallabel = multilabel;
+					 
+				 }
 				 
-			
+				 int currentlabel = Integer.MIN_VALUE;
+				Iterator<Integer> iter = finallabel.iterator();
+				if(iter.hasNext()){
+				 currentlabel = iter.next();
+				 
+				}
 				 
 				 
 				 if (currentlabel != Integer.MIN_VALUE){
 					 System.out.println(currentlabel);
 			 double[] paramnextframe =Getfinaltrackparam(PrevFrameparam.get(index),
 							currentlabel, psf, framenumber);
-			 if (paramnextframe!=null){
-			 final_paramlist.add(paramnextframe);
-			 
-			 
+
 			 final double[] oldstartpoint = {PrevFrameparam.get(index)[0], PrevFrameparam.get(index)[1]};
 			 
 			 final double[] oldendpoint = {PrevFrameparam.get(index)[2], PrevFrameparam.get(index)[3]};
+			 if (paramnextframe!=null)
+			 final_paramlist.add(paramnextframe);
+			 if (paramnextframe==null)
+				 paramnextframe = PrevFrameparam.get(index);
+                  final double[] newstartpoint = {paramnextframe[0], paramnextframe[1]};
 			 
-			 final double[] newstartpoint = oldstartpoint;
+			 final double[] newendpoint = {paramnextframe[2], paramnextframe[3]};
 			 
-			 final double[] newendpoint = oldendpoint;
-			
-			 if (paramnextframe!=null){
-			 for (int d = 0; d < ndims; ++d){
-				 
-				 newstartpoint[d] = paramnextframe[d];
-				 newendpoint[d] = paramnextframe[d + ndims];
-			 }
-			 }
-				
 			 final double[] directionstart = {newstartpoint[0] - oldstartpoint[0] , newstartpoint[1] - oldstartpoint[1] };
 			 
 			 final double[] directionend = {newendpoint[0] - oldendpoint[0] , newendpoint[1] - oldendpoint[1] };
@@ -134,33 +138,19 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 			System.out.println("Frame:" + framenumber + " " +  "Fits :" + currentlabel + " "+ "StartX:" + paramnextframe[0] 
 					+ " StartY:" + paramnextframe[1] + " " + "EndX:"
 					+ paramnextframe[2] + "EndY: " + paramnextframe[3]);
-			
+			 
+		
 			final Staticproperties edge = 
 		   new Staticproperties(currentlabel, oldstartpoint, oldendpoint, newstartpoint, newendpoint, directionstart , directionend );
 			
 
 					startandendinframe.add(edge);	
 				 }
-				 }
-				 // The line is missing in the current frame
-				 else{
-					 final double[] oldstartpoint = {PrevFrameparam.get(index)[0], PrevFrameparam.get(index)[1]};
-					 
-					 final double[] oldendpoint = {PrevFrameparam.get(index)[2], PrevFrameparam.get(index)[3]};
-					 final double[] newstartpoint = oldstartpoint;
-					 
-					 final double[] newendpoint = oldendpoint;
-					 final double[] directionstart = {newstartpoint[0] - oldstartpoint[0] , newstartpoint[1] - oldstartpoint[1] };
-					 
-					 final double[] directionend = {newendpoint[0] - oldendpoint[0] , newendpoint[1] - oldendpoint[1] };
-
-						final Staticproperties edge = 
-					   new Staticproperties(currentlabel, oldstartpoint, oldendpoint, newstartpoint, newendpoint, directionstart , directionend );
-						
-					 startandendinframe.add(edge);
-				 }
-		}
-		}
+				 
+				 
+		
+		
+}
 		return false;
 	}
 
@@ -191,16 +181,17 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 		final Cursor<FloatType> outcursor = Views.iterable(currentimg).localizingCursor();
 
 		final double maxintensityline = GetLocalmaxmin.computeMaxIntensity(currentimg);
-
+		final EllipseRoi roi = imgs.get(label).roi;
 		while (outcursor.hasNext()) {
 
 			outcursor.fwd();
-
-			if (outcursor.get().get() / maxintensityline > Intensityratio) {
+			int x = outcursor.getIntPosition(0);
+			int y = outcursor.getIntPosition(1);
+			if (roi.contains(x, y)){
 				outcursor.localize(newposition);
 
 				long pointonline = (long) (outcursor.getLongPosition(1) - slope * outcursor.getLongPosition(0) - newintercept);
-
+				if (outcursor.get().get()/maxintensityline > Intensityratio){
 				// To get the min and max co-rodinates along the line so we
 				// have starting points to
 				// move on the line smoothly
@@ -214,11 +205,10 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 							maxVal[d] = outcursor.getDoublePosition(d);
 
 					}
-
 				}
 			}
 		}
-
+		}
 		final double[] MinandMax = new double[2 * ndims + 3];
 
 		if (slope >= 0) {

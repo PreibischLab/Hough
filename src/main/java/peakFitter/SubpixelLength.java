@@ -107,18 +107,18 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 
 
 		final Cursor<FloatType> outcursor = Views.iterable(currentimg).localizingCursor();
-
+		final RandomAccess<IntType> intcursor = intimg.randomAccess();
 		final double maxintensityline = GetLocalmaxmin.computeMaxIntensity(currentimg);
 
 		while (outcursor.hasNext()) {
 
 			outcursor.fwd();
-
-			if (outcursor.get().get() / maxintensityline > Intensityratio) {
+            intcursor.setPosition(outcursor);
+            if (intcursor.get().get() == label){
 				outcursor.localize(newposition);
 
 				long pointonline = (long) (newposition[1] - slope * newposition[0] - newintercept);
-
+				if (outcursor.get().get()/maxintensityline > Intensityratio){
 				// To get the min and max co-rodinates along the line so we
 				// have starting points to
 				// move on the line smoothly
@@ -135,6 +135,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 
 				}
 			}
+            }
 		}
 
 		final double[] MinandMax = new double[2 * ndims + 3];

@@ -29,7 +29,7 @@ public class HoughPushCurves {
 
 			inputcursor.fwd();
 			
-				if (inputcursor.get().get() > threshold && inputcursor.get().get() > 0 ) {
+				if (inputcursor.get().get() > threshold  ) {
 					inputcursor.localize(position);
 					Amplitude = Math.sqrt(Math.pow(position[0], 2) + Math.pow(position[1], 2));
 					Phase = Math.toDegrees(Math.atan2(position[0], position[1]));

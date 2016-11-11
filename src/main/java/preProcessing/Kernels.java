@@ -685,7 +685,7 @@ public static void addBackground(final IterableInterval<FloatType> iterable, fin
 		//Supress values below the low threshold
 		int n = inputimg.numDimensions();
 		double[] position = new double[n];
-				final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(inputimg);
+				final Float Lowthreshold = GlobalThresholding.AutomaticThresholdingSec(inputimg);
 				 Float threshold = Lowthreshold;
 				Cursor<FloatType> inputcursor = Views.iterable(inputimg).localizingCursor();
 				RandomAccess<FloatType> outputran = Threshimg.randomAccess();
@@ -711,9 +711,9 @@ public static void addBackground(final IterableInterval<FloatType> iterable, fin
 		//Supress values below the low threshold
 		int n = inputimg.numDimensions();
 		double[] position = new double[n];
-				final Float Lowthreshold = GlobalThresholding.AutomaticThresholding(inputimg);
+				final Float Lowthreshold = GlobalThresholding.AutomaticThresholdingSec(inputimg);
 				 Float threshold = Lowthreshold;
-				 Float Highthreshold = new Float(2.5 * threshold);
+				 Float Highthreshold = new Float(2.0 * threshold);
 				Cursor<FloatType> inputcursor = Views.iterable(inputimg).localizingCursor();
 				RandomAccess<FloatType> outputran = Threshimg.randomAccess();
 				while(inputcursor.hasNext()){

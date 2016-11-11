@@ -13,6 +13,7 @@ import java.util.TreeSet;
 import com.sun.tools.javac.util.Pair;
 
 import houghandWatershed.Boundingboxes;
+import houghandWatershed.HoughTransformandMser;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
@@ -50,7 +51,9 @@ public class RoiforMSER extends BenchmarkAlgorithm
 	private final long maxSize;
 	private final double maxVar;
 	private final double minDIversity;
+	private final int minlength;
 	private final boolean darktoBright;
+	private final boolean doHough;
 	private Overlay ov;
 	private final int ndims;
 	private int Roiindex;
@@ -58,7 +61,7 @@ public class RoiforMSER extends BenchmarkAlgorithm
 
 	public RoiforMSER(final RandomAccessibleInterval<FloatType> source, final RandomAccessibleInterval<FloatType> Actualsource,
 			final double delta, final long minSize, 
-			final long maxSize, final double maxVar, final double minDiversity,  final boolean darktoBright) {
+			final long maxSize, final double maxVar, final double minDiversity, final int minlength,  final boolean darktoBright, final boolean doHough) {
 
 		this.source = source;
 		this.Actualsource = Actualsource;
@@ -68,6 +71,8 @@ public class RoiforMSER extends BenchmarkAlgorithm
 		this.maxVar = maxVar;
 		this.minDIversity = minDiversity;
 		this.darktoBright = darktoBright;
+		this.minlength = minlength;
+		this.doHough = doHough;
 		this.ndims = source.numDimensions();
 	}
 
@@ -151,8 +156,8 @@ public class RoiforMSER extends BenchmarkAlgorithm
 				final EllipseRoi ellipseroi = GetDelta.createEllipse(mean, covar, 3);
 				
 	    		final double perimeter = ellipseroi.getLength();
-			
-	    		if (perimeter > 50){
+	    		final double smalleigenvalue = SmallerEigenvalue(mean, covar);
+	    		if (perimeter > 4 * Math.PI * minlength && smalleigenvalue < 30){
 	    			
 	    			Roiindex = count;
 	    			count++;
@@ -205,10 +210,21 @@ public class RoiforMSER extends BenchmarkAlgorithm
 				
 				
 				// Obtain the slope and intercept of the line by obtaining the major axis of the ellipse (super fast and accurate)
+				if (doHough){
+					
+					HoughTransformandMser viaHough = new HoughTransformandMser(Roiindex, Roiimg, ellipseroi, minlength);
+					viaHough.checkInput();
+					viaHough.process();
+					slopeandintercept = viaHough.getResult();
+					
+				}
+				
+				else{
+					
 				
 				slopeandintercept = LargestEigenvector(mean, covar);
 				
-				
+				}
 				
 				LabelledImg currentimg = new LabelledImg(Roiindex, Roiimg, ActualRoiimg, ellipseroi, slopeandintercept, mean, covar);
 				
@@ -289,6 +305,35 @@ public class RoiforMSER extends BenchmarkAlgorithm
 		
 	}
 	
+	/**
+	 * Returns the smallest eigenvalue of the ellipse
+	 * 
+	 * 
+	 *@param mean
+	 *            (x,y) components of mean vector
+	 * @param cov
+	 *            (xx, xy, yy) components of covariance matrix
+	 * @return slope and intercept of the line along the major axis
+	 */
+	public  double SmallerEigenvalue( final double[] mean, final double[] cov){
+		
+		// For inifinite slope lines support is provided
+		final double a = cov[0];
+		final double b = cov[1];
+		final double c = cov[2];
+		final double d = Math.sqrt(a * a + 4 * b * b - 2 * a * c + c * c);
+
+		
+        final double smalleigenvalue = (a + c - d) / 2;
+       
+        
+        	
+        	return smalleigenvalue;
+        	
+        	 
+       
+		
+	}
 	
 	
 	

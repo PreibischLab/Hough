@@ -61,7 +61,7 @@ public class Velocitydetector {
 				.openAs32Bit(
 					//	new File("../res/10frame_moving.tif"),
 					//	new ArrayImgFactory<FloatType>());
-						new File("../res/Bovine_12uM_37Cdup-2.tif"),
+						new File("../res/Bovine_12uM_37Cdup-4.tif"),
 						new ArrayImgFactory<FloatType>());
 					//	new File("../res/small_MT.tif"),
 					//	new ArrayImgFactory<FloatType>());
