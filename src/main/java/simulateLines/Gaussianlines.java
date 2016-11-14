@@ -122,21 +122,23 @@ public class Gaussianlines {
 		ArrayList<Fakeline> linearray = new ArrayList<Fakeline>();
 		final Random rnd = new Random(60);
 		final Random rndsec = new Random(28);
+		final Random rndthird = new Random(28);
 		for (int index = 0; index < numlines; ++index) {
 
 				
 			double startpos[] = new double[n];
 			double endpos[] = new double[n];
 			double MaxLength = 55.82;
-			
-			for (int d = 0; d < range.numDimensions(); ++d) {
-				startpos[d] = (rnd.nextDouble() * (range.max(d) - range.min(d)) + range.min(d));
-			}
-			endpos[0] = (rndsec.nextDouble()+ 14 * Math.sin(2 *rate));
 			double inislope = rndsec.nextDouble();
-			double iniintercept = startpos[1] - inislope * startpos[0];
-			endpos[1] = (inislope * endpos[0] +  iniintercept);
+			double iniintercept = rndthird.nextDouble() ;
+			/*
+		//	for (int d = 0; d < range.numDimensions(); ++d) {
+				startpos[0] = (rnd.nextDouble() * (range.max(0) - range.min(0)) + range.min(0));
+	//		}
+				startpos[1] = inislope * startpos[0] + iniintercept + 0.1 * startpos[0] * startpos[0];
+			endpos[0] = (rndsec.nextDouble()+ 14 * Math.abs((0.2 *rate)));
 			
+			endpos[1] =   (inislope * endpos[0] +  iniintercept ) +   0.1 *  endpos[0] * endpos[0];
 			
 			while (true){
 			if (Distance(startpos, endpos) > MaxLength){
@@ -155,8 +157,9 @@ public class Gaussianlines {
 			double slope = (endpos[1] - startpos[1]) / (endpos[0] - startpos[0]);
 			double intercept = startpos[1] - slope * startpos[0];
 
-		
-			
+		*/
+			double slope = 0;
+			double intercept = 0;
 			PushCurves.Drawshortline(outimg, linearray, slope, intercept, startpos, endpos, sigma);
 			
 

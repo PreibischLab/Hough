@@ -19,7 +19,7 @@ import net.imglib2.view.Views;
 import peakFitter.GaussianMaskFitMSER.EndfitMSER;
 import preProcessing.GetLocalmaxmin;
 
-public class SubpixelLengthMSER extends BenchmarkAlgorithm
+public class SubpixelBentLengthMSER extends BenchmarkAlgorithm
 implements OutputAlgorithm<ArrayList<double[]>> {
 	
 	private static final String BASE_ERROR_MSG = "[SubpixelLineMSER] ";
@@ -41,7 +41,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 	final double Intensityratio = 0.5;
 	
 	
-	public SubpixelLengthMSER( final RandomAccessibleInterval<FloatType> source, 
+	public SubpixelBentLengthMSER( final RandomAccessibleInterval<FloatType> source, 
 			             final ArrayList<LabelledImg> imgs,
 			             final ArrayList<Simpleobject> simpleobject,
 			             final double[] psf,
@@ -141,7 +141,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 			}
            }
 
-		final double[] MinandMax = new double[2 * ndims + 3];
+		final double[] MinandMax = new double[2 * ndims + 4];
 
 		if (slope >= 0) {
 			for (int d = 0; d < ndims; ++d) {
@@ -166,10 +166,10 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 		MinandMax[2 * ndims + 1] = maxintensityline; 
 		// This parameter guess estimates the background noise level
 		MinandMax[2 * ndims + 2] = 0; 
-		
+		MinandMax[2 * ndims + 3] = 0; 
 		
 		System.out.println("Label: " + label + " " + "MSER Detection: " + " StartX: " + MinandMax[0] + " StartY: "
-				+ MinandMax[1] + " EndX: " + MinandMax[2] + " EndY: " + MinandMax[3]);
+				+ MinandMax[1] + " EndX: " + MinandMax[2] + " EndY: " + MinandMax[3]+ " " + " Bent Length" + MinandMax[2 * ndims + 3]);
 
 		
 		
@@ -253,7 +253,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 				
 				if (inicutoffdistance > minlength) {
 					try {
-						LevenbergMarquardtSolverLine.solve(X, finalparamstart, fixed_param, I, new GaussianLineds(), lambda,
+						LevenbergMarquardtSolverLine.solve(X, finalparamstart, fixed_param, I, new GaussianBentLineds(), lambda,
 								termepsilon, maxiter);
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -304,7 +304,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 					// If mask fits fail, return LM solver results, very crucial for
 					// noisy data
 
-					double[] returnparam = new double[2 * ndims + 3];
+					double[] returnparam = new double[2 * ndims + 4];
 					double[] LMparam = new double[2 * ndims];
 
 					
@@ -365,6 +365,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 					returnparam[2 * ndims] = finalparamstart[4];
 					returnparam[2 * ndims + 1] = finalparamstart[5];
 					returnparam[2 * ndims + 2] = finalparamstart[6];
+					returnparam[2 * ndims + 3] = finalparamstart[7];
 					return returnparam;
 
 				}

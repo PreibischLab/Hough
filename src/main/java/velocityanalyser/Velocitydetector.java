@@ -36,7 +36,6 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 import peakFitter.SubpixelLength;
 import peakFitter.SubpixelVelocity;
-import preProcessing.Biggify;
 import preProcessing.GetLocalmaxmin;
 import preProcessing.GlobalThresholding;
 import preProcessing.Kernels;
@@ -61,7 +60,7 @@ public class Velocitydetector {
 				.openAs32Bit(
 					//	new File("../res/10frame_moving.tif"),
 					//	new ArrayImgFactory<FloatType>());
-						new File("../res/Bovine_12uM_37Cdup-4.tif"),
+						new File("../res/23-09-16-laevis-6uM-25C-3.tif"),
 						new ArrayImgFactory<FloatType>());
 					//	new File("../res/small_MT.tif"),
 					//	new ArrayImgFactory<FloatType>());

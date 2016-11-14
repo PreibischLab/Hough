@@ -27,7 +27,7 @@ public class GetDelta {
 		
 		
 		
-			int stepdelta = 2;
+			int stepdelta = 10;
 			
 			
 			double MaxBestdelta = delta;

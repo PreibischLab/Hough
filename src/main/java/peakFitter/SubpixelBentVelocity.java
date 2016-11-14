@@ -19,7 +19,7 @@ import net.imglib2.view.Views;
 import peakFitter.GaussianMaskFit.Endfit;
 import preProcessing.GetLocalmaxmin;
 
-public class SubpixelVelocity extends BenchmarkAlgorithm
+public class SubpixelBentVelocity extends BenchmarkAlgorithm
 implements OutputAlgorithm<ArrayList<double[]>> {
 
 	private static final String BASE_ERROR_MSG = "[SubpixelVelocity] ";
@@ -42,7 +42,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 	final boolean halfgaussian = false;
 	final double Intensityratio = 0.5;
 	
-	public  SubpixelVelocity(final RandomAccessibleInterval<FloatType> source, 
+	public  SubpixelBentVelocity(final RandomAccessibleInterval<FloatType> source, 
 			                       final RandomAccessibleInterval<IntType> intimg,
 			                       final ArrayList<double[]> PrevFrameparam,
 			                       final double[] psf,
@@ -176,7 +176,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
             }
 		}
 
-		final double[] MinandMax = new double[2 * ndims + 3];
+		final double[] MinandMax = new double[2 * ndims + 4];
 
 		if (slope >= 0) {
 			for (int d = 0; d < ndims; ++d) {
@@ -199,8 +199,9 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 		MinandMax[2 * ndims] = iniparam[2 * ndims];
 		MinandMax[2 * ndims + 1] = iniparam[2 * ndims + 1];
 		MinandMax[2 * ndims + 2] = iniparam[2 * ndims + 2];
+		MinandMax[2 * ndims + 3] = iniparam[2 * ndims + 3];
 		System.out.println("Label: " + label + " " + "Initial guess: " + " StartX: " + MinandMax[0] + " StartY: "
-				+ MinandMax[1] + " EndX: " + MinandMax[2] + " EndY: " + MinandMax[3]);
+				+ MinandMax[1] + " EndX: " + MinandMax[2] + " EndY: " + MinandMax[3] + " " + " Bent Line" + MinandMax[2 * ndims + 3]  );
 
 		
 			for (int d = 0; d < ndims; ++d) {
@@ -267,7 +268,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 				// LM solver part
 				if (inicutoffdistance > 2) {
 					try {
-						LevenbergMarquardtSolverLine.solve(X, finalparamstart, fixed_param, I, new GaussianLineds(), lambda,
+						LevenbergMarquardtSolverLine.solve(X, finalparamstart, fixed_param, I, new GaussianBentLineds(), lambda,
 								termepsilon, maxiter);
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -370,6 +371,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 					returnparam[2 * ndims] = finalparamstart[4];
 					returnparam[2 * ndims + 1] = finalparamstart[5];
 					returnparam[2 * ndims + 2] = finalparamstart[6];
+					returnparam[2 * ndims + 3] = finalparamstart[7];
 					return returnparam;
 				} else
 					return null;

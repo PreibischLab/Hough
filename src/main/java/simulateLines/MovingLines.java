@@ -28,13 +28,13 @@ public class MovingLines {
 		
 		
 		final int ndims = range.numDimensions();
-		final double [] sigma = {1.4,1.5};
+		final double [] sigma = {1.65,1.47};
 		final double [] Ci = new double[ndims];
 		
 		for (int d = 0; d < ndims; ++d)
 			Ci[d] = 1.0 / Math.pow(sigma[d],2);
 		
-		final int numframes = 25;
+		final int numframes = 2;
 		final int numlines = 10;
 
 		for (int frame = 0; frame < numframes; ++frame){

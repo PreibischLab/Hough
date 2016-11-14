@@ -36,9 +36,10 @@ import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
+import peakFitter.SubpixelBentLengthMSER;
+import peakFitter.SubpixelBentVelocityMSER;
 import peakFitter.SubpixelLengthMSER;
 import peakFitter.SubpixelVelocityMSER;
-import preProcessing.Biggify;
 import preProcessing.Kernels;
 import preProcessing.MedianFilter2D;
 
@@ -62,25 +63,36 @@ public class VelocitydetectionMSER {
 				// File("../res/2016-09-28_bovine_cy5seeds_cy3tub_6uM_seeds.tif"),
 				// new ArrayImgFactory<FloatType>());
 
-				// new File("../res/10frame_moving.tif"),
+				// new File("../res/test-bent.tif"),
 				// new ArrayImgFactory<FloatType>());
 				// new File("../res/multiple-lines.tif"),
 				// new ArrayImgFactory<FloatType>());
-				new File("../res/Bovine_12uM_37Cdup-4.tif"), new ArrayImgFactory<FloatType>());
+				new File("../res/Combined20-09-16-laevis.tif"), 
+				new ArrayImgFactory<FloatType>());
+		
+		
+		RandomAccessibleInterval<FloatType> preprocessedimg = util.ImgLib2Util.openAs32Bit(
+				// new
+				// File("../res/2016-09-28_bovine_cy5seeds_cy3tub_6uM_seeds.tif"),
+				// new ArrayImgFactory<FloatType>());
+
+				// new File("../res/test-bent.tif"),
+				// new ArrayImgFactory<FloatType>());
+				// new File("../res/multiple-lines.tif"),
+				// new ArrayImgFactory<FloatType>());
+				new File("../res/Combined20-09-16-laevis-preprocessed.tif"), 
+				new ArrayImgFactory<FloatType>());
+		
 		int ndims = img.numDimensions();
 		 
 		  
-		Biggify bigimg = new Biggify(img, 0);
-		bigimg.process();
-		RandomAccessibleInterval<FloatType> testimg = bigimg.getResult();
-		ImageJFunctions.show(testimg).setTitle("test");
 		
 		// Normalize the intensity of the whole stack to be between min and max
 		// value specified here
 		new Normalize();
 
 		final boolean darktoBright = false;
-		final boolean doHough = true;
+		final boolean doHough = false;
 		FloatType minval = new FloatType(0);
 		FloatType maxval = new FloatType(1);
 		final int skipframes = 0;
@@ -92,7 +104,7 @@ public class VelocitydetectionMSER {
 
 		// minimum length of the lines to be detected, the smallest possible
 		// number is 2.
-		final int minlength = 3;
+		final int minlength = 4;
 
 		// Show the stack
 		ImagePlus impstart = ImageJFunctions.show(img);
@@ -101,21 +113,22 @@ public class VelocitydetectionMSER {
 		// For low noise images a low value of delta such as 10 and for high
 		// noise images a value such as 100
 		final double delta = 10;
-		final long minSize = 0;
+		final long minSize = 1;
 		final long maxSize = Long.MAX_VALUE;
-		final double maxVar = 0.5;
-		final double minDiversity = 1.0;
+		final double maxVar = 0.2;
+		final double minDiversity = 0;
 		final int maxlines = 100;
-		final int maxdeltaini = 40;
+		final int maxdeltaini = 50;
 		final int maxdeltanext = 20;
-
+		final long radius =  (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		if (ndims == 2) {
 
 
 			// Preprocess image using Median Filter and suppress background
-			final MedianFilter2D<FloatType> medfilter = new MedianFilter2D<FloatType>(img, 1);
+			final MedianFilter2D<FloatType> medfilter = new MedianFilter2D<FloatType>(preprocessedimg, 1);
 			medfilter.process();
 			RandomAccessibleInterval<FloatType> inputimg = medfilter.getResult();
+			//RandomAccessibleInterval<FloatType> inputimg = Kernels.CannyEdgeandMean(preinputimg, radius);
 			Normalize.normalize(Views.iterable(inputimg), minval, maxval);
 
 			ImageJFunctions.show(inputimg).setTitle("Preprocessed extended image");
@@ -133,6 +146,7 @@ public class VelocitydetectionMSER {
 
 			// IntensityHistogram.Npeaks(inputimg);
 
+			System.out.println("Determining the best delta parameter for the image:");
 			double bestdelta = GetDelta.Bestdeltaparam(newimg, delta, minSize, maxSize, maxVar, minDiversity, minlength,
 					maxlines, maxdeltaini, darktoBright);
 			System.out.println(bestdelta);
@@ -158,7 +172,7 @@ public class VelocitydetectionMSER {
 
 			ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
 
-			SubpixelLengthMSER MTline = new SubpixelLengthMSER(img, arrayimg, simpleobject, psf, minlength);
+			SubpixelBentLengthMSER MTline = new SubpixelBentLengthMSER(img, arrayimg, simpleobject, psf, minlength);
 			MTline.checkInput();
 			MTline.process();
 			ArrayList<double[]> final_paramlist = MTline.getResult();
@@ -173,13 +187,14 @@ public class VelocitydetectionMSER {
 			// Do Hough transform on the First seed image
 
 			IntervalView<FloatType> groundframe = Views.hyperSlice(img, ndims - 1, 0);
-			
+			IntervalView<FloatType> groundframepre = Views.hyperSlice(preprocessedimg, ndims - 1, 0);
 
 			System.out.println("Applying Median filter to the first image.");
 			// Preprocess image using Median Filter and suppress background
-			final MedianFilter2D<FloatType> medfilter = new MedianFilter2D<FloatType>(groundframe, 1);
+			final MedianFilter2D<FloatType> medfilter = new MedianFilter2D<FloatType>(groundframepre, 1);
 			medfilter.process();
 			RandomAccessibleInterval<FloatType> inputimg = medfilter.getResult();
+		//	RandomAccessibleInterval<FloatType> inputimg = Kernels.CannyEdgeandMean(preinputimg, radius);
 			Normalize.normalize(Views.iterable(inputimg), minval, maxval);
 
 			System.out.println("Median Filter applied sucessfully.");
@@ -221,7 +236,7 @@ public class VelocitydetectionMSER {
 
 			 ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
 
-			SubpixelLengthMSER MTline = new SubpixelLengthMSER(groundframe, arrayimg, simpleobject, psf, minlength);
+			SubpixelBentLengthMSER MTline = new SubpixelBentLengthMSER(groundframe, arrayimg, simpleobject, psf, minlength);
 			MTline.checkInput();
 			MTline.process();
 			ArrayList<double[]> final_paramlist = MTline.getResult();
@@ -238,13 +253,13 @@ public class VelocitydetectionMSER {
 			for (int frame = 1; frame < img.dimension(ndims - 1); frame += skipframes + 1) {
 
 				IntervalView<FloatType> currentframe = Views.hyperSlice(img, ndims - 1, frame);
-
+				IntervalView<FloatType> currentframepre = Views.hyperSlice(preprocessedimg, ndims - 1, frame);
 				System.out.println("Applying Median filter to current frame.");
 				// Preprocess image using Median Filter and suppress background
-				final MedianFilter2D<FloatType> medfiltercurr = new MedianFilter2D<FloatType>(currentframe, 1);
+				final MedianFilter2D<FloatType> medfiltercurr = new MedianFilter2D<FloatType>(currentframepre, 1);
 				medfiltercurr.process();
 				RandomAccessibleInterval<FloatType> inputimgpre = medfiltercurr.getResult();
-
+				//RandomAccessibleInterval<FloatType> inputimgpre = Kernels.CannyEdgeandMean(preinputimgpre, radius);
 				Normalize.normalize(Views.iterable(inputimgpre), minval, maxval);
 
 				ImageJFunctions.show(inputimgpre);
@@ -272,7 +287,7 @@ public class VelocitydetectionMSER {
 				impframe.setOverlay(ovframe);
 				
 
-				final SubpixelVelocityMSER growthtracker = new SubpixelVelocityMSER(currentframe, arrayimgframe,
+				final SubpixelBentVelocityMSER growthtracker = new SubpixelBentVelocityMSER(currentframe, arrayimgframe,
 						PrevFrameparam, psf, frame);
 				growthtracker.checkInput();
 				growthtracker.process();

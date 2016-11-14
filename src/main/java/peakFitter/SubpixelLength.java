@@ -114,11 +114,12 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 
 			outcursor.fwd();
             intcursor.setPosition(outcursor);
+            if (outcursor.get().get()/maxintensityline > Intensityratio){
             if (intcursor.get().get() == label){
 				outcursor.localize(newposition);
 
 				long pointonline = (long) (newposition[1] - slope * newposition[0] - newintercept);
-				if (outcursor.get().get()/maxintensityline > Intensityratio){
+				
 				// To get the min and max co-rodinates along the line so we
 				// have starting points to
 				// move on the line smoothly
@@ -159,7 +160,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 		}
 
 		// This parameter is guess estimate for spacing between the Gaussians
-		MinandMax[2 * ndims] =  0.5 * Math.min(psf[0], psf[1]);
+		MinandMax[2 * ndims] =   Math.min(psf[0], psf[1]);
 		MinandMax[2 * ndims + 1] = maxintensityline; 
 		// This parameter guess estimates the background noise level
 		MinandMax[2 * ndims + 2] = 1; 

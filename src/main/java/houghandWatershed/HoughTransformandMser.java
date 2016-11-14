@@ -105,10 +105,9 @@ public class HoughTransformandMser extends BenchmarkAlgorithm implements OutputA
 		slopeandintercept = new double[ndims + 1];
 
 		Pair<RandomAccessibleInterval<FloatType>, FinalInterval> pair = Boundingboxes.CurrentLabelImage(source, roi);
-		RandomAccessibleInterval<FloatType> outimgview = pair.fst;
-		Float val = GlobalThresholding.AutomaticThresholding(outimgview);
+		RandomAccessibleInterval<FloatType> outimg = pair.fst;
+		Float val = GlobalThresholding.AutomaticThresholding(outimg);
 
-		final RandomAccessibleInterval<FloatType> outimg = Kernels.CannyEdge(Kernels.Supressthresh(outimgview));
 		FinalInterval Realinterval = pair.snd;
 
 		long intervalsize = (long) Math.sqrt(Realinterval.dimension(0) * Realinterval.dimension(0)
@@ -147,7 +146,7 @@ public class HoughTransformandMser extends BenchmarkAlgorithm implements OutputA
 			// Hough
 			// detected lines
 			ArrayList<RefinedPeak<Point>> SubpixelMinlist = new ArrayList<RefinedPeak<Point>>(
-					outimgview.numDimensions());
+					outimg.numDimensions());
 
 			// Get the list of all the detections
 			SubpixelMinlist = GetLocalmaxmin.HoughspaceMaxima(houghimage, interval, sizes, thetaPerPixel, rhoPerPixel);

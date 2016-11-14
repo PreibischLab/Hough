@@ -123,10 +123,12 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 			 final double[] oldstartpoint = {PrevFrameparam.get(index)[0], PrevFrameparam.get(index)[1]};
 			 
 			 final double[] oldendpoint = {PrevFrameparam.get(index)[2], PrevFrameparam.get(index)[3]};
-			 if (paramnextframe!=null)
-			 final_paramlist.add(paramnextframe);
+			
+			 
 			 if (paramnextframe==null)
 				 paramnextframe = PrevFrameparam.get(index);
+			     final_paramlist.add(paramnextframe);
+			 
                   final double[] newstartpoint = {paramnextframe[0], paramnextframe[1]};
 			 
 			 final double[] newendpoint = {paramnextframe[2], paramnextframe[3]};
@@ -187,11 +189,13 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 			outcursor.fwd();
 			int x = outcursor.getIntPosition(0);
 			int y = outcursor.getIntPosition(1);
+			if (outcursor.get().get()/maxintensityline > Intensityratio){
 			if (roi.contains(x, y)){
+				
 				outcursor.localize(newposition);
 
 				long pointonline = (long) (outcursor.getLongPosition(1) - slope * outcursor.getLongPosition(0) - newintercept);
-				if (outcursor.get().get()/maxintensityline > Intensityratio){
+				
 				// To get the min and max co-rodinates along the line so we
 				// have starting points to
 				// move on the line smoothly
