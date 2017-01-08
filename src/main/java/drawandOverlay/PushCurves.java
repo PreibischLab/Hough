@@ -272,7 +272,7 @@ public class PushCurves {
 
 	}
 
-	public static void Drawshortline(RandomAccessibleInterval<FloatType> imgout, ArrayList<Fakeline> linearray,
+	public static void Drawshortline(RandomAccessibleInterval<FloatType> imgout,
 			double slope, double intercept, final double[] startpos, final double[] endpos, final double[] sigma) throws IncompatibleTypeException {
 		final int ndims = imgout.numDimensions();
 		final double[] tmppos = new double[ndims];
@@ -333,25 +333,103 @@ public class PushCurves {
 			steppos[1] += dy;
 			
 		}
-		double acstartpos[] = {startline[0] , startline[1] };
-		try {
-	        FileWriter writer = new FileWriter("../res/ActualP3.txt", true);
-	        writer.write( "StartX: "  + (acstartpos[0])+  " " +
-	       		 "StartY: "+ (acstartpos[1]) + " " + "EndposX: " + steppos[0] +  
-	    		 " EndposY :" + steppos[1]+ "  Length " + Distance(acstartpos, steppos) );
-	        writer.write("\r\n"); 
-	        writer.write("\r\n");
-	        writer.close();
-	    } catch (IOException e) {
-	        e.printStackTrace();
-	    }
-		final double distance = Distance(startline, endline);
-		final Fakeline singleline = new Fakeline(distance, slope, intercept, startline, endline);
-		linearray.add(singleline);
+	
+		
 
 	}
 
+	public static void Drawshortstrictline(RandomAccessibleInterval<FloatType> imgout, 
+			double slope, double intercept, final double[] startpos, final double[] endpos, final double[] sigma, int rate) throws IncompatibleTypeException {
+		final int ndims = imgout.numDimensions();
+		final double[] tmppos = new double[ndims];
+		final double[] startline = new double[ndims];
+		final double[] endline = new double[ndims];
 	
+		for (int d = 0; d < ndims; ++d) {
+
+			tmppos[d] = startpos[d];
+
+			
+				startline[d] = startpos[d];
+				endline[d] = endpos[d];
+			
+			}
+		
+		final double stepsize =  1 ;
+		double steppos[] = {startline[0], startline[1]};
+		double dx = stepsize / Math.sqrt(1 + slope * slope);
+		double dy = slope * dx;
+		
+		while (true) {
+			
+			AddGaussian.addGaussian(imgout, steppos, sigma);
+			
+			if (steppos[0] > endline[0] || steppos[1] > endline[1] && slope >= 0)
+				break;
+			if (steppos[0] > endline[0] || steppos[1] < endline[1] && slope < 0)
+				break;
+			steppos[0] += dx;
+			steppos[1] += dy;
+			
+		}
+		
+		
+		
+	
+
+	}
+
+
+	public static void Drawshortstrictcurve(RandomAccessibleInterval<FloatType> imgout, 
+			double slope, double intercept, final double[] startpos, final double[] endpos, final double[] sigma, int rate) throws IncompatibleTypeException {
+		final int ndims = imgout.numDimensions();
+		final double[] startline = new double[ndims];
+		final double[] endline = new double[ndims];
+	
+		for (int d = 0; d < ndims; ++d) {
+
+
+			
+				startline[d] = startpos[d];
+				endline[d] = endpos[d];
+			
+			}
+
+		
+		
+		
+		
+		final double stepsize =  1 ;
+		double steppos[] = {startline[0], startline[1]};
+		double dx = stepsize / Math.sqrt(1 + slope * slope);
+		double dy = slope * dx ;
+		while (true) {
+			
+			
+			AddGaussian.addGaussian(imgout, steppos, sigma);
+			
+			if (steppos[0] > endline[0] || steppos[1] > endline[1] && slope >= 0)
+				break;
+			if (steppos[0] > endline[0] || steppos[1] < endline[1] && slope < 0)
+				break;
+			steppos[0] += dx ;
+			steppos[1] += dy;
+			
+			dy += 0.02 * dx* dx  ;
+			
+			
+				
+		}
+		
+		
+		
+		
+	
+		
+		
+
+	}
+
 
 	
 	// Draw a line between starting and end point

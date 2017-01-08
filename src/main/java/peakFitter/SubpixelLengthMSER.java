@@ -446,6 +446,19 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 			}
 			return (distance);
 		}
+		
+		
+		public double cordDistance(final double[] cordone, final double[] cordtwo) {
+
+			double distance = 0;
+
+			for (int d = 0; d < ndims; ++d) {
+
+				distance += Math.min((cordone[d] - cordtwo[d]),1);
+
+			}
+			return (distance);
+		}
 		private void Testerrorone(final double[] point, int label, double length) {
 
 			try {

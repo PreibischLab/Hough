@@ -67,7 +67,7 @@ public class VelocitydetectionMSER {
 				// new ArrayImgFactory<FloatType>());
 				// new File("../res/multiple-lines.tif"),
 				// new ArrayImgFactory<FloatType>());
-				new File("../res/Combined20-09-16-laevis.tif"), 
+				new File("../res/filaments.tif"), 
 				new ArrayImgFactory<FloatType>());
 		
 		
@@ -80,7 +80,7 @@ public class VelocitydetectionMSER {
 				// new ArrayImgFactory<FloatType>());
 				// new File("../res/multiple-lines.tif"),
 				// new ArrayImgFactory<FloatType>());
-				new File("../res/Combined20-09-16-laevis-preprocessed.tif"), 
+				new File("../res/filaments-preprocessed.tif"), 
 				new ArrayImgFactory<FloatType>());
 		
 		int ndims = img.numDimensions();
@@ -97,7 +97,7 @@ public class VelocitydetectionMSER {
 		FloatType maxval = new FloatType(1);
 		final int skipframes = 0;
 		Normalize.normalize(Views.iterable(img), minval, maxval);
-		final double[] psf = { 1.65, 1.47 };
+		final double[] psf = { 1.2, 1.0 };
 		// Declare all the constants needed by the program here:
 
 		// final double[] psf = { 1.4, 1.5 };
@@ -117,9 +117,9 @@ public class VelocitydetectionMSER {
 		final long maxSize = Long.MAX_VALUE;
 		final double maxVar = 0.2;
 		final double minDiversity = 0;
-		final int maxlines = 100;
+		final int maxlines = 5;
 		final int maxdeltaini = 50;
-		final int maxdeltanext = 20;
+		final int maxdeltanext = 50;
 		final long radius =  (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		if (ndims == 2) {
 
@@ -172,7 +172,7 @@ public class VelocitydetectionMSER {
 
 			ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
 
-			SubpixelBentLengthMSER MTline = new SubpixelBentLengthMSER(img, arrayimg, simpleobject, psf, minlength);
+			SubpixelLengthMSER MTline = new SubpixelLengthMSER(img, arrayimg, simpleobject, psf, minlength);
 			MTline.checkInput();
 			MTline.process();
 			ArrayList<double[]> final_paramlist = MTline.getResult();
@@ -207,13 +207,12 @@ public class VelocitydetectionMSER {
 
 			System.out.println("Running MSER: ");
 
-			Img<UnsignedByteType> newimg;
-
+			
 			ImageJFunctions.wrap(inputimg, "curr");
 			final ImagePlus currentimp = IJ.getImage();
 			IJ.run("8-bit");
 
-			newimg = ImagePlusAdapter.wrapByte(currentimp);
+			Img<UnsignedByteType> newimg = ImagePlusAdapter.wrapByte(currentimp);
 
 			double bestdelta = GetDelta.Bestdeltaparam(newimg, delta, minSize, maxSize, maxVar, minDiversity, minlength,
 					maxlines, maxdeltaini, darktoBright);
@@ -236,7 +235,7 @@ public class VelocitydetectionMSER {
 
 			 ImageJFunctions.show(imgout).setTitle("Rough-Reconstruction");
 
-			SubpixelBentLengthMSER MTline = new SubpixelBentLengthMSER(groundframe, arrayimg, simpleobject, psf, minlength);
+			SubpixelLengthMSER MTline = new SubpixelLengthMSER(groundframe, arrayimg, simpleobject, psf, minlength);
 			MTline.checkInput();
 			MTline.process();
 			ArrayList<double[]> final_paramlist = MTline.getResult();
@@ -268,7 +267,7 @@ public class VelocitydetectionMSER {
 				ImageJFunctions.wrap(inputimgpre, "curr");
 				final ImagePlus currentimpnew = IJ.getImage();
 				IJ.run("8-bit");
-
+			
 				newimg = ImagePlusAdapter.wrapByte(currentimpnew);
 
 				double nextbestdelta = GetDelta.Bestdeltaparam(newimg, bestdelta, minSize, maxSize, maxVar,
@@ -287,7 +286,7 @@ public class VelocitydetectionMSER {
 				impframe.setOverlay(ovframe);
 				
 
-				final SubpixelBentVelocityMSER growthtracker = new SubpixelBentVelocityMSER(currentframe, arrayimgframe,
+				final SubpixelVelocityMSER growthtracker = new SubpixelVelocityMSER(currentframe, arrayimgframe,
 						PrevFrameparam, psf, frame);
 				growthtracker.checkInput();
 				growthtracker.process();

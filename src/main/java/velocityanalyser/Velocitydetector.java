@@ -60,7 +60,7 @@ public class Velocitydetector {
 				.openAs32Bit(
 					//	new File("../res/10frame_moving.tif"),
 					//	new ArrayImgFactory<FloatType>());
-						new File("../res/23-09-16-laevis-6uM-25C-3.tif"),
+						new File("../res/filamentsFrames1to10.tif"),
 						new ArrayImgFactory<FloatType>());
 					//	new File("../res/small_MT.tif"),
 					//	new ArrayImgFactory<FloatType>());
@@ -80,7 +80,7 @@ public class Velocitydetector {
 		
 		final int missedframes = 0;
 		
-		final double[] psf = { 1.65, 1.47 };
+		final double[] psf = { 1.0, 1.0};
 		final double[] sigma = { 2, 2 };
 		final long radius =  (long) Math.ceil(Math.sqrt(psf[0] * psf[0] + psf[1] * psf[1]));
 		final int minlength = 2;

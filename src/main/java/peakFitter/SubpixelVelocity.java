@@ -113,7 +113,7 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 					startandendinframe.add(edge);	
 		}
 		
-		return false;
+		return true;
 	}
 
 	@Override
@@ -441,6 +441,18 @@ implements OutputAlgorithm<ArrayList<double[]>> {
 		for (int d = 0; d < ndims; ++d) {
 
 			distance += Math.pow((cordone[d] - cordtwo[d]), 2);
+
+		}
+		return (distance);
+	}
+	
+	public double cordDistance(final double[] cordone, final double[] cordtwo) {
+
+		double distance = 0;
+
+		for (int d = 0; d < ndims; ++d) {
+
+			distance += Math.min((cordone[d] - cordtwo[d]),1);
 
 		}
 		return (distance);

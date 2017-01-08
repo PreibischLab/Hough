@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
+import com.sun.tools.javac.util.Pair;
+
+import drawandOverlay.AddGaussian;
 import drawandOverlay.PushCurves;
 import mISC.Tree.Distance;
 import net.imglib2.Interval;
@@ -57,7 +60,7 @@ public class Gaussianlines {
 		
 			
 
-			PushCurves.Drawshortline(outimg, linearray, slope, intercept, startpos, endpos, sigma);
+			PushCurves.Drawshortline(outimg, slope, intercept, startpos, endpos, sigma);
 			
 			
 		
@@ -115,30 +118,312 @@ public class Gaussianlines {
 		return linearrayini;
 	}
 	
-	public static void Drawmovingsimulatedlines(RandomAccessibleInterval<FloatType> outimg, final Interval range, final int rate,final int numlines,
+	
+	public static void GetSeeds(RandomAccessibleInterval<FloatType> outimg, ArrayList<double[]> startseeds,ArrayList<double[]> endseeds,
+			
+			final Interval range, final int numlines, final double[] sigma) throws IncompatibleTypeException{
+		
+		final Random rnd = new Random(-40);
+		final Random rndsec = new Random(80);
+		final int n = outimg.numDimensions();
+		
+	
+		
+			for (int index = 0; index < numlines; ++index) {
+				
+				double startpos[] = new double[n];
+				double endpos[] = new double[n];
+				double[] startline = new double[n];
+				double[] endline = new double[n];
+				double MaxLength = 55.82;
+				
+				for (int d = 0; d < range.numDimensions(); ++d) {
+					startpos[d] = 150 + (rnd.nextDouble() * (range.max(d) - range.min(d)) + range.min(d)) ;
+					endpos[d] = ((rndsec.nextDouble() * (range.max(d) - range.min(d)) + range.min(d)))  ;
+				}
+				final double[] tmppos = new double[n];
+				
+				final double[] minVal = new double[n];
+				final double[] maxVal = new double[n];
+				while (true){
+					if (Distance(startpos, endpos) > MaxLength){
+						
+						for (int d = 0; d < range.numDimensions(); ++d) {
+							
+							endpos[d] = (startpos[d] + endpos[d]) / 2;
+						}
+						
+					}
+					if (Distance(startpos, endpos) <= MaxLength)
+						break;
+					}
+					
+					
+					double slope = (endpos[1] - startpos[1]) / (endpos[0] - startpos[0]);
+					double intercept = startpos[1] - slope * startpos[0];
+				for (int d = 0; d < n; ++d) {
+
+					final double locationdiff = startpos[d] - endpos[d];
+					final boolean minsearch = locationdiff > 0;
+					tmppos[d] = startpos[d];
+
+					
+						minVal[d] = minsearch ? endpos[d] : startpos[d];
+						maxVal[d] = minsearch ? tmppos[d] : endpos[d];
+					
+					}
+
+				
+				
+				if (slope >= 0) {
+					for (int d = 0; d < n; ++d) {
+
+						startline[d] = minVal[d];
+						endline[d] = maxVal[d];
+					}
+					
+				
+				}
+
+				if (slope < 0) {
+
+					startline[0] = minVal[0];
+					startline[1] = maxVal[1];
+					endline[0] = maxVal[0];
+					endline[1] = minVal[1];
+				
+
+				}
+			
+				double stepsize = 1.0;
+				double steppos[] = {startline[0], startline[1]};
+				double dx = stepsize / Math.sqrt(1 + slope * slope);
+				double dy = slope * dx;
+				while (true) {
+					
+					AddGaussian.addGaussian(outimg, steppos, sigma);
+					
+					if (steppos[0] > endline[0] || steppos[1] > endline[1] && slope >= 0)
+						break;
+					if (steppos[0] > endline[0] || steppos[1] < endline[1] && slope < 0)
+						break;
+					steppos[0] += dx;
+					steppos[1] += dy;
+					
+					
+				}
+				for (int d  = 0; d < n ; ++d)
+					endline[d] = steppos[d];
+			
+				
+				final double[] startinfo = {startline[0], startline[1], slope, intercept};
+				final double[] endinfo = {endline[0], endline[1], slope, intercept};
+				startseeds.add(startinfo);
+				endseeds.add(endinfo);
+				
+			
+	}
+				
+			
+			
+			
+		
+		
+		
+		
+	}
+	
+	
+	public static Pair<ArrayList<double[]>, ArrayList<double[]>> Growseeds (RandomAccessibleInterval<FloatType> outimg, 
+			ArrayList<double[]> startseeds, ArrayList<double[]> endseeds, int frame, double[] sigma) throws IncompatibleTypeException{
+		
+	
+		final int n = outimg.numDimensions();
+		
+        double growrate = 12* Math.sin(0.2 * frame) ;
+
+		
+		 ArrayList<double[]> newcords = new ArrayList<double[]>();
+		 ArrayList<double[]> newcordsend = new ArrayList<double[]>();
+		
+		 for (int index = 0; index < startseeds.size(); ++index){
+			 newcords.add(startseeds.get(index));
+			 double[] startpos = new double[n];
+			 double[] endpos = new double[n];
+			 double slope = startseeds.get(index)[n];
+			 double intercept = startseeds.get(index)[n + 1];
+			 
+			 
+			 for (int d = 0; d < n; ++d){
+				 
+				 endpos[d] = startseeds.get(index)[d];
+				 
+			 }
+				 startpos[0] = startseeds.get(index)[0] -  1.5* Math.abs((growrate)) - 10.5 ;
+				 startpos[1] = slope * startpos[0] + intercept;
+				
+			 
+			    newcords.add(startpos);
+			
+			 
+					final double stepsize =  1 ;
+					double steppos[] = {startpos[0], startpos[1]};
+					double dx = stepsize / Math.sqrt(1 + slope * slope);
+					double dy = slope * dx;
+					
+					while (true) {
+						
+						AddGaussian.addGaussian(outimg, steppos, sigma);
+						
+						if (steppos[0] > endpos[0] || steppos[1] > endpos[1] && slope >= 0)
+							break;
+						if (steppos[0] > endpos[0] || steppos[1] < endpos[1] && slope < 0)
+							break;
+						steppos[0] += dx;
+						steppos[1] += dy;
+						
+					}
+					
+				
+			 
+		 }
+		 
+		
+       
+		 for (int index = 0; index < endseeds.size(); ++index){
+			 newcordsend.add(endseeds.get(index));
+			 double[] startpos = new double[n];
+			 double[] endpos = new double[n];
+			 double slope = endseeds.get(index)[n];
+			 double intercept = endseeds.get(index)[n + 1];
+			 
+			 for (int d = 0; d < n; ++d){
+				 
+				 startpos[d] = endseeds.get(index)[d];
+			 }
+				 endpos[0] = endseeds.get(index)[0] +  5.5* Math.abs((growrate)) ;
+				endpos[1] = slope * endpos[0] + intercept;
+			 
+			 newcordsend.add(endpos);
+			
+			 PushCurves.Drawshortstrictcurve(outimg,  slope, intercept, startpos, endpos, sigma, frame);
+			 
+			 
+		 }
+	
+	
+		 Pair<ArrayList<double[]>, ArrayList<double[]>> pair = new Pair<ArrayList<double[]>, ArrayList<double[]>>(newcords, newcordsend);
+	
+	
+	return pair;
+		
+	}
+	
+	
+	
+	public static Pair<Pair<ArrayList<double[]>, ArrayList<double[]>>, Pair<ArrayList<Double>, ArrayList<Double>>> Getgrowlength(
+			ArrayList<double[]> startseeds, ArrayList<double[]> endseeds, int frame, double[] sigma) throws IncompatibleTypeException{
+		
+		
+		final int n = sigma.length;
+		
+        final ArrayList<double[]> newstartpoints = new ArrayList<double[]>();
+        final ArrayList<double[]> newendpoints = new ArrayList<double[]>();
+        final ArrayList<Double> startlength = new ArrayList<Double>();
+        final ArrayList<Double> endlength = new ArrayList<Double>();
+		double growrate = 12* Math.sin(0.2 * frame) ;
+
+		
+		 
+		 
+		 for (int index = 0; index < startseeds.size(); ++index){
+			 double[] startpos = new double[n];
+			 double[] endpos = new double[n];
+			 double slope = startseeds.get(index)[n];
+			 double intercept = startseeds.get(index)[n + 1];
+			 double length = 0;
+			 
+			 for (int d = 0; d < n; ++d){
+				 
+				 endpos[d] = startseeds.get(index)[d];
+			 }
+				 
+				 startpos[0] = startseeds.get(index)[0] -  1.5* Math.abs((growrate)) - 10.5 ;
+				startpos[1] = slope * startpos[0] + intercept;
+					
+			 
+			 length = Distance(startpos, endpos);
+				startlength.add(length);
+			 final double[] startinfo = { startpos[0], startpos[1], slope, intercept};
+			 newstartpoints.add(startinfo);
+			 
+			 
+			 
+			 
+		 }
+		 
+		
+        
+		 for (int index = 0; index < endseeds.size(); ++index){
+			 double[] startpos = new double[n];
+			 double[] endpos = new double[n];
+			 double slope = endseeds.get(index)[n];
+			 double intercept = endseeds.get(index)[n + 1];
+			 double length = 0;
+			 
+			 for (int d = 0; d < n; ++d){
+				 
+				 startpos[d] = endseeds.get(index)[d];
+				 
+			 }
+				 endpos[0] = endseeds.get(index)[0] +  5.5* Math.abs((growrate)) ;
+				 endpos[1] = slope * endpos[0] + intercept;
+				
+			 
+			 length = Distance(startpos, endpos);
+				endlength.add(length);
+			 final double[] endinfo = { endpos[0], endpos[1], slope, intercept};
+			 newendpoints.add(endinfo);
+			
+			 
+			 
+		 }
+	
+	
+	Pair<ArrayList<double[]>, ArrayList<double[]>> pair = new Pair<ArrayList<double[]>, ArrayList<double[]>>(newstartpoints, newendpoints);
+	Pair<ArrayList<Double>, ArrayList<Double>> pairlength = new Pair<ArrayList<Double>, ArrayList<Double>>(startlength, endlength);
+	
+	Pair<Pair<ArrayList<double[]>, ArrayList<double[]>>, Pair<ArrayList<Double>, ArrayList<Double>>> totalpair = new
+			Pair<Pair<ArrayList<double[]>, ArrayList<double[]>>, Pair<ArrayList<Double>, ArrayList<Double>>>(pair, pairlength);
+	
+	return totalpair;
+		
+	}
+	
+	
+	public static Pair<ArrayList<Pair<Integer, double[]>>, ArrayList<Pair<Integer, double[]>>> Drawmovingsimulatedlines(RandomAccessibleInterval<FloatType> outimg, final Interval range, final int rate,final int numlines,
 			 final double[] sigma) throws IncompatibleTypeException {
 		final int n = outimg.numDimensions();
 
+		ArrayList<Pair<Integer, double[]>> linearraystart = new ArrayList<Pair<Integer, double[]>>();
+		ArrayList<Pair<Integer, double[]>> linearrayend = new ArrayList<Pair<Integer, double[]>>();
 		ArrayList<Fakeline> linearray = new ArrayList<Fakeline>();
-		final Random rnd = new Random(60);
-		final Random rndsec = new Random(28);
-		final Random rndthird = new Random(28);
+		final Random rnd = new Random(-40);
+		final Random rndsec = new Random(80);
 		for (int index = 0; index < numlines; ++index) {
 
 				
 			double startpos[] = new double[n];
 			double endpos[] = new double[n];
+			double newstartpos[] = new double[n];
+			double newendpos[] = new double[n];
 			double MaxLength = 55.82;
-			double inislope = rndsec.nextDouble();
-			double iniintercept = rndthird.nextDouble() ;
-			/*
-		//	for (int d = 0; d < range.numDimensions(); ++d) {
-				startpos[0] = (rnd.nextDouble() * (range.max(0) - range.min(0)) + range.min(0));
-	//		}
-				startpos[1] = inislope * startpos[0] + iniintercept + 0.1 * startpos[0] * startpos[0];
-			endpos[0] = (rndsec.nextDouble()+ 14 * Math.abs((0.2 *rate)));
 			
-			endpos[1] =   (inislope * endpos[0] +  iniintercept ) +   0.1 *  endpos[0] * endpos[0];
+			for (int d = 0; d < range.numDimensions(); ++d) {
+				startpos[d] = 150 + (rnd.nextDouble() * (range.max(d) - range.min(d)) + range.min(d)) ;
+				endpos[d] = ((rndsec.nextDouble() * (range.max(d) - range.min(d)) + range.min(d)))  ;
+			}
+
 			
 			while (true){
 			if (Distance(startpos, endpos) > MaxLength){
@@ -157,13 +442,86 @@ public class Gaussianlines {
 			double slope = (endpos[1] - startpos[1]) / (endpos[0] - startpos[0]);
 			double intercept = startpos[1] - slope * startpos[0];
 
-		*/
-			double slope = 0;
-			double intercept = 0;
-			PushCurves.Drawshortline(outimg, linearray, slope, intercept, startpos, endpos, sigma);
+		if (Math.abs(slope) < 10){
+			
+			if (rate == 0)
+			PushCurves.Drawshortline(outimg, slope, intercept, startpos, endpos, sigma);
+			final double[] tmppos = new double[n];
+			final double[] startline = new double[n];
+			double[] endline = new double[n];
+			final double[] minVal = new double[n];
+			final double[] maxVal = new double[n];
+			for (int d = 0; d < n; ++d) {
+
+				final double locationdiff = startpos[d] - endpos[d];
+				final boolean minsearch = locationdiff > 0;
+				tmppos[d] = startpos[d];
+
+				
+					minVal[d] = minsearch ? endpos[d] : startpos[d];
+					maxVal[d] = minsearch ? tmppos[d] : endpos[d];
+				
+				}
+
+			
+			
+			if (slope >= 0) {
+				for (int d = 0; d < n; ++d) {
+
+					startline[d] = minVal[d];
+					endline[d] = maxVal[d];
+				}
+				
+			
+			}
+
+			if (slope < 0) {
+
+				startline[0] = minVal[0];
+				startline[1] = maxVal[1];
+				endline[0] = maxVal[0];
+				endline[1] = minVal[1];
 			
 
+			}
+			
+			
+			double growrate = 0;
+		
+					growrate = 12* Math.sin(0.2 * rate) ;
+			
+				
+				
+					
+				newstartpos[0] = startline[0] -  1.5* Math.abs((growrate)) - 10.5 ;
+				newstartpos[1] = slope * newstartpos[0] + intercept;
+				
+				newendpos[0] = endline[0] +  5.5* Math.abs((growrate)) ;
+				newendpos[1] = slope * newendpos[0] + intercept;
+				
+				
+				Pair<Integer, double[]> framepairstart = new Pair<Integer, double[]>(rate,newstartpos);
+				Pair<Integer, double[]> framepairend = new Pair<Integer, double[]>(rate,newendpos);
+				
+				
+				
+				linearraystart.add(framepairstart);
+				linearrayend.add(framepairend);
+				
+			if (rate > 0){
+				
+				
+				PushCurves.Drawshortstrictline(outimg,  slope, intercept, newstartpos, startline, sigma, rate);
+				PushCurves.Drawshortstrictcurve(outimg,  slope, intercept, endline, newendpos, sigma, rate);
+				
+			}
+			
+			
 		}
+		}
+		Pair<ArrayList<Pair<Integer, double[]>>, ArrayList<Pair<Integer, double[]>> > pair = new Pair<ArrayList<Pair<Integer, double[]>>, ArrayList<Pair<Integer, double[]>> >(linearraystart, linearrayend);
+		
+		return pair;
 	/*
 		for (int index = 0; index < linearray.size(); ++index){
 		try {

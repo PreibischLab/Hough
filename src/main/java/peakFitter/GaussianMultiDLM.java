@@ -48,7 +48,10 @@ package peakFitter;
 				double di = x[dim] - a[dim+1];
 				return - di * di * a[0] * E(x, a);
 			}
-			
+		
+            else if (k == 2* ndims + 1)
+
+            return 1.0;	
 			else{
 				
 				return 0;

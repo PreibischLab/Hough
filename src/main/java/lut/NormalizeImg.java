@@ -2,7 +2,9 @@ package lut;
 
 import java.io.File;
 
+import ij.IJ;
 import ij.ImageJ;
+import ij.ImagePlus;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
@@ -21,12 +23,12 @@ public class NormalizeImg {
 		// Load the stack of images
 		RandomAccessibleInterval<FloatType> img = util.ImgLib2Util.openAs32Bit(
 				
-				new File("../res/C1-23-09-16-laevis-6uM-25C-dup.tif"), 
+				new File("../res/C1-Bovine_12uM_37C-1.tif"), 
 				new ArrayImgFactory<FloatType>());
 		
         RandomAccessibleInterval<FloatType> secimg = util.ImgLib2Util.openAs32Bit(
 				
-				new File("../res/C2-23-09-16-laevis-6uM-25C-dup.tif"), 
+				new File("../res/C2-Bovine_12uM_37C-1.tif"), 
 				new ArrayImgFactory<FloatType>());
 		
 		
@@ -39,8 +41,10 @@ public class NormalizeImg {
 		add.process();
 		RandomAccessibleInterval<FloatType> imgout = add.getResult();
 		Normalize.normalize(Views.iterable(imgout), minval, maxval);
+		
+		
 		ImageJFunctions.show(imgout);
-        
+		
 	}
 	
 }
